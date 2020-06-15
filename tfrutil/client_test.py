@@ -16,22 +16,36 @@
 
 """Tests for client."""
 
-import unittest
-import pandas as pd
-from tfrutil import client
+from typing import List
 
-TEST_DATA = {"image": ["gs://foo/bar/1.jpg",
-                       "gs://foo/bar/2.jpg",
-                       "gs://foo/bar/3.jpg"],
-             "label": [0, 0, 1]}
+import csv
+import tempfile
+import unittest
+
+import mock
+import pandas as pd
+
+from tfrutil import client
+from tfrutil import constants
+
+
+TEST_DATA = {
+    constants.IMAGE_URI_KEY: [
+        "gs://foo/bar/1.jpg",
+        "gs://foo/bar/2.jpg",
+        "gs://foo/bar/3.jpg"
+    ],
+    constants.LABEL_KEY: [0, 0, 1]}
 
 
 class ClientTest(unittest.TestCase):
+  """Misc tests for `client` module."""
 
   def setUp(self):
     self.test_df = pd.DataFrame.from_dict(TEST_DATA)
 
   def test_create_tfrecords(self):
+    """Tests `create_tfrecords` valid case."""
 
     pid = client.create_tfrecords(self.test_df,
                                   runner="DirectRunner",
@@ -39,34 +53,138 @@ class ClientTest(unittest.TestCase):
     self.assertEqual(pid, "p1234")
 
 
+#pylint: disable=protected-access
+
 class InputValidationTest(unittest.TestCase):
+  """"Tests for validation input data."""
 
   def setUp(self):
     self.test_df = pd.DataFrame.from_dict(TEST_DATA)
 
   def test_valid_dataframe(self):
-    client._validate_data(self.test_df,
-                          image_col="image",
-                          label_col="label")
+    """Tests valid DataFrame input."""
+    self.assertIsNone(
+        client._validate_data(
+            self.test_df, image_col="image_uri", label_col="label"))
 
   def test_invalid_image(self):
+    """Tests invalid image."""
     with self.assertRaises(AttributeError):
       client._validate_data(self.test_df,
                             image_col="foo",
                             label_col="label")
 
   def test_invalid_label(self):
+    """Tests invalid label."""
     with self.assertRaises(AttributeError):
       client._validate_data(self.test_df,
-                            image_col="image",
+                            image_col="image_uri",
                             label_col="foo")
 
   def test_valid_runner(self):
-    client._validate_runner("DirectRunner")
+    """Tests valid runner."""
+    self.assertIsNone(client._validate_runner("DirectRunner"))
 
   def test_invalid_runner(self):
+    """Tests invalid runner."""
     with self.assertRaises(AttributeError):
       client._validate_runner("FooRunner")
+
+
+def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:
+  """Returns `NamedTemporaryFile` representing an image CSV."""
+
+  f = tempfile.NamedTemporaryFile(mode="w+t", suffix=".csv")
+  writer = csv.writer(f, delimiter=",")
+  for row in data:
+    writer.writerow(row)
+  f.seek(0)
+  return f
+
+
+def get_sample_image_csv_data() -> List[List[str]]:
+  """Returns sample CSV data in Image CSV format."""
+
+  data = TEST_DATA.copy()
+  data[constants.SPLIT_KEY] = ["TRAIN", "VALIDATION", "TEST"]
+  header = list(data.keys())
+  content = [list(row) for row in zip(*data.values())]
+  return [header] + content
+
+
+class ReadCSVTest(unittest.TestCase):
+  """Tests `read_csv`."""
+
+  def setUp(self):
+    data = get_sample_image_csv_data()
+    self.header = data.pop(0)
+    self.sample_data = data
+
+  def test_valid_csv_no_header_no_names_specified(self):
+    """Tests a valid CSV without a header and no header names given."""
+    f = _make_csv_tempfile(self.sample_data)
+    actual = client.read_csv(f.name, header=None)
+    self.assertEqual(list(actual.columns), constants.IMAGE_CSV_COLUMNS)
+    self.assertEqual(actual.values.tolist(), self.sample_data)
+
+  def test_valid_csv_no_header_names_specified(self):
+    """Tests valid CSV without a header, but header names are given."""
+    f = _make_csv_tempfile(self.sample_data)
+    actual = client.read_csv(f.name, header=None, names=self.header)
+    self.assertEqual(list(actual.columns), self.header)
+    self.assertEqual(actual.values.tolist(), self.sample_data)
+
+  def test_valid_csv_with_header_no_names_specified(self):
+    """Tests valid CSV with header, and no header names given (inferred)."""
+
+    f = _make_csv_tempfile([self.header] + self.sample_data)
+    actual = client.read_csv(f.name)
+    self.assertEqual(list(actual.columns), self.header)
+    self.assertEqual(actual.values.tolist(), self.sample_data)
+
+  def test_valid_csv_with_header_names_specified(self):
+    """Tests valid CSV with header, and header names given (override)."""
+
+    f = _make_csv_tempfile([self.header] + self.sample_data)
+    actual = client.read_csv(f.name, names=self.header, header=0)
+    self.assertEqual(list(actual.columns), self.header)
+    self.assertEqual(actual.values.tolist(), self.sample_data)
+
+
+class ToDataFrameTest(unittest.TestCase):
+  """Tests `to_dataframe`."""
+
+  def setUp(self) -> None:
+    sample_data = get_sample_image_csv_data()
+    columns = sample_data.pop(0)
+    self.input_df = pd.DataFrame(sample_data, columns=columns)
+
+  @mock.patch.object(client, "read_csv", autospec=True)
+  def test_input_csv(self, read_csv):
+    """Tests valid input CSV file."""
+    expected = self.input_df
+    read_csv.return_value = expected
+    f = _make_csv_tempfile(get_sample_image_csv_data())
+    actual = client.to_dataframe(f.name)
+    pd.testing.assert_frame_equal(actual, expected)
+
+  def test_input_dataframe_no_names_specified(self):
+    """Tests valid input dataframe with no header names specified."""
+    actual = client.to_dataframe(self.input_df)
+    pd.testing.assert_frame_equal(actual, self.input_df)
+
+  def test_input_dataframe_with_header(self):
+    """Tests valid input dataframe with header specified."""
+    names = list(self.input_df.columns[0:-1])
+    actual = client.to_dataframe(self.input_df, names=names)
+    pd.testing.assert_frame_equal(actual, self.input_df[names])
+
+  def test_error_invalid_inputs(self):
+    """Tests error handling with different invalid inputs."""
+    inputs = [0, "not_a_csv_file", list(), dict()]
+    for input_data in inputs:
+      with self.assertRaises(ValueError):
+        client.to_dataframe(input_data)
 
 
 if __name__ == "__main__":

@@ -17,12 +17,15 @@
 """Provides a common interface for TFRUtil to DF Accessor and CLI.
 
 client.py provides create_tfrecords() to upstream clients including
-the Pandas DataFrame Accessor (accessor.py) and the CLI
-(TODO(cezequeil: name file)).
+the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
-from typing import Union
-import pandas as pd
 
+from typing import Union, Optional, Sequence
+
+import pandas as pd
+import tensorflow as tf
+
+from tfrutil import constants
 from tfrutil import beam_pipeline
 
 
@@ -43,15 +46,69 @@ def _validate_runner(runner):
     raise AttributeError("Runner {} is not supported.".format(runner))
 
 
-def create_tfrecords(df: pd.DataFrame,
-                     runner: str,
-                     output_path: str,
-                     job_label: str = "beam-job",
-                     compression: Union[str, None] = "gzip",
-                     num_shards: int = 0,
-                     image_col: str = "image",
-                     label_col: str = "label") -> str:
-  """TFRUtil Python Client.
+# def read_image_directory(dirpath) -> pd.DataFrame:
+#   """Reads image data from a directory into a Pandas DataFrame."""
+#
+#   # TODO(cezequiel): Implement in phase 2.
+#   _ = dirpath
+#   raise NotImplementedError
+
+
+def _is_directory(input_data) -> bool:
+  """Returns True if `input_data` is a directory; False otherwise."""
+  # TODO(cezequiel): Implement in phase 2.
+  _ = input_data
+  return False
+
+
+def read_csv(
+    csv_file: str,
+    header: Optional[Union[str, int, Sequence]] = "infer",
+    names: Optional[Sequence] = None) -> pd.DataFrame:
+  """Returns a a Pandas DataFrame from a CSV file."""
+
+  if header is None and not names:
+    names = constants.IMAGE_CSV_COLUMNS
+
+  with tf.io.gfile.GFile(csv_file) as f:
+    return pd.read_csv(f, names=names, header=header)
+
+
+def to_dataframe(
+    input_data: Union[str, pd.DataFrame],
+    header: Optional[Union[str, int, Sequence]] = "infer",
+    names: Optional[Sequence] = None) -> pd.DataFrame:
+  """Converts `input_data` to a Pandas DataFrame."""
+
+  if isinstance(input_data, pd.DataFrame):
+    df = input_data[names] if names else input_data
+
+  elif isinstance(input_data, str) and input_data.endswith(".csv"):
+    df = read_csv(input_data, header, names)
+
+  elif isinstance(input_data, str) and _is_directory(input_data):
+    # TODO(cezequiel): Implement in phase 2
+    raise NotImplementedError
+
+  else:
+    raise ValueError("Unsupported `input_data`: {}".format(type(input_data)))
+
+  return df
+
+#pylint: disable=too-many-arguments
+
+def create_tfrecords(
+    input_data: Union[str, pd.DataFrame],
+    output_path: str,
+    header: Optional[Union[str, int, Sequence]] = "infer",
+    names: Optional[Sequence] = None,
+    runner: str = "DirectRunner",
+    job_label: str = "create-tfrecords",
+    compression: Union[str, None] = "gzip",
+    num_shards: int = 0,
+    image_col: str = "image_uri",
+    label_col: str = "label") -> str:
+  """Generates TFRecord files from given input data.
 
   TFRUtil provides an easy interface to create image-based tensorflow records
   from a dataframe containing GCS locations of the images and labels.
@@ -59,18 +116,20 @@ def create_tfrecords(df: pd.DataFrame,
   Usage:
     import tfrutil
 
-    job_id = tfrutil.create_tfrecords(train_df,
-                                     runner="local",
-                                     output_path="gcs://foo/bar/train",
-                                     compression="gzip",
-                                     num_shards=10,
-                                     image_col="image",
-                                     label_col="label)
+    job_id = tfrutil.client.create_tfrecords(
+        train_df,
+        output_path="gcs://foo/bar/train",
+        runner="DataFlowRunner)
 
   Args:
-    df: Pandas DataFrame
-    runner: Beam runner. Can be "local" or "DataFlow"
+    input_data: Pandas DataFrame, CSV file or image directory path.
     output_path: Local directory or GCS Location to save TFRecords to.
+    header: List of field names to use.
+      If `input_data` is a CSV file (str) and header is `None`,
+        defaults to using `constants.IMAGE_CSV_COLUMNS`.
+      if `input_data` is a DataFrame and `header` is given,
+        filter output DataFrame columns based on `header`.
+    runner: Beam runner. Can be "local" or "DataFlow"
     job_label: User supplied description for the beam job name.
     compression: Can be "gzip" or None for no compression.
     num_shards: Number of shards to divide the TFRecords into. Default is
@@ -81,15 +140,20 @@ def create_tfrecords(df: pd.DataFrame,
   Returns:
     job_id: Job ID of the DataFlow job or PID of the local runner.
   """
+
+  df = to_dataframe(input_data, header, names)
+
   _validate_data(df, image_col, label_col)
   _validate_runner(runner)
-  beam_pipeline.run_pipeline(df,
-                             job_label=job_label,
-                             runner=runner,
-                             output_path=output_path,
-                             compression=compression,
-                             num_shards=num_shards,
-                             image_col=image_col,
-                             label_col=label_col)
+  beam_pipeline.run_pipeline(
+      df,
+      job_label=job_label,
+      runner=runner,
+      output_path=output_path,
+      compression=compression,
+      num_shards=num_shards,
+      image_col=image_col,
+      label_col=label_col)
+
   job_id = "p1234"
   return job_id

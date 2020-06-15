@@ -24,7 +24,7 @@ from typing import Union
 
 import apache_beam as beam
 import pandas as pd
-import tensorflow_transform as tft
+# import tensorflow_transform as tft
 from tensorflow_transform import beam as tft_beam
 
 
@@ -69,6 +69,7 @@ def _get_pipeline_options(
   options_dict.update(popts)
   return beam.pipeline.PipelineOptions(flags=[], **options_dict)
 
+#pylint: disable=too-many-arguments
 
 def run_pipeline(df: pd.DataFrame,
                  job_label: str,
@@ -93,6 +94,12 @@ def run_pipeline(df: pd.DataFrame,
   Note: These inputs must be validated upstrea (by client.create_tfrecord())
   """
 
+  # TODO: make use of the following params
+  _ = compression
+  _ = num_shards
+  _ = image_col
+  _ = label_col
+
   job_name = _get_job_name(job_label)
   job_dir = _get_job_dir(output_path, job_name)
   popts = {}  # TODO(mikebernico): consider how/if to pass pipeline options.
@@ -112,4 +119,3 @@ def run_pipeline(df: pd.DataFrame,
           | "Debugger" >> beam.io.WriteToText(
               os.path.join(job_dir, "debug"))
       )
-      

@@ -18,10 +18,13 @@
 
 import unittest
 import pandas as pd
+
+#pylint: disable=unused-import
 from tfrutil import accessor
 
 
-class ClientAccessor(unittest.TestCase):
+class TFRUtilAccessorTest(unittest.TestCase):
+  """Tests `TFRUtilAccessor`."""
 
   def setUp(self):
     data = {
@@ -31,7 +34,9 @@ class ClientAccessor(unittest.TestCase):
         "label": [0, 0, 1]}
     self.test_df = pd.DataFrame.from_dict(data)
 
-  def test_pandas_accessor(self):
+  def test_to_tfr_accessor(self):
+    """Tests `to_tfr` accessor."""
+
     pid = self.test_df.tensorflow.to_tfr(runner="DirectRunner",
                                          output_path="/tmp/train")
     self.assertEqual(pid, "p1234")

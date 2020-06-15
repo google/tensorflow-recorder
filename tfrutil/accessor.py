@@ -33,6 +33,8 @@ class TFRUtilAccessor:
   def __init__(self, pandas_obj):
     self._df = pandas_obj
 
+#pylint: disable=too-many-arguments
+
   def to_tfr(self,
              runner: str,
              output_path: str,
@@ -69,7 +71,7 @@ class TFRUtilAccessor:
     Returns:
       job_id: Job ID of the DataFlow job or PID of the local runner.
     """
-    job_id = client.create_tfrecords(df=self._df,
+    job_id = client.create_tfrecords(self._df,
                                      runner=runner,
                                      output_path=output_path,
                                      job_label=job_label,
