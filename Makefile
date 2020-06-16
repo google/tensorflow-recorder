@@ -2,10 +2,7 @@ init:
 	pip install -r requirements.txt
 
 test:
-	python -m unittest
-
-coverage:
-	coverage run -m unittest && coverage report -m
+	nosetests --with-coverage --nocapture -v --cover-package=tfrutil
 
 lint:
 	glint tfrutil/*.py
