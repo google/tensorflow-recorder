@@ -4,7 +4,10 @@ init:
 test:
 	nosetests --with-coverage --nocapture -v --cover-package=tfrutil
 
-lint:
+pylint:
+	pylint tfrutil
+
+glint:
 	glint tfrutil/*.py
 
-.PHONY: init lint coverage test
+.PHONY: init glint coverage test

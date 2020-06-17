@@ -1,3 +1,4 @@
 .vscode/
 tfrutil.workspace.code-workspace
 __pycache__
+.coverage
