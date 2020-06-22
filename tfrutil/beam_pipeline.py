@@ -71,6 +71,7 @@ def _get_pipeline_options(
 
 #pylint: disable=too-many-arguments
 
+#pylint: disable=too-many-arguments
 def run_pipeline(df: pd.DataFrame,
                  job_label: str,
                  runner: str,
@@ -93,6 +94,11 @@ def run_pipeline(df: pd.DataFrame,
 
   Note: These inputs must be validated upstrea (by client.create_tfrecord())
   """
+  #TODO Do something with these arguments.
+  _ = compression
+  _ = num_shards
+  _ = image_col
+  _ = label_col
 
   # TODO: make use of the following params
   _ = compression

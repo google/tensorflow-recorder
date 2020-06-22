@@ -33,8 +33,7 @@ class TFRUtilAccessor:
   def __init__(self, pandas_obj):
     self._df = pandas_obj
 
-#pylint: disable=too-many-arguments
-
+  # pylint: disable=too-many-arguments
   def to_tfr(self,
              runner: str,
              output_path: str,

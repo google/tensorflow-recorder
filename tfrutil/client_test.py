@@ -35,7 +35,8 @@ TEST_DATA = {
         "gs://foo/bar/2.jpg",
         "gs://foo/bar/3.jpg"
     ],
-    constants.LABEL_KEY: [0, 0, 1]}
+    constants.LABEL_KEY: [0, 0, 1],
+    constants.SPLIT_KEY:["TRAIN", "VALIDATION", "TEST"]}
 
 
 class ClientTest(unittest.TestCase):
@@ -90,7 +91,6 @@ class InputValidationTest(unittest.TestCase):
     with self.assertRaises(AttributeError):
       client._validate_runner("FooRunner")
 
-
 def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:
   """Returns `NamedTemporaryFile` representing an image CSV."""
 
@@ -101,12 +101,10 @@ def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:
   f.seek(0)
   return f
 
-
 def get_sample_image_csv_data() -> List[List[str]]:
   """Returns sample CSV data in Image CSV format."""
 
   data = TEST_DATA.copy()
-  data[constants.SPLIT_KEY] = ["TRAIN", "VALIDATION", "TEST"]
   header = list(data.keys())
   content = [list(row) for row in zip(*data.values())]
   return [header] + content

@@ -1,0 +1,81 @@
+# Lint as: python3
+
+# Copyright 2020 Google LLC.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+""" Functions and beam DoFn for reading and encoding images."""
+
+import base64
+import logging
+from typing import Dict, Tuple, Any, Generator
+
+import apache_beam as beam
+import tensorflow as tf
+from PIL import Image
+
+
+def load(image_uri):
+  """Loads an image."""
+
+  try:
+    with tf.io.gfile.GFile(image_uri, "rb") as f:
+      return Image.open(f)
+  except tf.python.framework.errors_impl.NotFoundError:
+    raise OSError("File {} was not found.".format(image_uri))
+
+
+def encode(image):
+  """Returns base64-encoded image data.
+
+  Args:
+    image: PIL image.
+  """
+
+  return base64.b64encode(image.tobytes(), altchars=b"-_")
+
+
+#pylint: disable=abstract-method
+class ExtractImagesDoFn(beam.DoFn):
+  """Adds image to PCollection."""
+
+  def __init__(self, image_key: str):
+    """Constructor."""
+    super().__init__()
+    self.image_key = image_key
+
+  #pylint: disable=unused-argument
+  def process(self,
+              element: Dict,
+              *args: Tuple[Any, ...],
+              **kwargs: Dict) -> Generator:
+    """Loads image and creates image features.
+
+    This DoFn extracts an image being stored on local disk or GCS and
+    yields a base64 encoded image, the image height, image width, and channels.
+    """
+    d = {}
+
+    try:
+      image_uri = element[self.image_key]
+      image = load(image_uri)
+      d["image"] = encode(image)
+      d["image_height"], d["image_width"] = image.size
+      d["image_channels"] = 1 if "L" in image.mode else 3
+
+    #pylint: disable=broad-except
+    except Exception as e:
+      logging.warning("Could not load image: %s", image_uri)
+      logging.error("Exception was: %s", str(e))
+
+    element.update(d)
+    yield element

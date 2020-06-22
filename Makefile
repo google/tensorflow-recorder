@@ -7,7 +7,4 @@ test:
 pylint:
 	pylint tfrutil
 
-glint:
-	glint tfrutil/*.py
-
 .PHONY: init glint coverage test

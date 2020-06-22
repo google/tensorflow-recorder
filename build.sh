@@ -8,4 +8,3 @@ pip install -r requirements.txt
 
 make pylint
 make test
-
