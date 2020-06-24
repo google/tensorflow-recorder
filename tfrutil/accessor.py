@@ -39,9 +39,7 @@ class TFRUtilAccessor:
              output_path: str,
              job_label: str = "to-tfr",
              compression: Union[str, None] = "gzip",
-             num_shards: int = 0,
-             image_col: str = "image",
-             label_col: str = "label") -> str:
+             num_shards: int = 0) -> str:
     """TFRUtil Pandas Accessor.
 
     TFRUtil provides an easy interface to create image-based tensorflow records
@@ -75,7 +73,5 @@ class TFRUtilAccessor:
                                      output_path=output_path,
                                      job_label=job_label,
                                      compression=compression,
-                                     num_shards=num_shards,
-                                     image_col=image_col,
-                                     label_col=label_col)
+                                     num_shards=num_shards)
     return job_id

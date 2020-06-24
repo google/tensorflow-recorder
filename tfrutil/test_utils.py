@@ -14,28 +14,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for pandas accessor."""
+"""Common utilites for writing tfrutil tests."""
 
-import unittest
+from apache_beam.testing import test_pipeline
+import pandas as pd
 
-# pylint: disable=unused-import
-from tfrutil import accessor
-from tfrutil import constants
-from tfrutil import test_utils
-
-
-class DataFrameAccessor(unittest.TestCase):
-  """UnitTests For DataFrame Accessor."""
-
-  def setUp(self):
-    self.test_df = test_utils.get_test_df()
-
-  def test_accessor(self):
-    """Tests pandas accessor."""
-    pid = self.test_df.tensorflow.to_tfr(runner="DirectRunner",
-                                         output_path="/tmp/train")
-    self.assertEqual(pid, "p1234")
+def get_test_df():
+  """Gets a test dataframe that works with the data in test_data/."""
+  return pd.read_csv("tfrutil/test_data/data.csv")
 
 
-if __name__ == "__main__":
-  unittest.main()
+def get_test_pipeline():
+  """Gets a test pipeline."""
+  return test_pipeline.TestPipeline(runner="DirectRunner")

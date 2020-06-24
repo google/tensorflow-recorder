@@ -27,23 +27,23 @@ import pandas as pd
 
 from tfrutil import client
 from tfrutil import constants
-
+from tfrutil import test_utils
 
 TEST_DATA = {
+    constants.SPLIT_KEY:["TRAIN", "VALIDATION", "TEST"],
     constants.IMAGE_URI_KEY: [
         "gs://foo/bar/1.jpg",
         "gs://foo/bar/2.jpg",
         "gs://foo/bar/3.jpg"
     ],
-    constants.LABEL_KEY: [0, 0, 1],
-    constants.SPLIT_KEY:["TRAIN", "VALIDATION", "TEST"]}
+    constants.LABEL_KEY: [0, 0, 1]}
 
 
 class ClientTest(unittest.TestCase):
   """Misc tests for `client` module."""
 
   def setUp(self):
-    self.test_df = pd.DataFrame.from_dict(TEST_DATA)
+    self.test_df = test_utils.get_test_df()
 
   def test_create_tfrecords(self):
     """Tests `create_tfrecords` valid case."""
@@ -66,21 +66,28 @@ class InputValidationTest(unittest.TestCase):
     """Tests valid DataFrame input."""
     self.assertIsNone(
         client._validate_data(
-            self.test_df, image_col="image_uri", label_col="label"))
+            self.test_df))
 
-  def test_invalid_image(self):
-    """Tests invalid image."""
+  def test_missing_image(self):
+    """Tests invalid image column."""
     with self.assertRaises(AttributeError):
-      client._validate_data(self.test_df,
-                            image_col="foo",
-                            label_col="label")
+      df2 = self.test_df.copy()
+      df2.drop('image_uri', inplace=True, axis=1)
+      client._validate_data(df2)
 
-  def test_invalid_label(self):
-    """Tests invalid label."""
+  def test_missing_label(self):
+    """Tests invalid label column."""
     with self.assertRaises(AttributeError):
-      client._validate_data(self.test_df,
-                            image_col="image_uri",
-                            label_col="foo")
+      df2 = self.test_df.copy()
+      df2.drop('label', inplace=True, axis=1)
+      client._validate_data(df2)
+
+  def test_missing_split(self):
+    """Tests invalid split column."""
+    with self.assertRaises(AttributeError):
+      df2 = self.test_df.copy()
+      df2.drop('split', inplace=True, axis=1)
+      client._validate_data(df2)
 
   def test_valid_runner(self):
     """Tests valid runner."""

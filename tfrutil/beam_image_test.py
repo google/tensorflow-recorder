@@ -20,21 +20,21 @@ import base64
 import unittest
 
 import apache_beam as beam
-from apache_beam.testing import test_pipeline
 from apache_beam.testing import util
-import pandas as pd
 import PIL
 import tensorflow_transform as tft
 
 from tfrutil import beam_image
 from tfrutil import constants
+from tfrutil import test_utils
+
 
 class BeamImageTests(unittest.TestCase):
   """Tests for beam_image.py"""
 
   def setUp(self):
-    self.pipeline = test_pipeline.TestPipeline(runner="DirectRunner")
-    self.df = pd.read_csv("tfrutil/test_data/data.csv")
+    self.pipeline = test_utils.get_test_pipeline()
+    self.df = test_utils.get_test_df()
 
 
   def test_load(self):
@@ -63,7 +63,7 @@ class BeamImageTests(unittest.TestCase):
       converter = tft.coders.CsvCoder(constants.IMAGE_CSV_COLUMNS,
                                       constants.IMAGE_CSV_METADATA.schema)
 
-      extract_images_fn = beam_image.ExtractImagesDoFn("image_uri")
+      extract_images_fn = beam_image.ExtractImagesDoFn(constants.IMAGE_URI_KEY)
 
       data = (
           p

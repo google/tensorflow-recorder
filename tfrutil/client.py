@@ -29,15 +29,18 @@ from tfrutil import constants
 from tfrutil import beam_pipeline
 
 
-def _validate_data(df, image_col, label_col):
-  # verify there is a column latitude and a column longitude
-  if image_col not in df.columns:
+def _validate_data(df):
+  """ Verify required image csv columsn exist in data."""
+  if constants.IMAGE_URI_KEY not in df.columns:
   # or label_col not in df.columns:
     raise AttributeError(
-        "Dataframe must contain specified image column {}.".format(image_col))
-  if label_col not in df.columns:
+        "Dataframe must contain image_uri column {}.")
+  if constants.LABEL_KEY not in df.columns:
     raise AttributeError(
-        "Dataframe must contain specified label column {}.".format(label_col))
+        "Dataframe must contain label column.")
+  if constants.SPLIT_KEY not in df.columns:
+    raise AttributeError(
+        "Dataframe must contain split column.")
 
 
 def _validate_runner(runner):
@@ -105,9 +108,7 @@ def create_tfrecords(
     runner: str = "DirectRunner",
     job_label: str = "create-tfrecords",
     compression: Union[str, None] = "gzip",
-    num_shards: int = 0,
-    image_col: str = "image_uri",
-    label_col: str = "label") -> str:
+    num_shards: int = 0) -> str:
   """Generates TFRecord files from given input data.
 
   TFRUtil provides an easy interface to create image-based tensorflow records
@@ -134,16 +135,13 @@ def create_tfrecords(
     compression: Can be "gzip" or None for no compression.
     num_shards: Number of shards to divide the TFRecords into. Default is
         0 = no sharding.
-    image_col: DataFrame column containing GCS path to image. Defaults to
-      "image".
-    label_col: DataFrame column containing image label. Defaults to "label".
   Returns:
     job_id: Job ID of the DataFlow job or PID of the local runner.
   """
 
   df = to_dataframe(input_data, header, names)
 
-  _validate_data(df, image_col, label_col)
+  _validate_data(df)
   _validate_runner(runner)
   beam_pipeline.run_pipeline(
       df,
@@ -151,9 +149,7 @@ def create_tfrecords(
       runner=runner,
       output_path=output_path,
       compression=compression,
-      num_shards=num_shards,
-      image_col=image_col,
-      label_col=label_col)
+      num_shards=num_shards)
 
   job_id = "p1234"
   return job_id

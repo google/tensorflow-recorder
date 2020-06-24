@@ -22,6 +22,8 @@ from tensorflow_transform.tf_metadata import schema_utils
 
 
 SPLIT_KEY = "split"
+SPLIT_VALUES = ["TRAIN", "VALIDATION", "TEST", "DISCARD"]
+DISCARD_INDEX = SPLIT_VALUES.index('DISCARD')
 IMAGE_URI_KEY = "image_uri"
 LABEL_KEY = "label"
 IMAGE_CSV_COLUMNS = [SPLIT_KEY, IMAGE_URI_KEY, LABEL_KEY]
@@ -32,5 +34,16 @@ IMAGE_CSV_FEATURE_SPEC = {
     "label": tf.io.FixedLenFeature([], tf.string),
 }
 
+RAW_FEATURE_SPEC = {
+    "image": tf.io.FixedLenFeature([], tf.string),
+    "image_height": tf.io.FixedLenFeature([], tf.int64),
+    "image_width": tf.io.FixedLenFeature([], tf.int64),
+    "image_channels":  tf.io.FixedLenFeature([], tf.int64)
+}
+RAW_FEATURE_SPEC.update(IMAGE_CSV_FEATURE_SPEC)
+
 IMAGE_CSV_METADATA = dataset_metadata.DatasetMetadata(
     schema_utils.schema_from_feature_spec(IMAGE_CSV_FEATURE_SPEC))
+
+RAW_METADATA = dataset_metadata.DatasetMetadata(
+    schema_utils.schema_from_feature_spec(RAW_FEATURE_SPEC))
