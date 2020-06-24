@@ -1,7 +1,7 @@
-"split","image_uri","label"
-"train","tfrutil/test_data/images/cat/cat-640x853-1.jpg","cat"
-"val","tfrutil/test_data/images/cat/cat-800x600-2.jpg","cat"
-"test","tfrutil/test_data/images/cat/cat-800x600-3.jpg","cat"
-"train","tfrutil/test_data/images/goat/goat-640x640-1.jpg","goat"
-"val","tfrutil/test_data/images/goat/goat-320x320-2.jpg","goat"
-"test","tfrutil/test_data/images/goat/goat-640x427-3.jpg","goat"
+split,image_uri,label
+TRAIN,tfrutil/test_data/images/cat/cat-640x853-1.jpg,cat
+VALIDATION,tfrutil/test_data/images/cat/cat-800x600-2.jpg,cat
+TEST,tfrutil/test_data/images/cat/cat-800x600-3.jpg,cat
+TRAIN,tfrutil/test_data/images/goat/goat-640x640-1.jpg,goat
+VALIDATION,tfrutil/test_data/images/goat/goat-320x320-2.jpg,goat
+TEST,tfrutil/test_data/images/goat/goat-640x427-3.jpg,goat

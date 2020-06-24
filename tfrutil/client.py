@@ -125,11 +125,9 @@ def create_tfrecords(
   Args:
     input_data: Pandas DataFrame, CSV file or image directory path.
     output_path: Local directory or GCS Location to save TFRecords to.
-    header: List of field names to use.
-      If `input_data` is a CSV file (str) and header is `None`,
-        defaults to using `constants.IMAGE_CSV_COLUMNS`.
-      if `input_data` is a DataFrame and `header` is given,
-        filter output DataFrame columns based on `header`.
+    header: Indicates row/s to use as a header. Not used when `input_data` is
+      a Pandas DataFrame.
+      If "infer" (default), header is taken from the first line of a CSV
     runner: Beam runner. Can be "local" or "DataFlow"
     job_label: User supplied description for the beam job name.
     compression: Can be "gzip" or None for no compression.

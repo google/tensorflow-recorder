@@ -17,7 +17,7 @@
 
 import base64
 import logging
-from typing import Dict, Tuple, Any, Generator
+from typing import Any, Dict, Generator, Tuple
 
 import apache_beam as beam
 import tensorflow as tf
@@ -54,10 +54,11 @@ class ExtractImagesDoFn(beam.DoFn):
     self.image_key = image_key
 
   #pylint: disable=unused-argument
-  def process(self,
-              element: Dict,
-              *args: Tuple[Any, ...],
-              **kwargs: Dict) -> Generator:
+  def process(
+      self,
+      element: Dict,
+      *args: Tuple[Any, ...],
+      **kwargs: Dict) -> Generator[Dict[str, Any], None, None]:
     """Loads image and creates image features.
 
     This DoFn extracts an image being stored on local disk or GCS and

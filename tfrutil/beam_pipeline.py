@@ -172,7 +172,7 @@ def run_pipeline(df: pd.DataFrame,
       )
 
       # Split dataset into train and validation.
-      discard_data, train_data, val_data, test_data = (
+      train_data, val_data, test_data, discard_data = (
           image_csv_data | 'SplitDataset' >> beam.Partition(
               _partition_fn, len(constants.SPLIT_VALUES))
       )
@@ -225,17 +225,13 @@ def run_pipeline(df: pd.DataFrame,
       _ = (
           discard_data
           | 'DiscardDataWriter' >> beam.io.WriteToText(
-              os.path.join(job_dir + "discarded-data")))
+              os.path.join(job_dir, "discarded-data")))
 
 
-      # Output transform function
-      transformed_function_path = os.path.join(job_dir, 'transform_function')
-      _ = (
-          transform_fn | 'WriteTransformFn' >> tft_beam.WriteTransformFn(
-              transformed_function_path))
+      # Output transform function and metadata
+      _ = (transform_fn | 'WriteTransformFn' >> tft_beam.WriteTransformFn(
+          job_dir))
 
-      # Output metdata
-      transformed_metadata_path = os.path.join(job_dir, 'transformed_metadata')
-      _ = (
-          transformed_metadata | 'WriteMetadata' >> tft_beam.WriteMetadata(
-              transformed_metadata_path, pipeline=p))
+      # Output metadata schema
+      _ = (transformed_metadata | 'WriteMetadata' >> tft_beam.WriteMetadata(
+          job_dir, pipeline=p))

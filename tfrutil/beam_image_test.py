@@ -36,7 +36,6 @@ class BeamImageTests(unittest.TestCase):
     self.pipeline = test_utils.get_test_pipeline()
     self.df = test_utils.get_test_df()
 
-
   def test_load(self):
     """Tests the image loading function."""
     img = beam_image.load("tfrutil/test_data/images/cat/cat-640x853-1.jpg")
@@ -54,11 +53,9 @@ class BeamImageTests(unittest.TestCase):
     decode = base64.b64decode(enc, altchars=b"-_")
     self.assertEqual(img.tobytes(), decode)
 
-
   def test_extract_image_dofn(self):
     """Tests ExtractImageDoFn."""
     with self.pipeline as p:
-
 
       converter = tft.coders.CsvCoder(constants.IMAGE_CSV_COLUMNS,
                                       constants.IMAGE_CSV_METADATA.schema)
