@@ -69,34 +69,53 @@ class InputValidationTest(unittest.TestCase):
             self.test_df))
 
   def test_missing_image(self):
-    """Tests invalid image column."""
+    """Tests missing image column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('image_uri', inplace=True, axis=1)
       client._validate_data(df2)
 
   def test_missing_label(self):
-    """Tests invalid label column."""
+    """Tests missing label column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('label', inplace=True, axis=1)
       client._validate_data(df2)
 
   def test_missing_split(self):
-    """Tests invalid split column."""
+    """Tests missing split column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('split', inplace=True, axis=1)
       client._validate_data(df2)
 
+  def test_columns_out_of_order(self):
+    """Tests validating column order wrong."""
+    with self.assertRaises(AttributeError):
+      df2 = self.test_df.copy()
+      cols = ["image_uri", "split", "label"]
+      df2 = df2[cols]
+      client._validate_data(df2)
+
   def test_valid_runner(self):
     """Tests valid runner."""
-    self.assertIsNone(client._validate_runner("DirectRunner"))
+    self.assertIsNone(client._validate_runner(self.test_df, "DirectRunner"))
 
   def test_invalid_runner(self):
     """Tests invalid runner."""
     with self.assertRaises(AttributeError):
-      client._validate_runner("FooRunner")
+      client._validate_runner(self.test_df, "FooRunner")
+
+  def test_local_path_with_dataflow_runner(self):
+    """Tests DataFlowRunner conflict with local path."""
+    with self.assertRaises(AttributeError):
+      client._validate_runner(self.df_test, "DataFlowRunner")
+
+  def test_gcs_path_with_dataflow_runner(self):
+    """Tests DataFlowRunner with gcs path."""
+    df2 = self.test_df.copy()
+    df2[constants.IMAGE_URI_KEY] = "gs://" + df2[constants.IMAGE_URI_KEY]
+    self.assertIsNone(client._validate_runner(df2, "DataFlowRunner"))
 
 def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:
   """Returns `NamedTemporaryFile` representing an image CSV."""

@@ -41,13 +41,21 @@ def _validate_data(df):
   if constants.SPLIT_KEY not in df.columns:
     raise AttributeError(
         "Dataframe must contain split column.")
+  if list(df.columns) != constants.IMAGE_CSV_COLUMNS:
+    raise AttributeError(
+        "Dataframe column order must be {}".format(
+            constants.IMAGE_CSV_COLUMNS))
 
 
-def _validate_runner(runner):
-  """Validates a supported beam runner is chosen."""
+def _validate_runner(df, runner):
+  """Validates an appropriate beam runner is chosen."""
   if runner not in ["DataFlowRunner", "DirectRunner"]:
     raise AttributeError("Runner {} is not supported.".format(runner))
 
+  # gcs_path is a bool, true if all image paths start with gs://
+  gcs_path = df[constants.IMAGE_URI_KEY].str.startswith("gs://").all()
+  if (runner == 'DataFlowRunner') & (not gcs_path):
+    raise AttributeError("DataFlowRunner requires GCS image locations.")
 
 # def read_image_directory(dirpath) -> pd.DataFrame:
 #   """Reads image data from a directory into a Pandas DataFrame."""
@@ -140,14 +148,16 @@ def create_tfrecords(
   df = to_dataframe(input_data, header, names)
 
   _validate_data(df)
-  _validate_runner(runner)
+  _validate_runner(df, runner)
+  integer_label = pd.api.types.is_integer_dtype(df[constants.LABEL_KEY])
   beam_pipeline.run_pipeline(
       df,
       job_label=job_label,
       runner=runner,
       output_path=output_path,
       compression=compression,
-      num_shards=num_shards)
+      num_shards=num_shards,
+      integer_label=integer_label)
 
   job_id = "p1234"
   return job_id

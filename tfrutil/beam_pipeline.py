@@ -75,7 +75,9 @@ def _get_pipeline_options(
   return beam.pipeline.PipelineOptions(flags=[], **options_dict)
 
 
-def _partition_fn(element: Dict[str, str], unused_num_partitions: int) -> int:
+def _partition_fn(
+    element: Dict[str, str],
+    unused_num_partitions: int = -1) -> int:
   """Returns index used to partition an element from a PCollection."""
   del unused_num_partitions
   dataset_type = element[constants.SPLIT_KEY].decode("utf-8")
@@ -118,10 +120,16 @@ def _get_write_to_tfrecord(output_path: str,
       num_shards=num_shards,
   )
 
-def _preprocessing_fn(inputs):
+def _preprocessing_fn(inputs, integer_label: bool = False):
   """TensorFlow Transform preprocessing function."""
 
   outputs = inputs.copy()
+
+  if not integer_label:
+    # Integerize string labels, if present.
+    outputs[constants.LABEL_KEY] = tft.compute_and_apply_vocabulary(
+        outputs[constants.LABEL_KEY])
+
   return outputs
 
 
@@ -132,7 +140,8 @@ def run_pipeline(df: pd.DataFrame,
                  runner: str,
                  output_path: str,
                  compression: str,
-                 num_shards: int):
+                 num_shards: int,
+                 integer_label: bool = False):
   """Runs TFRUtil Beam Pipeline.
 
   Args:
@@ -182,10 +191,13 @@ def run_pipeline(df: pd.DataFrame,
       test_dataset = (test_data, constants.RAW_METADATA)
 
       # TensorFlow Transform applied to all datasets.
+      preprocessing_fn = functools.partial(
+          _preprocessing_fn,
+          integer_label=integer_label)
       transformed_train_dataset, transform_fn = (
           train_dataset
           | 'AnalyzeAndTransformTrain' >> tft_beam.AnalyzeAndTransformDataset(
-              _preprocessing_fn))
+              preprocessing_fn))
 
       transformed_train_data, transformed_metadata = transformed_train_dataset
       transformed_data_coder = tft.coders.ExampleProtoCoder(

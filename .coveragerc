@@ -2,3 +2,6 @@
 omit =
     */site-packages/*
     *test_*
+
+[report]
+show_missing = True
