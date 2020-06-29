@@ -35,8 +35,8 @@ class TFRUtilAccessor:
 
   # pylint: disable=too-many-arguments
   def to_tfr(self,
-             runner: str,
              output_path: str,
+             runner: str = "DirectRunner",
              job_label: str = "to-tfr",
              compression: Union[str, None] = "gzip",
              num_shards: int = 0) -> str:
@@ -68,10 +68,11 @@ class TFRUtilAccessor:
     Returns:
       job_id: Job ID of the DataFlow job or PID of the local runner.
     """
-    job_id = client.create_tfrecords(self._df,
-                                     runner=runner,
-                                     output_path=output_path,
-                                     job_label=job_label,
-                                     compression=compression,
-                                     num_shards=num_shards)
-    return job_id
+    print("Starting DataFlow Transform. This may take a while. Please wait.")
+    client.create_tfrecords(self._df,
+                            runner=runner,
+                            output_path=output_path,
+                            job_label=job_label,
+                            compression=compression,
+                            num_shards=num_shards)
+    print("TFRecords created. Output stored in {}".format(output_path))

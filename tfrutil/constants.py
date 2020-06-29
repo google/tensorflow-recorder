@@ -16,6 +16,7 @@
 
 """Global constants."""
 
+import logging
 import tensorflow as tf
 from tensorflow_transform.tf_metadata import dataset_metadata
 from tensorflow_transform.tf_metadata import schema_utils
@@ -47,3 +48,6 @@ IMAGE_CSV_METADATA = dataset_metadata.DatasetMetadata(
 
 RAW_METADATA = dataset_metadata.DatasetMetadata(
     schema_utils.schema_from_feature_spec(RAW_FEATURE_SPEC))
+
+LOGFILE = "tfrutil-beam.log"
+LOGLEVEL = logging.INFO

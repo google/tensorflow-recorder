@@ -28,6 +28,7 @@ REQUIRED_PACKAGES = [
     "nose >= 1.3.7",
     "pylint >= 2.5.3",
     "fire >= 0.3.1",
+    "tensorflow >= 2.2.0"
 ]
 
 

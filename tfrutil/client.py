@@ -19,7 +19,8 @@
 client.py provides create_tfrecords() to upstream clients including
 the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
-
+import logging
+import os
 from typing import Union, Optional, Sequence
 
 import pandas as pd
@@ -149,7 +150,14 @@ def create_tfrecords(
 
   _validate_data(df)
   _validate_runner(df, runner)
+  os.makedirs(output_path, exist_ok=True)
+  logfile = os.path.join(output_path, constants.LOGFILE)
+  logging.basicConfig(filename=logfile, level=constants.LOGLEVEL)
+  # This disables annoying Tensorflow and TFX info/warning messages.
+  logging.getLogger("tensorflow").setLevel(logging.ERROR)
+
   integer_label = pd.api.types.is_integer_dtype(df[constants.LABEL_KEY])
+
   beam_pipeline.run_pipeline(
       df,
       job_label=job_label,

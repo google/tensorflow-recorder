@@ -32,9 +32,8 @@ class DataFrameAccessor(unittest.TestCase):
 
   def test_accessor(self):
     """Tests pandas accessor."""
-    pid = self.test_df.tensorflow.to_tfr(runner="DirectRunner",
-                                         output_path="/tmp/train")
-    self.assertEqual(pid, "p1234")
+    self.assertIsNone(self.test_df.tensorflow.to_tfr(runner="DirectRunner",
+                                                     output_path="/tmp/train"))
 
 
 if __name__ == "__main__":

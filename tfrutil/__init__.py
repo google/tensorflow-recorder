@@ -15,5 +15,5 @@
 # limitations under the License.
 
 """Imports."""
-
-from tfrutil.client import create_tfrecords
+from tfrutil import accessor
+from tfrutil import client
