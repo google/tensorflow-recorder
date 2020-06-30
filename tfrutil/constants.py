@@ -16,7 +16,9 @@
 
 """Global constants."""
 
+import collections
 import logging
+
 import tensorflow as tf
 from tensorflow_transform.tf_metadata import dataset_metadata
 from tensorflow_transform.tf_metadata import schema_utils
@@ -30,18 +32,18 @@ LABEL_KEY = "label"
 IMAGE_CSV_COLUMNS = [SPLIT_KEY, IMAGE_URI_KEY, LABEL_KEY]
 
 IMAGE_CSV_FEATURE_SPEC = {
-    "split": tf.io.FixedLenFeature([], tf.string),
-    "image_uri": tf.io.FixedLenFeature([], tf.string),
-    "label": tf.io.FixedLenFeature([], tf.string),
+    SPLIT_KEY: tf.io.FixedLenFeature([], tf.string),
+    IMAGE_URI_KEY: tf.io.FixedLenFeature([], tf.string),
+    LABEL_KEY: tf.io.FixedLenFeature([], tf.string),
 }
 
-RAW_FEATURE_SPEC = {
+RAW_FEATURE_SPEC = collections.OrderedDict(IMAGE_CSV_FEATURE_SPEC)
+RAW_FEATURE_SPEC.update({
     "image": tf.io.FixedLenFeature([], tf.string),
     "image_height": tf.io.FixedLenFeature([], tf.int64),
     "image_width": tf.io.FixedLenFeature([], tf.int64),
     "image_channels":  tf.io.FixedLenFeature([], tf.int64)
-}
-RAW_FEATURE_SPEC.update(IMAGE_CSV_FEATURE_SPEC)
+})
 
 IMAGE_CSV_METADATA = dataset_metadata.DatasetMetadata(
     schema_utils.schema_from_feature_spec(IMAGE_CSV_FEATURE_SPEC))

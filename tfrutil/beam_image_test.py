@@ -21,7 +21,9 @@ import unittest
 
 import apache_beam as beam
 from apache_beam.testing import util
+import numpy as np
 import PIL
+from PIL import Image
 import tensorflow_transform as tft
 
 from tfrutil import beam_image
@@ -35,10 +37,11 @@ class BeamImageTests(unittest.TestCase):
   def setUp(self):
     self.pipeline = test_utils.get_test_pipeline()
     self.df = test_utils.get_test_df()
+    self.image_file = "tfrutil/test_data/images/cat/cat-640x853-1.jpg"
 
   def test_load(self):
     """Tests the image loading function."""
-    img = beam_image.load("tfrutil/test_data/images/cat/cat-640x853-1.jpg")
+    img = beam_image.load(self.image_file)
     self.assertIsInstance(img, PIL.JpegImagePlugin.JpegImageFile)
 
   def test_file_not_found_load(self):
@@ -46,15 +49,39 @@ class BeamImageTests(unittest.TestCase):
     with self.assertRaises(OSError):
       _ = beam_image.load("tfrutil/test_data/images/cat/food.jpg")
 
+  def test_mode_to_channel(self):
+    """Tests `mode_to_channel`."""
+
+    actual = [beam_image.mode_to_channel(mode)
+              for mode in ('L', 'RGB', 'whatever')]
+    self.assertEqual(actual, [1, 3, 3])
+
+  def test_channel_to_mode(self):
+    """Tests `channel_to_mode`."""
+
+    actual = [beam_image.channel_to_mode(channel) for channel in (1, 2, 3)]
+    self.assertEqual(actual, ['L', 'RGB', 'RGB'])
+
   def test_base64_encode(self):
     """Tests encode function."""
-    img = beam_image.load("tfrutil/test_data/images/cat/cat-640x853-1.jpg")
+    img = beam_image.load(self.image_file)
     enc = beam_image.encode(img)
-    decode = base64.b64decode(enc, altchars=b"-_")
+    decode = base64.b64decode(enc, altchars=beam_image.BASE64_ALTCHARS)
     self.assertEqual(img.tobytes(), decode)
+
+  def test_base64_decode(self):
+    """Tests `decode` function."""
+
+    image = Image.open(self.image_file)
+    b64_bytes = base64.b64encode(
+        image.tobytes(), altchars=beam_image.BASE64_ALTCHARS)
+    width, height = image.size
+    actual = beam_image.decode(b64_bytes, width, height, 3)
+    np.testing.assert_array_equal(np.asarray(actual), np.asarray(image))
 
   def test_extract_image_dofn(self):
     """Tests ExtractImageDoFn."""
+
     with self.pipeline as p:
 
       converter = tft.coders.CsvCoder(constants.IMAGE_CSV_COLUMNS,
@@ -76,9 +103,13 @@ class BeamImageTests(unittest.TestCase):
         def _equal(actual):
           """ _equal raises a BeamAssertException when an element in the
               PCollection doesn't contain the image extraction keys."""
+          expected_keys_ = set(expected_keys)
           for element in actual:
-            if set(element.keys()) != set(expected_keys):
-              raise util.BeamAssertException("PCollection key match failed.")
+            actual_keys = set(element.keys())
+            if actual_keys != expected_keys_:
+              raise util.BeamAssertException(
+                  "PCollection key match failed. Actual ({}) vs. expected ({})"
+                  .format(actual_keys, expected_keys_))
         return _equal
 
       expected_keys = ["image_uri", "label", "split", "image",

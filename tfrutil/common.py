@@ -14,16 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Command-line interface."""
+"""Common utility functions."""
 
-import fire
-
-from tfrutil import client
-from tfrutil import check
+from datetime import datetime
 
 
-if __name__ == '__main__':
-  fire.Fire({
-      'create-tfrecords': client.create_tfrecords,
-      'check-tfrecords': check.check_tfrecords,
-  })
+def get_timestamp() -> str:
+  """Returns current date and time as formatted string."""
+  return datetime.now().strftime('%Y%m%d-%H%M%S')

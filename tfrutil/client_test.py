@@ -29,15 +29,6 @@ from tfrutil import client
 from tfrutil import constants
 from tfrutil import test_utils
 
-TEST_DATA = {
-    constants.SPLIT_KEY:["TRAIN", "VALIDATION", "TEST"],
-    constants.IMAGE_URI_KEY: [
-        "gs://foo/bar/1.jpg",
-        "gs://foo/bar/2.jpg",
-        "gs://foo/bar/3.jpg"
-    ],
-    constants.LABEL_KEY: [0, 0, 1]}
-
 
 class ClientTest(unittest.TestCase):
   """Misc tests for `client` module."""
@@ -50,7 +41,7 @@ class ClientTest(unittest.TestCase):
 
     pid = client.create_tfrecords(self.test_df,
                                   runner="DirectRunner",
-                                  output_path="/tmp/train")
+                                  output_dir="/tmp/train")
     self.assertEqual(pid, "p1234")
 
 
@@ -60,7 +51,7 @@ class InputValidationTest(unittest.TestCase):
   """"Tests for validation input data."""
 
   def setUp(self):
-    self.test_df = pd.DataFrame.from_dict(TEST_DATA)
+    self.test_df = test_utils.get_test_df()
 
   def test_valid_dataframe(self):
     """Tests valid DataFrame input."""
@@ -117,6 +108,7 @@ class InputValidationTest(unittest.TestCase):
     df2[constants.IMAGE_URI_KEY] = "gs://" + df2[constants.IMAGE_URI_KEY]
     self.assertIsNone(client._validate_runner(df2, "DataFlowRunner"))
 
+
 def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:
   """Returns `NamedTemporaryFile` representing an image CSV."""
 
@@ -127,10 +119,11 @@ def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:
   f.seek(0)
   return f
 
+
 def get_sample_image_csv_data() -> List[List[str]]:
   """Returns sample CSV data in Image CSV format."""
 
-  data = TEST_DATA.copy()
+  data = test_utils.get_test_data()
   header = list(data.keys())
   content = [list(row) for row in zip(*data.values())]
   return [header] + content

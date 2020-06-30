@@ -34,12 +34,13 @@ class TFRUtilAccessor:
     self._df = pandas_obj
 
   # pylint: disable=too-many-arguments
-  def to_tfr(self,
-             output_path: str,
-             runner: str = "DirectRunner",
-             job_label: str = "to-tfr",
-             compression: Union[str, None] = "gzip",
-             num_shards: int = 0) -> str:
+  def to_tfr(
+      self,
+      output_dir: str,
+      runner: str = "DirectRunner",
+      job_label: str = "to-tfr",
+      compression: Union[str, None] = "gzip",
+      num_shards: int = 0) -> str:
     """TFRUtil Pandas Accessor.
 
     TFRUtil provides an easy interface to create image-based tensorflow records
@@ -48,16 +49,17 @@ class TFRUtilAccessor:
     Usage:
       import tfrutil
 
-      df.tfrutil.to_tfr(runner="local",
-                        output_path="gcs://foo/bar/train",
-                        compression="gzip",
-                        num_shards=10,
-                        image_col="image",
-                        label_col="label)
+      df.tfrutil.to_tfr(
+          output_dir="gcs://foo/bar/train",
+          runner="DirectRunner",
+          compression="gzip",
+          num_shards=10,
+          image_col="image",
+          label_col="label)
 
     Args:
       runner: Beam runner. Can be "local" or "DataFlow"
-      output_path: Local directory or GCS Location to save TFRecords to.
+      output_dir: Local directory or GCS Location to save TFRecords to.
       job_label: User supplied description for the beam job name.
       compression: Can be "gzip" or None for no compression.
       num_shards: Number of shards to divide the TFRecords into. Default is
@@ -70,9 +72,9 @@ class TFRUtilAccessor:
     """
     print("Starting DataFlow Transform. This may take a while. Please wait.")
     client.create_tfrecords(self._df,
+                            output_dir=output_dir,
                             runner=runner,
-                            output_path=output_path,
                             job_label=job_label,
                             compression=compression,
                             num_shards=num_shards)
-    print("TFRecords created. Output stored in {}".format(output_path))
+    print("TFRecords created. Output stored in {}".format(output_dir))

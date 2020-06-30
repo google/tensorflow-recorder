@@ -24,6 +24,39 @@ import tensorflow as tf
 from PIL import Image
 
 
+BASE64_ALTCHARS = b'-_'
+
+
+def mode_to_channel(mode: str) -> int:
+  """Returns number of channels depending on PIL image `mode`s."""
+
+  return 1 if 'L' in mode else 3
+
+
+def channel_to_mode(channels: int) -> str:
+  """Returns PIL image mode depending on number of `channels`."""
+
+  return 'L' if channels == 1 else 'RGB'
+
+
+def encode(image: Image):
+  """Returns base64-encoded image data.
+
+  Args:
+    image: PIL image.
+  """
+
+  return base64.b64encode(image.tobytes(), altchars=BASE64_ALTCHARS)
+
+
+def decode(b64_bytes, width, height, channels) -> Image:
+  """Decodes an image from base64-encoded data."""
+
+  image_bytes = base64.b64decode(b64_bytes, altchars=BASE64_ALTCHARS)
+  mode = channel_to_mode(channels)
+  return Image.frombytes(mode, (width, height), image_bytes)
+
+
 def load(image_uri):
   """Loads an image."""
 
@@ -34,17 +67,8 @@ def load(image_uri):
     raise OSError("File {} was not found.".format(image_uri))
 
 
-def encode(image):
-  """Returns base64-encoded image data.
+# pylint: disable=abstract-method
 
-  Args:
-    image: PIL image.
-  """
-
-  return base64.b64encode(image.tobytes(), altchars=b"-_")
-
-
-#pylint: disable=abstract-method
 class ExtractImagesDoFn(beam.DoFn):
   """Adds image to PCollection."""
 
@@ -53,7 +77,7 @@ class ExtractImagesDoFn(beam.DoFn):
     super().__init__()
     self.image_key = image_key
 
-  #pylint: disable=unused-argument
+  # pylint: disable=unused-argument
   def process(
       self,
       element: Dict,
@@ -70,8 +94,8 @@ class ExtractImagesDoFn(beam.DoFn):
       image_uri = element[self.image_key]
       image = load(image_uri)
       d["image"] = encode(image)
-      d["image_height"], d["image_width"] = image.size
-      d["image_channels"] = 1 if "L" in image.mode else 3
+      d["image_width"], d["image_height"] = image.size
+      d["image_channels"] = mode_to_channel(image.mode)
 
     #pylint: disable=broad-except
     except Exception as e:

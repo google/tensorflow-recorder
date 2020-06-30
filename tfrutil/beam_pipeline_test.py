@@ -55,7 +55,7 @@ class BeamPipelineTests(unittest.TestCase):
   def test_write_to_tfrecord(self):
     """Test _write_to_tfrecord() fn."""
     tfr_writer = beam_pipeline._get_write_to_tfrecord(
-        output_path='tmp',
+        output_dir='tmp',
         prefix='foo',
         compress=True,
         num_shards=2)

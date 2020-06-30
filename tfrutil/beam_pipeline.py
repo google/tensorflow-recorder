@@ -18,7 +18,7 @@
 
 This file implements the full beam pipeline for TFRUtil.
 """
-import datetime
+
 import functools
 import logging
 import os
@@ -30,6 +30,7 @@ import tensorflow_transform as tft
 from tensorflow_transform import beam as tft_beam
 
 from tfrutil import beam_image
+from tfrutil import common
 from tfrutil import constants
 
 
@@ -44,7 +45,7 @@ def _get_job_name(job_label: str = None) -> str:
       insure uniqueness.
   """
 
-  job_name = "tfrutil-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+  job_name = "tfrutil-" + common.get_timestamp()
   if job_label:
     job_label = job_label.replace("_", "-")
     job_name += "-" + job_label
@@ -89,7 +90,7 @@ def _partition_fn(
     index = constants.DISCARD_INDEX
   return index
 
-def _get_write_to_tfrecord(output_path: str,
+def _get_write_to_tfrecord(output_dir: str,
                            prefix: str,
                            compress: bool = True,
                            num_shards: int = 0) \
@@ -99,13 +100,13 @@ def _get_write_to_tfrecord(output_path: str,
   This configures a Beam sink to output TFRecord files.
 
   Args:
-    output_path: Directory to output TFRecord files.
+    output_dir: Directory to output TFRecord files.
     prefix: TFRecord file prefix.
     compress: If True, GZip compress TFRecord files.
     num_shards: Number of file shards to split the TFRecord data.
   """
 
-  path = os.path.join(output_path, prefix)
+  path = os.path.join(output_dir, prefix)
   suffix = '.tfrecord'
   if compress:
     compression_type = 'gzip'
@@ -135,20 +136,21 @@ def _preprocessing_fn(inputs, integer_label: bool = False):
 
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
-def run_pipeline(df: pd.DataFrame,
-                 job_label: str,
-                 runner: str,
-                 output_path: str,
-                 compression: str,
-                 num_shards: int,
-                 integer_label: bool = False):
+def run_pipeline(
+    df: pd.DataFrame,
+    job_label: str,
+    runner: str,
+    output_dir: str,
+    compression: str,
+    num_shards: int,
+    integer_label: bool = False):
   """Runs TFRUtil Beam Pipeline.
 
   Args:
     df: Pandas Dataframe
     job_label: User description for the beam job.
     runner: Beam Runner: (e.g. DataFlowRunner, DirectRunner).
-    output_path: GCS or Local Path for output.
+    output_dir: GCS or Local Path for output.
     compression: gzip or None.
     num_shards: Number of shards.
 
@@ -156,7 +158,7 @@ def run_pipeline(df: pd.DataFrame,
   """
 
   job_name = _get_job_name(job_label)
-  job_dir = _get_job_dir(output_path, job_name)
+  job_dir = _get_job_dir(output_dir, job_name)
   popts = {}  # TODO(mikebernico): consider how/if to pass pipeline options.
   options = _get_pipeline_options(job_name, job_dir, **popts)
 
@@ -215,7 +217,7 @@ def run_pipeline(df: pd.DataFrame,
 
       # Sinks for TFRecords and metadata.
       tfr_writer = functools.partial(_get_write_to_tfrecord,
-                                     output_path=job_dir,
+                                     output_dir=job_dir,
                                      compress=compression,
                                      num_shards=num_shards)
 
@@ -238,7 +240,6 @@ def run_pipeline(df: pd.DataFrame,
           discard_data
           | 'DiscardDataWriter' >> beam.io.WriteToText(
               os.path.join(job_dir, "discarded-data")))
-
 
       # Output transform function and metadata
       _ = (transform_fn | 'WriteTransformFn' >> tft_beam.WriteTransformFn(

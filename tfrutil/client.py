@@ -111,7 +111,7 @@ def to_dataframe(
 
 def create_tfrecords(
     input_data: Union[str, pd.DataFrame],
-    output_path: str,
+    output_dir: str,
     header: Optional[Union[str, int, Sequence]] = "infer",
     names: Optional[Sequence] = None,
     runner: str = "DirectRunner",
@@ -128,12 +128,12 @@ def create_tfrecords(
 
     job_id = tfrutil.client.create_tfrecords(
         train_df,
-        output_path="gcs://foo/bar/train",
+        output_dir="gcs://foo/bar/train",
         runner="DataFlowRunner)
 
   Args:
     input_data: Pandas DataFrame, CSV file or image directory path.
-    output_path: Local directory or GCS Location to save TFRecords to.
+    output_dir: Local directory or GCS Location to save TFRecords to.
     header: Indicates row/s to use as a header. Not used when `input_data` is
       a Pandas DataFrame.
       If "infer" (default), header is taken from the first line of a CSV
@@ -150,19 +150,18 @@ def create_tfrecords(
 
   _validate_data(df)
   _validate_runner(df, runner)
-  os.makedirs(output_path, exist_ok=True)
-  logfile = os.path.join(output_path, constants.LOGFILE)
+  os.makedirs(output_dir, exist_ok=True)
+  logfile = os.path.join(output_dir, constants.LOGFILE)
   logging.basicConfig(filename=logfile, level=constants.LOGLEVEL)
   # This disables annoying Tensorflow and TFX info/warning messages.
   logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
   integer_label = pd.api.types.is_integer_dtype(df[constants.LABEL_KEY])
-
   beam_pipeline.run_pipeline(
       df,
       job_label=job_label,
       runner=runner,
-      output_path=output_path,
+      output_dir=output_dir,
       compression=compression,
       num_shards=num_shards,
       integer_label=integer_label)

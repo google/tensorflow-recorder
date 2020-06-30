@@ -16,14 +16,47 @@
 
 """Common utilites for writing tfrutil tests."""
 
+from typing import Any, Dict, List
+
+import os
+
+import numpy as np
+from PIL import Image
+
 from apache_beam.testing import test_pipeline
 import pandas as pd
 
+
+TEST_DIR = 'tfrutil/test_data'
+
+# TEST_DATA = collections.OrderedDict({
+#     constants.SPLIT_KEY:["TRAIN", "VALIDATION", "TEST"],
+#     constants.IMAGE_URI_KEY: [
+#         "gs://foo/bar/1.jpg",
+#         "gs://foo/bar/2.jpg",
+#         "gs://foo/bar/3.jpg",
+#     ],
+#     constants.LABEL_KEY: [0, 0, 1]})
+
+
 def get_test_df():
   """Gets a test dataframe that works with the data in test_data/."""
-  return pd.read_csv("tfrutil/test_data/data.csv")
+  return pd.read_csv(os.path.join(TEST_DIR, "data.csv"))
+
+
+def get_test_data() -> Dict[str, List[Any]]:
+  """Returns test data in columnar format."""
+
+  return get_test_df().to_dict(orient='list')
 
 
 def get_test_pipeline():
   """Gets a test pipeline."""
   return test_pipeline.TestPipeline(runner="DirectRunner")
+
+
+def make_random_image(height, width, channels):
+  """Returns a random Numpy image."""
+
+  return Image.fromarray(
+      (np.random.random((height, width, channels)) * 255).astype(np.uint8))
