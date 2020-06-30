@@ -21,11 +21,12 @@ the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
 import logging
 import os
-from typing import Union, Optional, Sequence
+from typing import Any, Dict, Union, Optional, Sequence
 
 import pandas as pd
 import tensorflow as tf
 
+from tfrutil import common
 from tfrutil import constants
 from tfrutil import beam_pipeline
 
@@ -48,7 +49,12 @@ def _validate_data(df):
             constants.IMAGE_CSV_COLUMNS))
 
 
-def _validate_runner(df, runner):
+def _validate_runner(
+    df: pd.DataFrame,
+    runner: str,
+    project: str,
+    region: str,
+    tfrutil_path: str):
   """Validates an appropriate beam runner is chosen."""
   if runner not in ["DataFlowRunner", "DirectRunner"]:
     raise AttributeError("Runner {} is not supported.".format(runner))
@@ -57,6 +63,13 @@ def _validate_runner(df, runner):
   gcs_path = df[constants.IMAGE_URI_KEY].str.startswith("gs://").all()
   if (runner == 'DataFlowRunner') & (not gcs_path):
     raise AttributeError("DataFlowRunner requires GCS image locations.")
+
+  if (runner == 'DataFlowRunner') & (
+      any(not v for v in [project, region, tfrutil_path])):
+    raise AttributeError("DataFlowRunner requires project region and "
+                         "tfrutil_path to be set however project is {} "
+                         "region is {} and tfrutil_path is {}".format(
+                             project, region, tfrutil_path))
 
 # def read_image_directory(dirpath) -> pd.DataFrame:
 #   """Reads image data from a directory into a Pandas DataFrame."""
@@ -108,6 +121,7 @@ def to_dataframe(
   return df
 
 #pylint: disable=too-many-arguments
+#pylint: disable=too-many-locals
 
 def create_tfrecords(
     input_data: Union[str, pd.DataFrame],
@@ -115,9 +129,13 @@ def create_tfrecords(
     header: Optional[Union[str, int, Sequence]] = "infer",
     names: Optional[Sequence] = None,
     runner: str = "DirectRunner",
+    project: Optional[str] = None,
+    region: Optional[str] = None,
+    tfrutil_path: Optional[str] = None,
+    dataflow_options: Union[Dict[str, Any], None] = None,
     job_label: str = "create-tfrecords",
-    compression: Union[str, None] = "gzip",
-    num_shards: int = 0) -> str:
+    compression: Optional[str] = "gzip",
+    num_shards: int = 0):
   """Generates TFRecord files from given input data.
 
   TFRUtil provides an easy interface to create image-based tensorflow records
@@ -129,7 +147,7 @@ def create_tfrecords(
     job_id = tfrutil.client.create_tfrecords(
         train_df,
         output_dir="gcs://foo/bar/train",
-        runner="DataFlowRunner)
+        runner="DirectFlowRunner)
 
   Args:
     input_data: Pandas DataFrame, CSV file or image directory path.
@@ -137,34 +155,49 @@ def create_tfrecords(
     header: Indicates row/s to use as a header. Not used when `input_data` is
       a Pandas DataFrame.
       If "infer" (default), header is taken from the first line of a CSV
-    runner: Beam runner. Can be "local" or "DataFlow"
+    runner: Beam runner. Can be "DirectRunner" or "DataFlowRunner"
+    project: GCP project name (Required if DataFlowRunner)
+    region: GCP region name (Required if DataFlowRunner)
+    tfrutil_path: Path to TFRutil source (Required if DataFlowRunner)
+    dataflow_options: Options dict for dataflow runner(Optional)
     job_label: User supplied description for the beam job name.
     compression: Can be "gzip" or None for no compression.
     num_shards: Number of shards to divide the TFRecords into. Default is
         0 = no sharding.
-  Returns:
-    job_id: Job ID of the DataFlow job or PID of the local runner.
+
   """
 
   df = to_dataframe(input_data, header, names)
 
   _validate_data(df)
-  _validate_runner(df, runner)
-  os.makedirs(output_dir, exist_ok=True)
-  logfile = os.path.join(output_dir, constants.LOGFILE)
+  _validate_runner(df, runner, project, region, tfrutil_path)
+  #os.makedirs(output_dir, exist_ok=True)
+  #TODO (mikebernico) this doesn't work with GCS locations...
+  logfile = os.path.join("/tmp", constants.LOGFILE)
   logging.basicConfig(filename=logfile, level=constants.LOGLEVEL)
   # This disables annoying Tensorflow and TFX info/warning messages.
   logging.getLogger("tensorflow").setLevel(logging.ERROR)
 
   integer_label = pd.api.types.is_integer_dtype(df[constants.LABEL_KEY])
-  beam_pipeline.run_pipeline(
+  p = beam_pipeline.build_pipeline(
       df,
       job_label=job_label,
       runner=runner,
+      project=project,
+      region=region,
+      tfrutil_path=tfrutil_path,
       output_dir=output_dir,
       compression=compression,
       num_shards=num_shards,
+      dataflow_options=dataflow_options,
       integer_label=integer_label)
 
-  job_id = "p1234"
-  return job_id
+  # TODO(mikbernico) Handle this async for the DataFlow case.
+  result = p.run()
+  result.wait_until_finish()
+  # TODO(mikebernico) Add metrics here.
+  logging.shutdown()
+  if os.path.exists(logfile):
+    common.copy_to_gcs(logfile,
+                       os.path.join(output_dir, constants.LOGFILE),
+                       recursive=False)

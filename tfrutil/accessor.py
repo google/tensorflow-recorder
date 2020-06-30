@@ -20,7 +20,7 @@ accessor.py contains TFRUtilAccessor which provides a pandas DataFrame
 accessor.  This accessor allows us to inject the to_tfr() function into
 pandas DataFrames.
 """
-from typing import Union
+from typing import Any, Dict, Optional, Union
 import pandas as pd
 
 from tfrutil import client
@@ -38,9 +38,13 @@ class TFRUtilAccessor:
       self,
       output_dir: str,
       runner: str = "DirectRunner",
+      project: Optional[str] = None,
+      region: Optional[str] = None,
+      tfrutil_path: Optional[str] = None,
+      dataflow_options: Union[Dict[str, Any], None] = None,
       job_label: str = "to-tfr",
-      compression: Union[str, None] = "gzip",
-      num_shards: int = 0) -> str:
+      compression: Optional[str] = "gzip",
+      num_shards: int = 0):
     """TFRUtil Pandas Accessor.
 
     TFRUtil provides an easy interface to create image-based tensorflow records
@@ -53,28 +57,30 @@ class TFRUtilAccessor:
           output_dir="gcs://foo/bar/train",
           runner="DirectRunner",
           compression="gzip",
-          num_shards=10,
-          image_col="image",
-          label_col="label)
+          num_shards=10)
 
     Args:
-      runner: Beam runner. Can be "local" or "DataFlow"
       output_dir: Local directory or GCS Location to save TFRecords to.
+      runner: Beam runner. Can be DirectRunner or  DataFlowRunner.
+      project: GCP project name (Required if DataFlowRunner).
+      region: GCP region name (Required if DataFlowRunner).
+      tfrutil_path: Path to tfrutil source (Required if DataFlowRunner).
+      dataflow_options: Optional dictionary containing DataFlow options.
       job_label: User supplied description for the beam job name.
       compression: Can be "gzip" or None for no compression.
       num_shards: Number of shards to divide the TFRecords into. Default is
           0 = no sharding.
-      image_col: DataFrame column containing GCS path to image. Defaults to
-        "image".
-      label_col: DataFrame column containing image label. Defaults to "label".
-    Returns:
-      job_id: Job ID of the DataFlow job or PID of the local runner.
+
     """
-    print("Starting DataFlow Transform. This may take a while. Please wait.")
-    client.create_tfrecords(self._df,
-                            output_dir=output_dir,
-                            runner=runner,
-                            job_label=job_label,
-                            compression=compression,
-                            num_shards=num_shards)
-    print("TFRecords created. Output stored in {}".format(output_dir))
+    client.create_tfrecords(
+        self._df,
+        output_dir=output_dir,
+        runner=runner,
+        project=project,
+        region=region,
+        tfrutil_path=tfrutil_path,
+        dataflow_options=dataflow_options,
+        job_label=job_label,
+        compression=compression,
+        num_shards=num_shards)
+    #TODO (mikebernico) Add notebook output for user.

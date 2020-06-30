@@ -9,3 +9,4 @@ pylint >= 2.5.3
 fire >= 0.3.1
 jupyter >= 1.0.0
 tensorflow >= 2.2.0
+gcsfs >= 0.6.2

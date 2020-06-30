@@ -39,10 +39,10 @@ class ClientTest(unittest.TestCase):
   def test_create_tfrecords(self):
     """Tests `create_tfrecords` valid case."""
 
-    pid = client.create_tfrecords(self.test_df,
-                                  runner="DirectRunner",
-                                  output_dir="/tmp/train")
-    self.assertEqual(pid, "p1234")
+    self.assertIsNone(client.create_tfrecords(
+        self.test_df,
+        runner="DirectRunner",
+        output_dir="/tmp/train"))
 
 
 #pylint: disable=protected-access
@@ -90,23 +90,56 @@ class InputValidationTest(unittest.TestCase):
 
   def test_valid_runner(self):
     """Tests valid runner."""
-    self.assertIsNone(client._validate_runner(self.test_df, "DirectRunner"))
+    self.assertIsNone(client._validate_runner(
+        self.test_df,
+        runner="DirectRunner",
+        project="foo",
+        region="us-central1",
+        tfrutil_path="foo/"))
 
   def test_invalid_runner(self):
     """Tests invalid runner."""
     with self.assertRaises(AttributeError):
-      client._validate_runner(self.test_df, "FooRunner")
+      client._validate_runner(
+          self.test_df,
+          runner="FooRunner",
+          project="foo",
+          region="us-central1",
+          tfrutil_path="foo/")
 
   def test_local_path_with_dataflow_runner(self):
     """Tests DataFlowRunner conflict with local path."""
     with self.assertRaises(AttributeError):
-      client._validate_runner(self.df_test, "DataFlowRunner")
+      client._validate_runner(
+          self.df_test,
+          runner="DataFlowRunner",
+          project="foo",
+          region="us-central1",
+          tfrutil_path="foo/")
 
   def test_gcs_path_with_dataflow_runner(self):
     """Tests DataFlowRunner with gcs path."""
     df2 = self.test_df.copy()
     df2[constants.IMAGE_URI_KEY] = "gs://" + df2[constants.IMAGE_URI_KEY]
-    self.assertIsNone(client._validate_runner(df2, "DataFlowRunner"))
+    self.assertIsNone(
+        client._validate_runner(
+            df2,
+            runner="DataFlowRunner",
+            project="foo",
+            region="us-central1",
+            tfrutil_path="foo/"))
+
+  def test_gcs_path_with_dataflow_runner_missing_param(self):
+    """Tests DataFlowRunner with missing required parameter."""
+    df2 = self.test_df.copy()
+    df2[constants.IMAGE_URI_KEY] = "gs://" + df2[constants.IMAGE_URI_KEY]
+    with self.assertRaises(AttributeError):
+      client._validate_runner(
+          df2,
+          runner="DataFlowRunner",
+          project=None,
+          region="us-central1",
+          tfrutil_path="foo/")
 
 
 def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:

@@ -17,8 +17,24 @@
 """Common utility functions."""
 
 from datetime import datetime
+import logging
+
+import gcsfs
 
 
 def get_timestamp() -> str:
   """Returns current date and time as formatted string."""
   return datetime.now().strftime('%Y%m%d-%H%M%S')
+
+
+def copy_to_gcs(local_dir: str, gcs_dir: str, recursive: bool):
+  """Copys files from local to GCS.
+
+  Args:
+    local_dir: Local dir or file.
+    gcs_dir: GCS destination.
+    recursive = True simulates a directory copy.
+  """
+  fs = gcsfs.GCSFileSystem()
+  fs.put(local_dir, gcs_dir, recursive=recursive)
+  logging.debug("Copying %s to %s", local_dir, gcs_dir)

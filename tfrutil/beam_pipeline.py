@@ -22,7 +22,7 @@ This file implements the full beam pipeline for TFRUtil.
 import functools
 import logging
 import os
-from typing import Dict, Union
+from typing import Any, Dict, Union
 
 import apache_beam as beam
 import pandas as pd
@@ -60,11 +60,18 @@ def _get_job_dir(output_path: str, job_name: str) -> str:
 
 
 def _get_pipeline_options(
-    job_name: str, job_dir: str, **popts: Union[bool, str, float]
+    runner: str,
+    job_name: str,
+    job_dir: str,
+    project: str,
+    region: str,
+    tfrutil_path: str,
+    dataflow_options: Union[Dict[str, Any], None]
     ) -> beam.pipeline.PipelineOptions:
   """Returns Beam pipeline options."""
 
   options_dict = {
+      "runner": runner,
       "staging_location": os.path.join(job_dir, "staging"),
       "temp_location": os.path.join(job_dir, "tmp"),
       "job_name": job_name,
@@ -72,7 +79,16 @@ def _get_pipeline_options(
       "save_main_session": True,
       "pipeline_type_check": False,
   }
-  options_dict.update(popts)
+
+  if project:
+    options_dict['project'] = project
+  if region:
+    options_dict['region'] = region
+  if tfrutil_path:
+    options_dict['setup_file'] = os.path.join(tfrutil_path, 'setup.py')
+  if dataflow_options:
+    options_dict.update(dataflow_options)
+
   return beam.pipeline.PipelineOptions(flags=[], **options_dict)
 
 
@@ -136,115 +152,136 @@ def _preprocessing_fn(inputs, integer_label: bool = False):
 
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
-def run_pipeline(
+def build_pipeline(
     df: pd.DataFrame,
     job_label: str,
     runner: str,
+    project: str,
+    region: str,
+    tfrutil_path: str,
     output_dir: str,
     compression: str,
     num_shards: int,
-    integer_label: bool = False):
+    dataflow_options: dict,
+    integer_label: bool) -> beam.Pipeline:
   """Runs TFRUtil Beam Pipeline.
 
   Args:
     df: Pandas Dataframe
     job_label: User description for the beam job.
     runner: Beam Runner: (e.g. DataFlowRunner, DirectRunner).
+    project: GCP project ID (if DataFlowRunner)
+    region: GCP compute region (if DataFlowRunner)
+    tfrutil_path: Path for TFRUtil source (required for DataFlowRunner)
     output_dir: GCS or Local Path for output.
     compression: gzip or None.
     num_shards: Number of shards.
+    dataflow_options: DataFlow Runner Options (optional)
+    integer_label: Flags if label is already an integer.
+
+  Returns:
+    beam.Pipeline
 
   Note: These inputs must be validated upstream (by client.create_tfrecord())
   """
 
   job_name = _get_job_name(job_label)
   job_dir = _get_job_dir(output_dir, job_name)
-  popts = {}  # TODO(mikebernico): consider how/if to pass pipeline options.
-  options = _get_pipeline_options(job_name, job_dir, **popts)
+  options = _get_pipeline_options(
+      runner,
+      job_name,
+      job_dir,
+      project,
+      region,
+      tfrutil_path,
+      dataflow_options)
 
-  with beam.Pipeline(runner, options=options) as p:
-    with tft_beam.Context(temp_dir=os.path.join(job_dir, "tft_tmp")):
+  #with beam.Pipeline(runner, options=options) as p:
+  p = beam.Pipeline(options=options)
+  with tft_beam.Context(temp_dir=os.path.join(job_dir, "tft_tmp")):
 
-      converter = tft.coders.CsvCoder(constants.IMAGE_CSV_COLUMNS,
-                                      constants.IMAGE_CSV_METADATA.schema)
+    converter = tft.coders.CsvCoder(constants.IMAGE_CSV_COLUMNS,
+                                    constants.IMAGE_CSV_METADATA.schema)
 
-      extract_images_fn = beam_image.ExtractImagesDoFn(constants.IMAGE_URI_KEY)
+    extract_images_fn = beam_image.ExtractImagesDoFn(constants.IMAGE_URI_KEY)
 
-      # Each element in the image_csv_data PCollection will be a dict
-      # including the image_csv_columns and the image features created from
-      # extract_images_fn.
-      image_csv_data = (
-          p
-          | "ReadFromDataFrame" >> beam.Create(df.values.tolist())
-          | "ToCSVRows" >> beam.Map(
-              lambda x: ",".join([str(item) for item in x]))
-          | "DecodeCSV" >> beam.Map(converter.decode)
-          | "ReadImage" >> beam.ParDo(extract_images_fn)
-      )
+    # Each element in the image_csv_data PCollection will be a dict
+    # including the image_csv_columns and the image features created from
+    # extract_images_fn.
+    image_csv_data = (
+        p
+        | "ReadFromDataFrame" >> beam.Create(df.values.tolist())
+        | "ToCSVRows" >> beam.Map(
+            lambda x: ",".join([str(item) for item in x]))
+        | "DecodeCSV" >> beam.Map(converter.decode)
+        | "ReadImage" >> beam.ParDo(extract_images_fn)
+    )
 
-      # Split dataset into train and validation.
-      train_data, val_data, test_data, discard_data = (
-          image_csv_data | 'SplitDataset' >> beam.Partition(
-              _partition_fn, len(constants.SPLIT_VALUES))
-      )
+    # Split dataset into train and validation.
+    train_data, val_data, test_data, discard_data = (
+        image_csv_data | 'SplitDataset' >> beam.Partition(
+            _partition_fn, len(constants.SPLIT_VALUES))
+    )
 
-      train_dataset = (train_data, constants.RAW_METADATA)
-      val_dataset = (val_data, constants.RAW_METADATA)
-      test_dataset = (test_data, constants.RAW_METADATA)
+    train_dataset = (train_data, constants.RAW_METADATA)
+    val_dataset = (val_data, constants.RAW_METADATA)
+    test_dataset = (test_data, constants.RAW_METADATA)
 
-      # TensorFlow Transform applied to all datasets.
-      preprocessing_fn = functools.partial(
-          _preprocessing_fn,
-          integer_label=integer_label)
-      transformed_train_dataset, transform_fn = (
-          train_dataset
-          | 'AnalyzeAndTransformTrain' >> tft_beam.AnalyzeAndTransformDataset(
-              preprocessing_fn))
+    # TensorFlow Transform applied to all datasets.
+    preprocessing_fn = functools.partial(
+        _preprocessing_fn,
+        integer_label=integer_label)
+    transformed_train_dataset, transform_fn = (
+        train_dataset
+        | 'AnalyzeAndTransformTrain' >> tft_beam.AnalyzeAndTransformDataset(
+            preprocessing_fn))
 
-      transformed_train_data, transformed_metadata = transformed_train_dataset
-      transformed_data_coder = tft.coders.ExampleProtoCoder(
-          transformed_metadata.schema)
+    transformed_train_data, transformed_metadata = transformed_train_dataset
+    transformed_data_coder = tft.coders.ExampleProtoCoder(
+        transformed_metadata.schema)
 
-      transformed_val_data, _ = (
-          (val_dataset, transform_fn)
-          | 'TransformVal' >> tft_beam.TransformDataset()
-      )
+    transformed_val_data, _ = (
+        (val_dataset, transform_fn)
+        | 'TransformVal' >> tft_beam.TransformDataset()
+    )
 
-      transformed_test_data, _ = (
-          (test_dataset, transform_fn)
-          | 'TransformTest' >> tft_beam.TransformDataset()
-      )
+    transformed_test_data, _ = (
+        (test_dataset, transform_fn)
+        | 'TransformTest' >> tft_beam.TransformDataset()
+    )
 
-      # Sinks for TFRecords and metadata.
-      tfr_writer = functools.partial(_get_write_to_tfrecord,
-                                     output_dir=job_dir,
-                                     compress=compression,
-                                     num_shards=num_shards)
+    # Sinks for TFRecords and metadata.
+    tfr_writer = functools.partial(_get_write_to_tfrecord,
+                                   output_dir=job_dir,
+                                   compress=compression,
+                                   num_shards=num_shards)
 
-      _ = (
-          transformed_train_data
-          | 'EncodeTrainData' >> beam.Map(transformed_data_coder.encode)
-          | 'WriteTrainData' >> tfr_writer(prefix="train"))
+    _ = (
+        transformed_train_data
+        | 'EncodeTrainData' >> beam.Map(transformed_data_coder.encode)
+        | 'WriteTrainData' >> tfr_writer(prefix="train"))
 
-      _ = (
-          transformed_val_data
-          | 'EncodeValData' >> beam.Map(transformed_data_coder.encode)
-          | 'WriteValData' >> tfr_writer(prefix="val"))
+    _ = (
+        transformed_val_data
+        | 'EncodeValData' >> beam.Map(transformed_data_coder.encode)
+        | 'WriteValData' >> tfr_writer(prefix="val"))
 
-      _ = (
-          transformed_test_data
-          | 'EncodeTestData' >> beam.Map(transformed_data_coder.encode)
-          | 'WriteTestData' >> tfr_writer(prefix="test"))
+    _ = (
+        transformed_test_data
+        | 'EncodeTestData' >> beam.Map(transformed_data_coder.encode)
+        | 'WriteTestData' >> tfr_writer(prefix="test"))
 
-      _ = (
-          discard_data
-          | 'DiscardDataWriter' >> beam.io.WriteToText(
-              os.path.join(job_dir, "discarded-data")))
+    _ = (
+        discard_data
+        | 'DiscardDataWriter' >> beam.io.WriteToText(
+            os.path.join(job_dir, "discarded-data")))
 
-      # Output transform function and metadata
-      _ = (transform_fn | 'WriteTransformFn' >> tft_beam.WriteTransformFn(
-          job_dir))
+    # Output transform function and metadata
+    _ = (transform_fn | 'WriteTransformFn' >> tft_beam.WriteTransformFn(
+        job_dir))
 
-      # Output metadata schema
-      _ = (transformed_metadata | 'WriteMetadata' >> tft_beam.WriteMetadata(
-          job_dir, pipeline=p))
+    # Output metadata schema
+    _ = (transformed_metadata | 'WriteMetadata' >> tft_beam.WriteMetadata(
+        job_dir, pipeline=p))
+
+  return p
