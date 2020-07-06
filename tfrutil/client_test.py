@@ -52,6 +52,8 @@ class InputValidationTest(unittest.TestCase):
 
   def setUp(self):
     self.test_df = test_utils.get_test_df()
+    self.test_region = 'us-central1'
+    self.test_project = 'foo'
 
   def test_valid_dataframe(self):
     """Tests valid DataFrame input."""
@@ -93,9 +95,8 @@ class InputValidationTest(unittest.TestCase):
     self.assertIsNone(client._validate_runner(
         self.test_df,
         runner='DirectRunner',
-        project='foo',
-        region='us-central1',
-        tfrutil_path='foo/'))
+        project=self.test_project,
+        region=self.test_region))
 
   def test_invalid_runner(self):
     """Tests invalid runner."""
@@ -103,9 +104,8 @@ class InputValidationTest(unittest.TestCase):
       client._validate_runner(
           self.test_df,
           runner='FooRunner',
-          project='foo',
-          region='us-central1',
-          tfrutil_path='foo/')
+          project=self.test_project,
+          region=self.test_region)
 
   def test_local_path_with_dataflow_runner(self):
     """Tests DataFlowRunner conflict with local path."""
@@ -113,9 +113,8 @@ class InputValidationTest(unittest.TestCase):
       client._validate_runner(
           self.df_test,
           runner='DataFlowRunner',
-          project='foo',
-          region='us-central1',
-          tfrutil_path='foo/')
+          project=self.test_project,
+          region=self.test_region)
 
   def test_gcs_path_with_dataflow_runner(self):
     """Tests DataFlowRunner with gcs path."""
@@ -125,9 +124,8 @@ class InputValidationTest(unittest.TestCase):
         client._validate_runner(
             df2,
             runner='DataFlowRunner',
-            project='foo',
-            region='us-central1',
-            tfrutil_path='foo/'))
+            project=self.test_project,
+            region=self.test_region))
 
   def test_gcs_path_with_dataflow_runner_missing_param(self):
     """Tests DataFlowRunner with missing required parameter."""
@@ -138,8 +136,7 @@ class InputValidationTest(unittest.TestCase):
           df2,
           runner='DataFlowRunner',
           project=None,
-          region='us-central1',
-          tfrutil_path='foo/')
+          region=self.test_region)
 
 
 def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:

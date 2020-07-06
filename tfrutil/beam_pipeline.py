@@ -65,7 +65,6 @@ def _get_pipeline_options(
     job_dir: str,
     project: str,
     region: str,
-    tfrutil_path: str,
     dataflow_options: Union[Dict[str, Any], None]
     ) -> beam.pipeline.PipelineOptions:
   """Returns Beam pipeline options."""
@@ -84,8 +83,8 @@ def _get_pipeline_options(
     options_dict['project'] = project
   if region:
     options_dict['region'] = region
-  if tfrutil_path:
-    options_dict['setup_file'] = os.path.join(tfrutil_path, 'setup.py')
+  if runner == 'DataFlowRunner':
+    options_dict['setup_file'] = os.path.join('..', 'setup.py')
   if dataflow_options:
     options_dict.update(dataflow_options)
 
@@ -158,7 +157,6 @@ def build_pipeline(
     runner: str,
     project: str,
     region: str,
-    tfrutil_path: str,
     output_dir: str,
     compression: str,
     num_shards: int,
@@ -172,7 +170,6 @@ def build_pipeline(
     runner: Beam Runner: (e.g. DataFlowRunner, DirectRunner).
     project: GCP project ID (if DataFlowRunner)
     region: GCP compute region (if DataFlowRunner)
-    tfrutil_path: Path for TFRUtil source (required for DataFlowRunner)
     output_dir: GCS or Local Path for output.
     compression: gzip or None.
     num_shards: Number of shards.
@@ -193,7 +190,6 @@ def build_pipeline(
       job_dir,
       project,
       region,
-      tfrutil_path,
       dataflow_options)
 
   #with beam.Pipeline(runner, options=options) as p:

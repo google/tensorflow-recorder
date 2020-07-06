@@ -53,8 +53,7 @@ def _validate_runner(
     df: pd.DataFrame,
     runner: str,
     project: str,
-    region: str,
-    tfrutil_path: str):
+    region: str):
   """Validates an appropriate beam runner is chosen."""
   if runner not in ['DataFlowRunner', 'DirectRunner']:
     raise AttributeError('Runner {} is not supported.'.format(runner))
@@ -65,11 +64,10 @@ def _validate_runner(
     raise AttributeError('DataFlowRunner requires GCS image locations.')
 
   if (runner == 'DataFlowRunner') & (
-      any(not v for v in [project, region, tfrutil_path])):
-    raise AttributeError('DataFlowRunner requires project region and '
-                         'tfrutil_path to be set however project is {} '
-                         'region is {} and tfrutil_path is {}'.format(
-                             project, region, tfrutil_path))
+      any(not v for v in [project, region])):
+    raise AttributeError('DataFlowRunner requires project region and region '
+                         'project is {} and region is {}'.format(
+                             project, region))
 
 # def read_image_directory(dirpath) -> pd.DataFrame:
 #   """Reads image data from a directory into a Pandas DataFrame."""
@@ -131,7 +129,6 @@ def create_tfrecords(
     runner: str = 'DirectRunner',
     project: Optional[str] = None,
     region: Optional[str] = None,
-    tfrutil_path: Optional[str] = None,
     dataflow_options: Optional[Dict[str, Any]] = None,
     job_label: str = 'create-tfrecords',
     compression: Optional[str] = 'gzip',
@@ -158,7 +155,6 @@ def create_tfrecords(
     runner: Beam runner. Can be 'DirectRunner' or 'DataFlowRunner'
     project: GCP project name (Required if DataFlowRunner)
     region: GCP region name (Required if DataFlowRunner)
-    tfrutil_path: Path to TFRutil source (Required if DataFlowRunner)
     dataflow_options: Options dict for dataflow runner
     job_label: User supplied description for the beam job name.
     compression: Can be 'gzip' or None for no compression.
@@ -170,7 +166,7 @@ def create_tfrecords(
   df = to_dataframe(input_data, header, names)
 
   _validate_data(df)
-  _validate_runner(df, runner, project, region, tfrutil_path)
+  _validate_runner(df, runner, project, region)
   #os.makedirs(output_dir, exist_ok=True)
   #TODO (mikebernico) this doesn't work with GCS locations...
   logfile = os.path.join('/tmp', constants.LOGFILE)
@@ -185,7 +181,6 @@ def create_tfrecords(
       runner=runner,
       project=project,
       region=region,
-      tfrutil_path=tfrutil_path,
       output_dir=output_dir,
       compression=compression,
       num_shards=num_shards,

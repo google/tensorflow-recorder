@@ -40,7 +40,6 @@ class TFRUtilAccessor:
       runner: str = 'DirectRunner',
       project: Optional[str] = None,
       region: Optional[str] = None,
-      tfrutil_path: Optional[str] = None,
       dataflow_options: Union[Dict[str, Any], None] = None,
       job_label: str = 'to-tfr',
       compression: Optional[str] = 'gzip',
@@ -64,7 +63,6 @@ class TFRUtilAccessor:
       runner: Beam runner. Can be DirectRunner or  DataFlowRunner.
       project: GCP project name (Required if DataFlowRunner).
       region: GCP region name (Required if DataFlowRunner).
-      tfrutil_path: Path to tfrutil source (Required if DataFlowRunner).
       dataflow_options: Optional dictionary containing DataFlow options.
       job_label: User supplied description for the beam job name.
       compression: Can be 'gzip' or None for no compression.
@@ -77,7 +75,6 @@ class TFRUtilAccessor:
         runner=runner,
         project=project,
         region=region,
-        tfrutil_path=tfrutil_path,
         dataflow_options=dataflow_options,
         job_label=job_label,
         compression=compression,
