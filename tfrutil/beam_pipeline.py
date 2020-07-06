@@ -45,10 +45,10 @@ def _get_job_name(job_label: str = None) -> str:
       insure uniqueness.
   """
 
-  job_name = "tfrutil-" + common.get_timestamp()
+  job_name = 'tfrutil-' + common.get_timestamp()
   if job_label:
-    job_label = job_label.replace("_", "-")
-    job_name += "-" + job_label
+    job_label = job_label.replace('_', '-')
+    job_name += '-' + job_label
 
   return job_name
 
@@ -71,13 +71,13 @@ def _get_pipeline_options(
   """Returns Beam pipeline options."""
 
   options_dict = {
-      "runner": runner,
-      "staging_location": os.path.join(job_dir, "staging"),
-      "temp_location": os.path.join(job_dir, "tmp"),
-      "job_name": job_name,
-      "teardown_policy": "TEARDOWN_ALWAYS",
-      "save_main_session": True,
-      "pipeline_type_check": False,
+      'runner': runner,
+      'staging_location': os.path.join(job_dir, 'staging'),
+      'temp_location': os.path.join(job_dir, 'tmp'),
+      'job_name': job_name,
+      'teardown_policy': 'TEARDOWN_ALWAYS',
+      'save_main_session': True,
+      'pipeline_type_check': False,
   }
 
   if project:
@@ -97,7 +97,7 @@ def _partition_fn(
     unused_num_partitions: int = -1) -> int:
   """Returns index used to partition an element from a PCollection."""
   del unused_num_partitions
-  dataset_type = element[constants.SPLIT_KEY].decode("utf-8")
+  dataset_type = element[constants.SPLIT_KEY].decode('utf-8')
   try:
     index = constants.SPLIT_VALUES.index(dataset_type)
   except ValueError as e:
@@ -198,7 +198,7 @@ def build_pipeline(
 
   #with beam.Pipeline(runner, options=options) as p:
   p = beam.Pipeline(options=options)
-  with tft_beam.Context(temp_dir=os.path.join(job_dir, "tft_tmp")):
+  with tft_beam.Context(temp_dir=os.path.join(job_dir, 'tft_tmp')):
 
     converter = tft.coders.CsvCoder(constants.IMAGE_CSV_COLUMNS,
                                     constants.IMAGE_CSV_METADATA.schema)
@@ -210,11 +210,11 @@ def build_pipeline(
     # extract_images_fn.
     image_csv_data = (
         p
-        | "ReadFromDataFrame" >> beam.Create(df.values.tolist())
-        | "ToCSVRows" >> beam.Map(
-            lambda x: ",".join([str(item) for item in x]))
-        | "DecodeCSV" >> beam.Map(converter.decode)
-        | "ReadImage" >> beam.ParDo(extract_images_fn)
+        | 'ReadFromDataFrame' >> beam.Create(df.values.tolist())
+        | 'ToCSVRows' >> beam.Map(
+            lambda x: ','.join([str(item) for item in x]))
+        | 'DecodeCSV' >> beam.Map(converter.decode)
+        | 'ReadImage' >> beam.ParDo(extract_images_fn)
     )
 
     # Split dataset into train and validation.
@@ -259,22 +259,22 @@ def build_pipeline(
     _ = (
         transformed_train_data
         | 'EncodeTrainData' >> beam.Map(transformed_data_coder.encode)
-        | 'WriteTrainData' >> tfr_writer(prefix="train"))
+        | 'WriteTrainData' >> tfr_writer(prefix='train'))
 
     _ = (
         transformed_val_data
         | 'EncodeValData' >> beam.Map(transformed_data_coder.encode)
-        | 'WriteValData' >> tfr_writer(prefix="val"))
+        | 'WriteValData' >> tfr_writer(prefix='val'))
 
     _ = (
         transformed_test_data
         | 'EncodeTestData' >> beam.Map(transformed_data_coder.encode)
-        | 'WriteTestData' >> tfr_writer(prefix="test"))
+        | 'WriteTestData' >> tfr_writer(prefix='test'))
 
     _ = (
         discard_data
         | 'DiscardDataWriter' >> beam.io.WriteToText(
-            os.path.join(job_dir, "discarded-data")))
+            os.path.join(job_dir, 'discarded-data')))
 
     # Output transform function and metadata
     _ = (transform_fn | 'WriteTransformFn' >> tft_beam.WriteTransformFn(

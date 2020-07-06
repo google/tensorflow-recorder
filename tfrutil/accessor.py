@@ -26,7 +26,7 @@ import pandas as pd
 from tfrutil import client
 
 
-@pd.api.extensions.register_dataframe_accessor("tensorflow")
+@pd.api.extensions.register_dataframe_accessor('tensorflow')
 class TFRUtilAccessor:
   """DataFrame Accessor class for TFRUtil."""
 
@@ -37,13 +37,13 @@ class TFRUtilAccessor:
   def to_tfr(
       self,
       output_dir: str,
-      runner: str = "DirectRunner",
+      runner: str = 'DirectRunner',
       project: Optional[str] = None,
       region: Optional[str] = None,
       tfrutil_path: Optional[str] = None,
       dataflow_options: Union[Dict[str, Any], None] = None,
-      job_label: str = "to-tfr",
-      compression: Optional[str] = "gzip",
+      job_label: str = 'to-tfr',
+      compression: Optional[str] = 'gzip',
       num_shards: int = 0):
     """TFRUtil Pandas Accessor.
 
@@ -54,9 +54,9 @@ class TFRUtilAccessor:
       import tfrutil
 
       df.tfrutil.to_tfr(
-          output_dir="gcs://foo/bar/train",
-          runner="DirectRunner",
-          compression="gzip",
+          output_dir='gcs://foo/bar/train',
+          runner='DirectRunner',
+          compression='gzip',
           num_shards=10)
 
     Args:
@@ -67,10 +67,9 @@ class TFRUtilAccessor:
       tfrutil_path: Path to tfrutil source (Required if DataFlowRunner).
       dataflow_options: Optional dictionary containing DataFlow options.
       job_label: User supplied description for the beam job name.
-      compression: Can be "gzip" or None for no compression.
+      compression: Can be 'gzip' or None for no compression.
       num_shards: Number of shards to divide the TFRecords into. Default is
           0 = no sharding.
-
     """
     client.create_tfrecords(
         self._df,

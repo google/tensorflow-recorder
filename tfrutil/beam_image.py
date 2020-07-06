@@ -61,10 +61,10 @@ def load(image_uri):
   """Loads an image."""
 
   try:
-    with tf.io.gfile.GFile(image_uri, "rb") as f:
+    with tf.io.gfile.GFile(image_uri, 'rb') as f:
       return Image.open(f)
   except tf.python.framework.errors_impl.NotFoundError:
-    raise OSError("File {} was not found.".format(image_uri))
+    raise OSError('File {} was not found.'.format(image_uri))
 
 
 # pylint: disable=abstract-method
@@ -93,14 +93,14 @@ class ExtractImagesDoFn(beam.DoFn):
     try:
       image_uri = element[self.image_key]
       image = load(image_uri)
-      d["image"] = encode(image)
-      d["image_width"], d["image_height"] = image.size
-      d["image_channels"] = mode_to_channel(image.mode)
+      d['image'] = encode(image)
+      d['image_width'], d['image_height'] = image.size
+      d['image_channels'] = mode_to_channel(image.mode)
 
-    #pylint: disable=broad-except
+    # pylint: disable=broad-except
     except Exception as e:
-      logging.warning("Could not load image: %s", image_uri)
-      logging.error("Exception was: %s", str(e))
+      logging.warning('Could not load image: %s', image_uri)
+      logging.error('Exception was: %s', str(e))
 
     element.update(d)
     yield element

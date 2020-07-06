@@ -24,11 +24,11 @@ from tensorflow_transform.tf_metadata import dataset_metadata
 from tensorflow_transform.tf_metadata import schema_utils
 
 
-SPLIT_KEY = "split"
-SPLIT_VALUES = ["TRAIN", "VALIDATION", "TEST", "DISCARD"]
+SPLIT_KEY = 'split'
+SPLIT_VALUES = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
 DISCARD_INDEX = SPLIT_VALUES.index('DISCARD')
-IMAGE_URI_KEY = "image_uri"
-LABEL_KEY = "label"
+IMAGE_URI_KEY = 'image_uri'
+LABEL_KEY = 'label'
 IMAGE_CSV_COLUMNS = [SPLIT_KEY, IMAGE_URI_KEY, LABEL_KEY]
 
 IMAGE_CSV_FEATURE_SPEC = {
@@ -39,10 +39,10 @@ IMAGE_CSV_FEATURE_SPEC = {
 
 RAW_FEATURE_SPEC = collections.OrderedDict(IMAGE_CSV_FEATURE_SPEC)
 RAW_FEATURE_SPEC.update({
-    "image": tf.io.FixedLenFeature([], tf.string),
-    "image_height": tf.io.FixedLenFeature([], tf.int64),
-    "image_width": tf.io.FixedLenFeature([], tf.int64),
-    "image_channels":  tf.io.FixedLenFeature([], tf.int64)
+    'image': tf.io.FixedLenFeature([], tf.string),
+    'image_height': tf.io.FixedLenFeature([], tf.int64),
+    'image_width': tf.io.FixedLenFeature([], tf.int64),
+    'image_channels':  tf.io.FixedLenFeature([], tf.int64)
 })
 
 IMAGE_CSV_METADATA = dataset_metadata.DatasetMetadata(
@@ -51,5 +51,5 @@ IMAGE_CSV_METADATA = dataset_metadata.DatasetMetadata(
 RAW_METADATA = dataset_metadata.DatasetMetadata(
     schema_utils.schema_from_feature_spec(RAW_FEATURE_SPEC))
 
-LOGFILE = "tfrutil-beam.log"
+LOGFILE = 'tfrutil-beam.log'
 LOGLEVEL = logging.INFO

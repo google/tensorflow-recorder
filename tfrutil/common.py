@@ -37,4 +37,4 @@ def copy_to_gcs(local_dir: str, gcs_dir: str, recursive: bool):
   """
   fs = gcsfs.GCSFileSystem()
   fs.put(local_dir, gcs_dir, recursive=recursive)
-  logging.debug("Copying %s to %s", local_dir, gcs_dir)
+  logging.debug('Copying %s to %s', local_dir, gcs_dir)

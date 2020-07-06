@@ -26,7 +26,7 @@ from typing import Any, Dict, Union, Optional, Sequence
 import pandas as pd
 import tensorflow as tf
 
-from tfrutil import common
+# from tfrutil import common
 from tfrutil import constants
 from tfrutil import beam_pipeline
 
@@ -36,16 +36,16 @@ def _validate_data(df):
   if constants.IMAGE_URI_KEY not in df.columns:
   # or label_col not in df.columns:
     raise AttributeError(
-        "Dataframe must contain image_uri column {}.")
+        'Dataframe must contain image_uri column {}.')
   if constants.LABEL_KEY not in df.columns:
     raise AttributeError(
-        "Dataframe must contain label column.")
+        'Dataframe must contain label column.')
   if constants.SPLIT_KEY not in df.columns:
     raise AttributeError(
-        "Dataframe must contain split column.")
+        'Dataframe must contain split column.')
   if list(df.columns) != constants.IMAGE_CSV_COLUMNS:
     raise AttributeError(
-        "Dataframe column order must be {}".format(
+        'Dataframe column order must be {}'.format(
             constants.IMAGE_CSV_COLUMNS))
 
 
@@ -56,19 +56,19 @@ def _validate_runner(
     region: str,
     tfrutil_path: str):
   """Validates an appropriate beam runner is chosen."""
-  if runner not in ["DataFlowRunner", "DirectRunner"]:
-    raise AttributeError("Runner {} is not supported.".format(runner))
+  if runner not in ['DataFlowRunner', 'DirectRunner']:
+    raise AttributeError('Runner {} is not supported.'.format(runner))
 
   # gcs_path is a bool, true if all image paths start with gs://
-  gcs_path = df[constants.IMAGE_URI_KEY].str.startswith("gs://").all()
+  gcs_path = df[constants.IMAGE_URI_KEY].str.startswith('gs://').all()
   if (runner == 'DataFlowRunner') & (not gcs_path):
-    raise AttributeError("DataFlowRunner requires GCS image locations.")
+    raise AttributeError('DataFlowRunner requires GCS image locations.')
 
   if (runner == 'DataFlowRunner') & (
       any(not v for v in [project, region, tfrutil_path])):
-    raise AttributeError("DataFlowRunner requires project region and "
-                         "tfrutil_path to be set however project is {} "
-                         "region is {} and tfrutil_path is {}".format(
+    raise AttributeError('DataFlowRunner requires project region and '
+                         'tfrutil_path to be set however project is {} '
+                         'region is {} and tfrutil_path is {}'.format(
                              project, region, tfrutil_path))
 
 # def read_image_directory(dirpath) -> pd.DataFrame:
@@ -88,7 +88,7 @@ def _is_directory(input_data) -> bool:
 
 def read_csv(
     csv_file: str,
-    header: Optional[Union[str, int, Sequence]] = "infer",
+    header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None) -> pd.DataFrame:
   """Returns a a Pandas DataFrame from a CSV file."""
 
@@ -101,14 +101,14 @@ def read_csv(
 
 def to_dataframe(
     input_data: Union[str, pd.DataFrame],
-    header: Optional[Union[str, int, Sequence]] = "infer",
+    header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None) -> pd.DataFrame:
   """Converts `input_data` to a Pandas DataFrame."""
 
   if isinstance(input_data, pd.DataFrame):
     df = input_data[names] if names else input_data
 
-  elif isinstance(input_data, str) and input_data.endswith(".csv"):
+  elif isinstance(input_data, str) and input_data.endswith('.csv'):
     df = read_csv(input_data, header, names)
 
   elif isinstance(input_data, str) and _is_directory(input_data):
@@ -116,25 +116,25 @@ def to_dataframe(
     raise NotImplementedError
 
   else:
-    raise ValueError("Unsupported `input_data`: {}".format(type(input_data)))
+    raise ValueError('Unsupported `input_data`: {}'.format(type(input_data)))
 
   return df
 
-#pylint: disable=too-many-arguments
-#pylint: disable=too-many-locals
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-locals
 
 def create_tfrecords(
     input_data: Union[str, pd.DataFrame],
     output_dir: str,
-    header: Optional[Union[str, int, Sequence]] = "infer",
+    header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
-    runner: str = "DirectRunner",
+    runner: str = 'DirectRunner',
     project: Optional[str] = None,
     region: Optional[str] = None,
     tfrutil_path: Optional[str] = None,
-    dataflow_options: Union[Dict[str, Any], None] = None,
-    job_label: str = "create-tfrecords",
-    compression: Optional[str] = "gzip",
+    dataflow_options: Optional[Dict[str, Any]] = None,
+    job_label: str = 'create-tfrecords',
+    compression: Optional[str] = 'gzip',
     num_shards: int = 0):
   """Generates TFRecord files from given input data.
 
@@ -146,22 +146,22 @@ def create_tfrecords(
 
     job_id = tfrutil.client.create_tfrecords(
         train_df,
-        output_dir="gcs://foo/bar/train",
-        runner="DirectFlowRunner)
+        output_dir='gcs://foo/bar/train',
+        runner='DirectFlowRunner)
 
   Args:
     input_data: Pandas DataFrame, CSV file or image directory path.
     output_dir: Local directory or GCS Location to save TFRecords to.
     header: Indicates row/s to use as a header. Not used when `input_data` is
       a Pandas DataFrame.
-      If "infer" (default), header is taken from the first line of a CSV
-    runner: Beam runner. Can be "DirectRunner" or "DataFlowRunner"
+      If 'infer' (default), header is taken from the first line of a CSV
+    runner: Beam runner. Can be 'DirectRunner' or 'DataFlowRunner'
     project: GCP project name (Required if DataFlowRunner)
     region: GCP region name (Required if DataFlowRunner)
     tfrutil_path: Path to TFRutil source (Required if DataFlowRunner)
-    dataflow_options: Options dict for dataflow runner(Optional)
+    dataflow_options: Options dict for dataflow runner
     job_label: User supplied description for the beam job name.
-    compression: Can be "gzip" or None for no compression.
+    compression: Can be 'gzip' or None for no compression.
     num_shards: Number of shards to divide the TFRecords into. Default is
         0 = no sharding.
 
@@ -173,10 +173,10 @@ def create_tfrecords(
   _validate_runner(df, runner, project, region, tfrutil_path)
   #os.makedirs(output_dir, exist_ok=True)
   #TODO (mikebernico) this doesn't work with GCS locations...
-  logfile = os.path.join("/tmp", constants.LOGFILE)
+  logfile = os.path.join('/tmp', constants.LOGFILE)
   logging.basicConfig(filename=logfile, level=constants.LOGLEVEL)
   # This disables annoying Tensorflow and TFX info/warning messages.
-  logging.getLogger("tensorflow").setLevel(logging.ERROR)
+  logging.getLogger('tensorflow').setLevel(logging.ERROR)
 
   integer_label = pd.api.types.is_integer_dtype(df[constants.LABEL_KEY])
   p = beam_pipeline.build_pipeline(
@@ -197,7 +197,10 @@ def create_tfrecords(
   result.wait_until_finish()
   # TODO(mikebernico) Add metrics here.
   logging.shutdown()
+
+  # FIXME: Issue where GCSFS is not picking up the `logfile` even if it exists.
   if os.path.exists(logfile):
-    common.copy_to_gcs(logfile,
-                       os.path.join(output_dir, constants.LOGFILE),
-                       recursive=False)
+    pass
+    # common.copy_to_gcs(logfile,
+    #                    os.path.join(output_dir, constants.LOGFILE),
+    #                    recursive=False)

@@ -37,7 +37,7 @@ class BeamImageTests(unittest.TestCase):
   def setUp(self):
     self.pipeline = test_utils.get_test_pipeline()
     self.df = test_utils.get_test_df()
-    self.image_file = "tfrutil/test_data/images/cat/cat-640x853-1.jpg"
+    self.image_file = 'tfrutil/test_data/images/cat/cat-640x853-1.jpg'
 
   def test_load(self):
     """Tests the image loading function."""
@@ -45,9 +45,9 @@ class BeamImageTests(unittest.TestCase):
     self.assertIsInstance(img, PIL.JpegImagePlugin.JpegImageFile)
 
   def test_file_not_found_load(self):
-    """Test loading an image that doesn"t exist."""
+    """Test loading an image that doesn't exist."""
     with self.assertRaises(OSError):
-      _ = beam_image.load("tfrutil/test_data/images/cat/food.jpg")
+      _ = beam_image.load('tfrutil/test_data/images/cat/food.jpg')
 
   def test_mode_to_channel(self):
     """Tests `mode_to_channel`."""
@@ -91,11 +91,11 @@ class BeamImageTests(unittest.TestCase):
 
       data = (
           p
-          | "ReadFromDataFrame" >> beam.Create(self.df.values.tolist())
-          | "FlattenDataFrame" >> beam.Map(
-              lambda x: ",".join([str(item) for item in x]))
-          | "DecodeCSV" >> beam.Map(converter.decode)
-          | "ExtractImage" >> beam.ParDo(extract_images_fn)
+          | 'ReadFromDataFrame' >> beam.Create(self.df.values.tolist())
+          | 'FlattenDataFrame' >> beam.Map(
+              lambda x: ','.join([str(item) for item in x]))
+          | 'DecodeCSV' >> beam.Map(converter.decode)
+          | 'ExtractImage' >> beam.ParDo(extract_images_fn)
       )
 
       def key_matcher(expected_keys):
@@ -108,10 +108,10 @@ class BeamImageTests(unittest.TestCase):
             actual_keys = set(element.keys())
             if actual_keys != expected_keys_:
               raise util.BeamAssertException(
-                  "PCollection key match failed. Actual ({}) vs. expected ({})"
+                  'PCollection key match failed. Actual ({}) vs. expected ({})'
                   .format(actual_keys, expected_keys_))
         return _equal
 
-      expected_keys = ["image_uri", "label", "split", "image",
-                       "image_height", "image_width", "image_channels"]
+      expected_keys = ['image_uri', 'label', 'split', 'image',
+                       'image_height', 'image_width', 'image_channels']
       util.assert_that(data, key_matcher(expected_keys))

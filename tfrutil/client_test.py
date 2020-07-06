@@ -41,14 +41,14 @@ class ClientTest(unittest.TestCase):
 
     self.assertIsNone(client.create_tfrecords(
         self.test_df,
-        runner="DirectRunner",
-        output_dir="/tmp/train"))
+        runner='DirectRunner',
+        output_dir='/tmp/train'))
 
 
-#pylint: disable=protected-access
+# pylint: disable=protected-access
 
 class InputValidationTest(unittest.TestCase):
-  """"Tests for validation input data."""
+  """'Tests for validation input data."""
 
   def setUp(self):
     self.test_df = test_utils.get_test_df()
@@ -84,7 +84,7 @@ class InputValidationTest(unittest.TestCase):
     """Tests validating column order wrong."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
-      cols = ["image_uri", "split", "label"]
+      cols = ['image_uri', 'split', 'label']
       df2 = df2[cols]
       client._validate_data(df2)
 
@@ -92,61 +92,61 @@ class InputValidationTest(unittest.TestCase):
     """Tests valid runner."""
     self.assertIsNone(client._validate_runner(
         self.test_df,
-        runner="DirectRunner",
-        project="foo",
-        region="us-central1",
-        tfrutil_path="foo/"))
+        runner='DirectRunner',
+        project='foo',
+        region='us-central1',
+        tfrutil_path='foo/'))
 
   def test_invalid_runner(self):
     """Tests invalid runner."""
     with self.assertRaises(AttributeError):
       client._validate_runner(
           self.test_df,
-          runner="FooRunner",
-          project="foo",
-          region="us-central1",
-          tfrutil_path="foo/")
+          runner='FooRunner',
+          project='foo',
+          region='us-central1',
+          tfrutil_path='foo/')
 
   def test_local_path_with_dataflow_runner(self):
     """Tests DataFlowRunner conflict with local path."""
     with self.assertRaises(AttributeError):
       client._validate_runner(
           self.df_test,
-          runner="DataFlowRunner",
-          project="foo",
-          region="us-central1",
-          tfrutil_path="foo/")
+          runner='DataFlowRunner',
+          project='foo',
+          region='us-central1',
+          tfrutil_path='foo/')
 
   def test_gcs_path_with_dataflow_runner(self):
     """Tests DataFlowRunner with gcs path."""
     df2 = self.test_df.copy()
-    df2[constants.IMAGE_URI_KEY] = "gs://" + df2[constants.IMAGE_URI_KEY]
+    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
     self.assertIsNone(
         client._validate_runner(
             df2,
-            runner="DataFlowRunner",
-            project="foo",
-            region="us-central1",
-            tfrutil_path="foo/"))
+            runner='DataFlowRunner',
+            project='foo',
+            region='us-central1',
+            tfrutil_path='foo/'))
 
   def test_gcs_path_with_dataflow_runner_missing_param(self):
     """Tests DataFlowRunner with missing required parameter."""
     df2 = self.test_df.copy()
-    df2[constants.IMAGE_URI_KEY] = "gs://" + df2[constants.IMAGE_URI_KEY]
+    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
     with self.assertRaises(AttributeError):
       client._validate_runner(
           df2,
-          runner="DataFlowRunner",
+          runner='DataFlowRunner',
           project=None,
-          region="us-central1",
-          tfrutil_path="foo/")
+          region='us-central1',
+          tfrutil_path='foo/')
 
 
 def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:
   """Returns `NamedTemporaryFile` representing an image CSV."""
 
-  f = tempfile.NamedTemporaryFile(mode="w+t", suffix=".csv")
-  writer = csv.writer(f, delimiter=",")
+  f = tempfile.NamedTemporaryFile(mode='w+t', suffix='.csv')
+  writer = csv.writer(f, delimiter=',')
   for row in data:
     writer.writerow(row)
   f.seek(0)
@@ -209,7 +209,7 @@ class ToDataFrameTest(unittest.TestCase):
     columns = sample_data.pop(0)
     self.input_df = pd.DataFrame(sample_data, columns=columns)
 
-  @mock.patch.object(client, "read_csv", autospec=True)
+  @mock.patch.object(client, 'read_csv', autospec=True)
   def test_input_csv(self, read_csv):
     """Tests valid input CSV file."""
     expected = self.input_df
@@ -231,11 +231,11 @@ class ToDataFrameTest(unittest.TestCase):
 
   def test_error_invalid_inputs(self):
     """Tests error handling with different invalid inputs."""
-    inputs = [0, "not_a_csv_file", list(), dict()]
+    inputs = [0, 'not_a_csv_file', list(), dict()]
     for input_data in inputs:
       with self.assertRaises(ValueError):
         client.to_dataframe(input_data)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   unittest.main()

@@ -16,11 +16,12 @@
 
 """Tests for pandas accessor."""
 
+import os
 import unittest
 
 # pylint: disable=unused-import
-from tfrutil import accessor
-from tfrutil import constants
+
+import tfrutil
 from tfrutil import test_utils
 
 
@@ -29,12 +30,14 @@ class DataFrameAccessor(unittest.TestCase):
 
   def setUp(self):
     self.test_df = test_utils.get_test_df()
+    self.output_dir = '/tmp/train'
+    os.makedirs(self.output_dir, exist_ok=True)
 
   def test_accessor(self):
     """Tests pandas accessor."""
 
-    self.assertIsNone(self.test_df.tensorflow.to_tfr(runner="DirectRunner",
-                                                     output_dir="/tmp/train"))
+    self.assertIsNone(self.test_df.tensorflow.to_tfr(
+        runner='DirectRunner', output_dir=self.output_dir))
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   unittest.main()
