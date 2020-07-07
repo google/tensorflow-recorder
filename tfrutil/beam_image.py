@@ -20,6 +20,7 @@ import logging
 from typing import Any, Dict, Generator, Tuple
 
 import apache_beam as beam
+from apache_beam.metrics import Metrics
 import tensorflow as tf
 from PIL import Image
 
@@ -76,11 +77,14 @@ class ExtractImagesDoFn(beam.DoFn):
     """Constructor."""
     super().__init__()
     self.image_key = image_key
+    self.image_good_counter = Metrics.counter(self.__class__, 'image_good')
+    self.image_bad_counter = Metrics.counter(self.__class__, 'image_bad')
+
 
   # pylint: disable=unused-argument
   def process(
       self,
-      element: Dict,
+      element: Dict[str, Any],
       *args: Tuple[Any, ...],
       **kwargs: Dict) -> Generator[Dict[str, Any], None, None]:
     """Loads image and creates image features.
@@ -96,11 +100,13 @@ class ExtractImagesDoFn(beam.DoFn):
       d['image'] = encode(image)
       d['image_width'], d['image_height'] = image.size
       d['image_channels'] = mode_to_channel(image.mode)
+      self.image_good_counter.inc()
 
     # pylint: disable=broad-except
     except Exception as e:
       logging.warning('Could not load image: %s', image_uri)
       logging.error('Exception was: %s', str(e))
+      self.image_bad_counter.inc()
 
     element.update(d)
     yield element

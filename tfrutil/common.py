@@ -17,9 +17,11 @@
 """Common utility functions."""
 
 from datetime import datetime
-import logging
+import os
 
-import gcsfs
+import tensorflow as tf
+
+from tfrutil import constants
 
 
 def get_timestamp() -> str:
@@ -27,14 +29,14 @@ def get_timestamp() -> str:
   return datetime.now().strftime('%Y%m%d-%H%M%S')
 
 
-def copy_to_gcs(local_dir: str, gcs_dir: str, recursive: bool):
-  """Copys files from local to GCS.
-
-  Args:
-    local_dir: Local dir or file.
-    gcs_dir: GCS destination.
-    recursive = True simulates a directory copy.
-  """
-  fs = gcsfs.GCSFileSystem()
-  fs.put(local_dir, gcs_dir, recursive=recursive)
-  logging.debug('Copying %s to %s', local_dir, gcs_dir)
+def copy_logfile_to_gcs(logfile: str, output_dir: str):
+  """Copies a logfile from local to gcs storage."""
+  try:
+    with open(logfile, 'r') as log_reader:
+      out_log = os.path.join(output_dir, constants.LOGFILE)
+      with tf.io.gfile.GFile(out_log, 'w') as gcs_logfile:
+        log = log_reader.read()
+        gcs_logfile.write(log)
+  except FileNotFoundError as e:
+    raise FileNotFoundError("Unable to copy log file {} to gcs.".format(
+        e.filename))

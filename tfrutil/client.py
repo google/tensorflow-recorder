@@ -23,10 +23,11 @@ import logging
 import os
 from typing import Any, Dict, Union, Optional, Sequence
 
+import apache_beam as beam
 import pandas as pd
 import tensorflow as tf
 
-# from tfrutil import common
+from tfrutil import common
 from tfrutil import constants
 from tfrutil import beam_pipeline
 
@@ -118,6 +119,40 @@ def to_dataframe(
 
   return df
 
+
+def _get_beam_metric(
+    metric_filter: beam.metrics.MetricsFilter,
+    result: beam.runners.runner.PipelineResult,
+    metric_type: str = 'counters') -> Optional[int]:
+  """Queries a beam pipeline result for a specificed metric.
+
+  Args:
+    metric_filter: an instance of apache_beam.metrics.MetricsFilter()
+    metric_type: A metric type (counters, distributions, etc.)
+
+  Returns:
+    Counter value or None
+  """
+  query_result = result.metrics().query(metric_filter)
+  result_val = None
+  if query_result[metric_type]:
+    result_val = query_result[metric_type][0].result
+  return result_val
+
+
+def _configure_logging(logfile):
+  """Configures logging options."""
+  # Remove default handlers that TF set for us.
+  logger = logging.getLogger('')
+  logger.handlers = []
+  handler = logging.FileHandler(logfile)
+  logger.addHandler(handler)
+  logger.setLevel(constants.LOGLEVEL)
+  # This disables annoying Tensorflow and TFX info/warning messages on console.
+  tf_logger = logging.getLogger('tensorflow')
+  tf_logger.handlers = []
+  tf_logger.addHandler(handler)
+
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 
@@ -132,7 +167,7 @@ def create_tfrecords(
     dataflow_options: Optional[Dict[str, Any]] = None,
     job_label: str = 'create-tfrecords',
     compression: Optional[str] = 'gzip',
-    num_shards: int = 0):
+    num_shards: int = 0) -> Dict[str, Any]:
   """Generates TFRecord files from given input data.
 
   TFRUtil provides an easy interface to create image-based tensorflow records
@@ -161,18 +196,21 @@ def create_tfrecords(
     num_shards: Number of shards to divide the TFRecords into. Default is
         0 = no sharding.
 
+  Returns:
+    job_results: Dict
+      job_id: DataFlow Job ID or 'DirectRunner'
+      metrics: (optional) Beam metrics. Only used for DirectRunner
+      dataflow_url: (optional) Job URL for DataFlowRunner
   """
 
   df = to_dataframe(input_data, header, names)
 
   _validate_data(df)
   _validate_runner(df, runner, project, region)
-  #os.makedirs(output_dir, exist_ok=True)
-  #TODO (mikebernico) this doesn't work with GCS locations...
+
   logfile = os.path.join('/tmp', constants.LOGFILE)
-  logging.basicConfig(filename=logfile, level=constants.LOGLEVEL)
-  # This disables annoying Tensorflow and TFX info/warning messages.
-  logging.getLogger('tensorflow').setLevel(logging.ERROR)
+  _configure_logging(logfile)
+
 
   integer_label = pd.api.types.is_integer_dtype(df[constants.LABEL_KEY])
   p = beam_pipeline.build_pipeline(
@@ -187,15 +225,55 @@ def create_tfrecords(
       dataflow_options=dataflow_options,
       integer_label=integer_label)
 
-  # TODO(mikbernico) Handle this async for the DataFlow case.
   result = p.run()
-  result.wait_until_finish()
-  # TODO(mikebernico) Add metrics here.
+
+  if runner == 'DirectRunner':
+    logging.info("Using DirectRunner. TFRUtil will block until job completes.")
+    result.wait_until_finish()
+
+    row_count_filter = beam.metrics.MetricsFilter().with_name('row_count')
+    good_image_filter = beam.metrics.MetricsFilter().with_name('image_good')
+    bad_image_filter = beam.metrics.MetricsFilter().with_name('image_bad')
+
+    row_count = _get_beam_metric(row_count_filter, result)
+    good_image_count = _get_beam_metric(good_image_filter, result)
+    bad_image_count = _get_beam_metric(bad_image_filter, result)
+
+    # TODO(mikebernico): Profile metric impact with larger dataset.
+    metrics = {
+        'rows': row_count,
+        'good_images': good_image_count,
+        'bad_images': bad_image_count,
+    }
+
+    job_result = {
+        'job_id': 'DirectRunner',
+        'metrics': metrics
+    }
+    logging.info("Job Complete.")
+
+  else:
+    logging.info("Using DataFlow Runner.")
+    # Construct DataFlow URL
+
+    job_id = result.job_id()
+
+    url = (
+        constants.CONSOLE_DATAFLOW_URI +
+        region +
+        '/' +
+        job_id +
+        '?project=' +
+        project)
+    job_result = {
+        'job_id': job_id,
+        'dataflow_url': url
+    }
+
   logging.shutdown()
 
-  # FIXME: Issue where GCSFS is not picking up the `logfile` even if it exists.
-  if os.path.exists(logfile):
-    pass
-    # common.copy_to_gcs(logfile,
-    #                    os.path.join(output_dir, constants.LOGFILE),
-    #                    recursive=False)
+  if runner == 'DataFlowRunner':
+    # if this is a dataflow job, copy the logfile to gcs
+    common.copy_logfile_to_gcs(logfile, output_dir)
+
+  return job_result

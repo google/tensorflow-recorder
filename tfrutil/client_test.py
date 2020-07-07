@@ -15,7 +15,7 @@
 # limitations under the License.
 
 """Tests for client."""
-
+import os
 from typing import List
 
 import csv
@@ -35,14 +35,43 @@ class ClientTest(unittest.TestCase):
 
   def setUp(self):
     self.test_df = test_utils.get_test_df()
+    self.test_region = 'us-central1'
+    self.test_project = 'foo'
 
-  def test_create_tfrecords(self):
-    """Tests `create_tfrecords` valid case."""
-
-    self.assertIsNone(client.create_tfrecords(
+  @mock.patch('tfrutil.client.beam_pipeline')
+  def test_create_tfrecords_direct_runner(self, mock_beam):
+    """Tests `create_tfrecords` Direct case."""
+    mock_beam.build_pipeline().run().wait_until_finished.return_value = {
+        'rows':6}
+    r = client.create_tfrecords(
         self.test_df,
         runner='DirectRunner',
-        output_dir='/tmp/train'))
+        output_dir='/tmp/direct_runner')
+    self.assertTrue('metrics' in r)
+
+  @mock.patch('tfrutil.client.beam_pipeline')
+  def test_create_tfrecords_dataflow_runner(self, mock_beam):
+    """Tests `create_tfrecords` DataFlow case."""
+    mock_beam.build_pipeline().run().job_id.return_value = 'foo_id'
+
+    df2 = self.test_df.copy()
+    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
+
+    outdir = '/tmp/dataflow_runner'
+
+    expected = {
+        'job_id': 'foo_id',
+        'dataflow_url': 'https://console.cloud.google.com/dataflow/jobs/' +
+                        'us-central1/foo_id?project=foo'}
+
+    os.makedirs(outdir, exist_ok=True)
+    r = client.create_tfrecords(
+        df2,
+        runner='DataFlowRunner',
+        output_dir=outdir,
+        region=self.test_region,
+        project=self.test_project)
+    self.assertEqual(r, expected)
 
 
 # pylint: disable=protected-access

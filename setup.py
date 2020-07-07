@@ -29,7 +29,6 @@ REQUIRED_PACKAGES = [
     "pylint >= 2.5.3",
     "fire >= 0.3.1",
     "tensorflow >= 2.2.0",
-    "gcsfs >= 0.6.2",
     "pyarrow < 0.17",
 ]
 

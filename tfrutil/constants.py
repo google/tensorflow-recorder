@@ -53,3 +53,5 @@ RAW_METADATA = dataset_metadata.DatasetMetadata(
 
 LOGFILE = 'tfrutil-beam.log'
 LOGLEVEL = logging.INFO
+
+CONSOLE_DATAFLOW_URI = "https://console.cloud.google.com/dataflow/jobs/"

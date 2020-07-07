@@ -19,10 +19,11 @@
 This file implements the full beam pipeline for TFRUtil.
 """
 
+from typing import Any, Dict, Generator, Union
+
 import functools
 import logging
 import os
-from typing import Any, Dict, Union
 
 import apache_beam as beam
 import pandas as pd
@@ -159,6 +160,34 @@ def _preprocessing_fn(inputs, integer_label: bool = False):
   return outputs
 
 
+# pylint: disable=abstract-method
+
+class ToCSVRows(beam.DoFn):
+  """Adds image to PCollection."""
+
+  def __init__(self):
+    """Constructor."""
+    super().__init__()
+    self.row_count = beam.metrics.Metrics.counter(self.__class__, 'row_count')
+
+
+  # pylint: disable=unused-argument
+  # pylint: disable=arguments-differ
+  def process(
+      self,
+      element: Dict[str, Any]
+      ) -> Generator[Dict[str, Any], None, None]:
+    """Loads image and creates image features.
+
+    This DoFn extracts an image being stored on local disk or GCS and
+    yields a base64 encoded image, the image height, image width, and channels.
+    """
+    element = ','.join([str(item) for item in element])
+    self.row_count.inc()
+    yield element
+
+
+
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 def build_pipeline(
@@ -210,6 +239,7 @@ def build_pipeline(
                                     constants.IMAGE_CSV_METADATA.schema)
 
     extract_images_fn = beam_image.ExtractImagesDoFn(constants.IMAGE_URI_KEY)
+    flatten_rows = ToCSVRows()
 
     # Each element in the image_csv_data PCollection will be a dict
     # including the image_csv_columns and the image features created from
@@ -217,8 +247,7 @@ def build_pipeline(
     image_csv_data = (
         p
         | 'ReadFromDataFrame' >> beam.Create(df.values.tolist())
-        | 'ToCSVRows' >> beam.Map(
-            lambda x: ','.join([str(item) for item in x]))
+        | 'ToCSVRows' >> beam.ParDo(flatten_rows)
         | 'DecodeCSV' >> beam.Map(converter.decode)
         | 'ReadImage' >> beam.ParDo(extract_images_fn)
     )

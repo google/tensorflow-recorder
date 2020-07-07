@@ -22,8 +22,10 @@ pandas DataFrames.
 """
 from typing import Any, Dict, Optional, Union
 import pandas as pd
+from IPython.core import display
 
 from tfrutil import client
+from tfrutil import constants
 
 
 @pd.api.extensions.register_dataframe_accessor('tensorflow')
@@ -43,7 +45,7 @@ class TFRUtilAccessor:
       dataflow_options: Union[Dict[str, Any], None] = None,
       job_label: str = 'to-tfr',
       compression: Optional[str] = 'gzip',
-      num_shards: int = 0):
+      num_shards: int = 0) -> Dict[str, Any]:
     """TFRUtil Pandas Accessor.
 
     TFRUtil provides an easy interface to create image-based tensorflow records
@@ -68,8 +70,14 @@ class TFRUtilAccessor:
       compression: Can be 'gzip' or None for no compression.
       num_shards: Number of shards to divide the TFRecords into. Default is
           0 = no sharding.
+    Returns:
+      job_results: A dictionary of job results.
     """
-    client.create_tfrecords(
+    display.display(
+        display.HTML(
+            '<b>Logging output to /tmp/{} </b>'.format(constants.LOGFILE)))
+
+    r = client.create_tfrecords(
         self._df,
         output_dir=output_dir,
         runner=runner,
@@ -79,4 +87,4 @@ class TFRUtilAccessor:
         job_label=job_label,
         compression=compression,
         num_shards=num_shards)
-    #TODO (mikebernico) Add notebook output for user.
+    return r
