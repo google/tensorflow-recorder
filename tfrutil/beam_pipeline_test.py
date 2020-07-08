@@ -16,6 +16,7 @@
 
 """Tests for beam_pipeline."""
 
+import os
 import unittest
 from unittest import mock
 
@@ -28,7 +29,7 @@ from tfrutil import beam_pipeline
 # pylint: disable=protected-access
 
 class BeamPipelineTests(unittest.TestCase):
-  """Tests for beam_image.py"""
+  """Tests for beam_pipeline.py"""
 
   def test_processing_fn_with_int_label(self):
     'Test preprocessing fn with integer label.'
@@ -76,3 +77,9 @@ class BeamPipelineTests(unittest.TestCase):
       self.assertEqual(
           index, i,
           '{} should be index {} but was index {}'.format(part, i, index))
+
+  def test_get_setup_py_filepath(self):
+    """Tests `_get_setup_py_filepath`."""
+    filepath = beam_pipeline._get_setup_py_filepath()
+    self.assertTrue(os.path.isfile(filepath))
+    self.assertTrue(os.path.isabs(filepath))

@@ -34,6 +34,16 @@ from tfrutil import common
 from tfrutil import constants
 
 
+def _get_setup_py_filepath() -> str:
+  """Returns the file path to the setup.py file.
+
+  The location of the setup.py file is needed to run Dataflow jobs.
+  """
+
+  return os.path.join(
+      os.path.dirname(os.path.abspath(__file__)), '..', 'setup.py')
+
+
 def _get_job_name(job_label: str = None) -> str:
   """Returns Beam runner job name.
 
@@ -84,7 +94,7 @@ def _get_pipeline_options(
   if region:
     options_dict['region'] = region
   if runner == 'DataFlowRunner':
-    options_dict['setup_file'] = os.path.join('..', 'setup.py')
+    options_dict['setup_file'] = _get_setup_py_filepath()
   if dataflow_options:
     options_dict.update(dataflow_options)
 
