@@ -22,8 +22,14 @@ from tfrutil import client
 from tfrutil import check
 
 
-if __name__ == '__main__':
+def main():
+  """Entry point for command-line interface."""
+
   fire.Fire({
       'create-tfrecords': client.create_tfrecords,
       'check-tfrecords': check.check_tfrecords,
   })
+
+
+if __name__ == '__main__':
+  main()

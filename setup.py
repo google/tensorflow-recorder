@@ -19,17 +19,21 @@ from setuptools import setup
 
 
 REQUIRED_PACKAGES = [
+    "absl-py < 0.9, >= 0.7",
     "apache-beam[gcp] >= 2.22.0",
-    "pandas >= 1.0.4",
-    "tensorflow_transform >= 0.22",
-    "Pillow >= 7.1.2",
+    "avro >= 1.10.0",
     "coverage >= 5.1",
     "ipython >= 7.15.0",
-    "nose >= 1.3.7",
-    "pylint >= 2.5.3",
     "fire >= 0.3.1",
-    "tensorflow >= 2.2.0",
-    "pyarrow < 0.17",
+    "nose >= 1.3.7",
+    "pandas >= 1.0.4",
+    "Pillow >= 7.1.2",
+    "pyarrow < 0.17, >= 0.16.0",
+    "pylint >= 2.5.3",
+    "pytz >= 2020.1",
+    "python-dateutil",
+    "tensorflow == 2.2.0",
+    "tensorflow_transform >= 0.22",
 ]
 
 
@@ -39,5 +43,8 @@ setup(
     install_requires=REQUIRED_PACKAGES,
     packages=find_packages(),
     include_package_data=True,
-    description='TFRUtil creates TensorFlow Records easily.'
+    description='TFRUtil creates TensorFlow Records easily.',
+    entry_points = {
+        'console_scripts': ['tfrutil=tfrutil.cli:main'],
+    },
 )
