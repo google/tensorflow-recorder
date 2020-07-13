@@ -66,9 +66,9 @@ def _validate_runner(
 
   if (runner == 'DataFlowRunner') & (
       any(not v for v in [project, region])):
-    raise AttributeError('DataFlowRunner requires project region and region '
-                         'project is {} and region is {}'.format(
-                             project, region))
+    raise AttributeError(
+        'DataFlowRunner requires valid `project` and `region` to be specified.'
+        'The `project` is {} and `region` is {}'.format(project, region))
 
 # def read_image_directory(dirpath) -> pd.DataFrame:
 #   """Reads image data from a directory into a Pandas DataFrame."""

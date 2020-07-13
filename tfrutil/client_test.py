@@ -160,12 +160,16 @@ class InputValidationTest(unittest.TestCase):
     """Tests DataFlowRunner with missing required parameter."""
     df2 = self.test_df.copy()
     df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
-    with self.assertRaises(AttributeError):
-      client._validate_runner(
-          df2,
-          runner='DataFlowRunner',
-          project=None,
-          region=self.test_region)
+    for p, r in [
+        (None, self.test_region), (self.test_project, None), (None, None)]:
+      with self.assertRaises(AttributeError) as context:
+        client._validate_runner(
+            df2,
+            runner='DataFlowRunner',
+            project=p,
+            region=r)
+      self.assertTrue('DataFlowRunner requires valid `project` and `region`'
+                      in repr(context.exception))
 
 
 def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:
