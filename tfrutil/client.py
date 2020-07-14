@@ -33,20 +33,20 @@ from tfrutil import beam_pipeline
 
 
 def _validate_data(df):
-  """ Verify required image csv columsn exist in data."""
+  """ Verifies required image csv columsn exist in data."""
   if constants.IMAGE_URI_KEY not in df.columns:
   # or label_col not in df.columns:
     raise AttributeError(
-        'Dataframe must contain image_uri column {}.')
+        'DataFrame must contain image_uri column {}.')
   if constants.LABEL_KEY not in df.columns:
     raise AttributeError(
-        'Dataframe must contain label column.')
+        'DataFrame must contain label column.')
   if constants.SPLIT_KEY not in df.columns:
     raise AttributeError(
-        'Dataframe must contain split column.')
+        'DataFrame must contain split column.')
   if list(df.columns) != constants.IMAGE_CSV_COLUMNS:
     raise AttributeError(
-        'Dataframe column order must be {}'.format(
+        'DataFrame column order must be {}'.format(
             constants.IMAGE_CSV_COLUMNS))
 
 
@@ -56,18 +56,18 @@ def _validate_runner(
     project: str,
     region: str):
   """Validates an appropriate beam runner is chosen."""
-  if runner not in ['DataFlowRunner', 'DirectRunner']:
+  if runner not in ['DataflowRunner', 'DirectRunner']:
     raise AttributeError('Runner {} is not supported.'.format(runner))
 
   # gcs_path is a bool, true if all image paths start with gs://
   gcs_path = df[constants.IMAGE_URI_KEY].str.startswith('gs://').all()
-  if (runner == 'DataFlowRunner') & (not gcs_path):
-    raise AttributeError('DataFlowRunner requires GCS image locations.')
+  if (runner == 'DataflowRunner') & (not gcs_path):
+    raise AttributeError('DataflowRunner requires GCS image locations.')
 
-  if (runner == 'DataFlowRunner') & (
+  if (runner == 'DataflowRunner') & (
       any(not v for v in [project, region])):
     raise AttributeError(
-        'DataFlowRunner requires valid `project` and `region` to be specified.'
+        'DataflowRunner requires valid `project` and `region` to be specified.'
         'The `project` is {} and `region` is {}'.format(project, region))
 
 # def read_image_directory(dirpath) -> pd.DataFrame:
@@ -188,19 +188,19 @@ def create_tfrecords(
       a Pandas DataFrame.
       If 'infer' (default), header is taken from the first line of a CSV
     runner: Beam runner. Can be 'DirectRunner' or 'DataFlowRunner'
-    project: GCP project name (Required if DataFlowRunner)
-    region: GCP region name (Required if DataFlowRunner)
-    dataflow_options: Options dict for dataflow runner
-    job_label: User supplied description for the beam job name.
+    project: GCP project name (Required if DataflowRunner)
+    region: GCP region name (Required if DataflowRunner)
+    dataflow_options: Options dict for DataflowRunner
+    job_label: User supplied description for the Beam job name.
     compression: Can be 'gzip' or None for no compression.
     num_shards: Number of shards to divide the TFRecords into. Default is
         0 = no sharding.
 
   Returns:
     job_results: Dict
-      job_id: DataFlow Job ID or 'DirectRunner'
+      job_id: Dataflow Job ID or 'DirectRunner'
       metrics: (optional) Beam metrics. Only used for DirectRunner
-      dataflow_url: (optional) Job URL for DataFlowRunner
+      dataflow_url: (optional) Job URL for DataflowRunner
   """
 
   df = to_dataframe(input_data, header, names)
@@ -253,8 +253,8 @@ def create_tfrecords(
     logging.info("Job Complete.")
 
   else:
-    logging.info("Using DataFlow Runner.")
-    # Construct DataFlow URL
+    logging.info("Using Dataflow Runner.")
+    # Construct Dataflow URL
 
     job_id = result.job_id()
 
@@ -272,8 +272,8 @@ def create_tfrecords(
 
   logging.shutdown()
 
-  if runner == 'DataFlowRunner':
-    # if this is a dataflow job, copy the logfile to gcs
+  if runner == 'DataflowRunner':
+    # if this is a Dataflow job, copy the logfile to GCS
     common.copy_logfile_to_gcs(logfile, output_dir)
 
   return job_result

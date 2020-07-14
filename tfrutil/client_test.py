@@ -51,7 +51,7 @@ class ClientTest(unittest.TestCase):
 
   @mock.patch('tfrutil.client.beam_pipeline')
   def test_create_tfrecords_dataflow_runner(self, mock_beam):
-    """Tests `create_tfrecords` DataFlow case."""
+    """Tests `create_tfrecords` Dataflow case."""
     mock_beam.build_pipeline().run().job_id.return_value = 'foo_id'
 
     df2 = self.test_df.copy()
@@ -67,7 +67,7 @@ class ClientTest(unittest.TestCase):
     os.makedirs(outdir, exist_ok=True)
     r = client.create_tfrecords(
         df2,
-        runner='DataFlowRunner',
+        runner='DataflowRunner',
         output_dir=outdir,
         region=self.test_region,
         project=self.test_project)
@@ -112,7 +112,7 @@ class InputValidationTest(unittest.TestCase):
       client._validate_data(df2)
 
   def test_columns_out_of_order(self):
-    """Tests validating column order wrong."""
+    """Tests validating wrong column order."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       cols = ['image_uri', 'split', 'label']
@@ -137,27 +137,27 @@ class InputValidationTest(unittest.TestCase):
           region=self.test_region)
 
   def test_local_path_with_dataflow_runner(self):
-    """Tests DataFlowRunner conflict with local path."""
+    """Tests DataflowRunner conflict with local path."""
     with self.assertRaises(AttributeError):
       client._validate_runner(
           self.df_test,
-          runner='DataFlowRunner',
+          runner='DataflowRunner',
           project=self.test_project,
           region=self.test_region)
 
   def test_gcs_path_with_dataflow_runner(self):
-    """Tests DataFlowRunner with gcs path."""
+    """Tests DataflowRunner with GCS path."""
     df2 = self.test_df.copy()
     df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
     self.assertIsNone(
         client._validate_runner(
             df2,
-            runner='DataFlowRunner',
+            runner='DataflowRunner',
             project=self.test_project,
             region=self.test_region))
 
   def test_gcs_path_with_dataflow_runner_missing_param(self):
-    """Tests DataFlowRunner with missing required parameter."""
+    """Tests DataflowRunner with missing required parameter."""
     df2 = self.test_df.copy()
     df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
     for p, r in [
@@ -165,10 +165,10 @@ class InputValidationTest(unittest.TestCase):
       with self.assertRaises(AttributeError) as context:
         client._validate_runner(
             df2,
-            runner='DataFlowRunner',
+            runner='DataflowRunner',
             project=p,
             region=r)
-      self.assertTrue('DataFlowRunner requires valid `project` and `region`'
+      self.assertTrue('DataflowRunner requires valid `project` and `region`'
                       in repr(context.exception))
 
 

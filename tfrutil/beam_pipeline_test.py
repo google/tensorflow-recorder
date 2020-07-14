@@ -83,3 +83,7 @@ class BeamPipelineTests(unittest.TestCase):
     filepath = beam_pipeline._get_setup_py_filepath()
     self.assertTrue(os.path.isfile(filepath))
     self.assertTrue(os.path.isabs(filepath))
+
+
+if __name__ == '__main__':
+  unittest.main()

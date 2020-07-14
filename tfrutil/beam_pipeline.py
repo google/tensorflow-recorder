@@ -16,7 +16,7 @@
 
 """TFRUtil Beam Pipeline.
 
-This file implements the full beam pipeline for TFRUtil.
+This file implements the full Beam pipeline for TFRUtil.
 """
 
 from typing import Any, Dict, Generator, Union
@@ -94,7 +94,7 @@ def _get_pipeline_options(
     options_dict['project'] = project
   if region:
     options_dict['region'] = region
-  if runner == 'DataFlowRunner':
+  if runner == 'DataflowRunner':
     options_dict['setup_file'] = _get_setup_py_filepath()
   if dataflow_options:
     options_dict.update(dataflow_options)
@@ -204,15 +204,15 @@ def build_pipeline(
   """Runs TFRUtil Beam Pipeline.
 
   Args:
-    df: Pandas Dataframe
+    df: Pandas DataFrame
     job_label: User description for the beam job.
-    runner: Beam Runner: (e.g. DataFlowRunner, DirectRunner).
-    project: GCP project ID (if DataFlowRunner)
-    region: GCP compute region (if DataFlowRunner)
+    runner: Beam Runner: (e.g. DataflowRunner, DirectRunner).
+    project: GCP project ID (if DataflowRunner)
+    region: GCP compute region (if DataflowRunner)
     output_dir: GCS or Local Path for output.
     compression: gzip or None.
     num_shards: Number of shards.
-    dataflow_options: DataFlow Runner Options (optional)
+    dataflow_options: Dataflow Runner Options (optional)
     integer_label: Flags if label is already an integer.
 
   Returns:
