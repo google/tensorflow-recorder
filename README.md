@@ -1,38 +1,62 @@
-# TFRecord Conversion Utilities
+# TFRecord Utilities (TFRUtil)
 
-## Installing
+TFRUtil makes it easy to create TFRecords from images and labels in 
+Pandas DataFrames or CSV files.
+Today, TFRUtil supports data stored in 'image csv format' similar to 
+GCP AutoML Vision. 
+In the future TFRUtil will support converting any Pandas DataFrame or CSV 
+file into TFRecords. 
 
-1. Clone this repo.
+## Installation
 
-2. Run the command `python3 setup.py`
+From the top directory of the repo, run the following command:
 
-## What is TFRUtil
-TFRUtil makes it easy to create TFRecords from images and labels using Pandas DataFrames or CSVs. 
-Today, TFRUtil supports data stored in 'image csv format' similar to GCP AutoML Vision. In the
-future TFRUtil will support converting any dataframe or CSV file into TFRecords. 
+```bash
+pip install .
+```
 
-## Using TFRUtil to create TFRecords
+## Usage
 
-### Image CSV Format
+### IPython/Jupyter
+
+#### Pandas DataFrame Conversion
+
+```bash
+import pandas as pd
+import tfrutil
+df = pd.read_csv(...)
+df.tensorflow.to_tfrecord(output_dir="gs://my/bucket")
+```
+
+#### Using Cloud Dataflow
+
+```bash
+df.tensorflow.to_tfrecord(
+    output_dir="gs://my/bucket",
+    runner="DataFlowRunner",
+    project="my-project",
+    region="us-central1)
+```
+
+### Command-line interface
+
+```bash
+tfrutil create-tfrecords --output_dir="gs://my/bucket" data.csv
+```
+
+## Input format
+
 TFRUtil currently expects data to be in the same format as [AutoML Vision](https://cloud.google.com/vision/automl/docs/prepare).  This format looks like a pandas dataframe or CSV formatted as:
 
-| split | image_uri               | label |
-|-------|-------------------------|-------|
-| TRAIN | gs://foo/bar/image1.jpg | cat   |
+| split | image_uri                 | label |
+|-------|---------------------------|-------|
+| TRAIN | gs://my/bucket/image1.jpg | cat   |
 
 Where:
-* split can take on the values TRAIN, VALIDATION, and TEST
-* image_uri specifies a local or google cloud storage location for the image file. 
-* label can be either a text based label that will be integerized or integer
+* `split` can take on the values TRAIN, VALIDATION, and TEST
+* `image_uri` specifies a local or google cloud storage location for the image file. 
+* `label` can be either a text based label that will be integerized or integer
 
-### Pandas API
-TODO
+## Contributing
 
-### Python API
-TODO
-
-### CSV File
-TODO
-
-## Using TFRutil to inspect TFRecords
-TODO
+Pull requests are welcome. 
