@@ -4,10 +4,10 @@
 # Python code to execute, usually for sys.path manipulation such as
 # pygtk.require().
 #init-hook=
-# Add files or directories to the blacklist. They should be base names, not
+# Add files or directories to the exclude list. They should be base names, not
 # paths.
 ignore=third_party
-# Add files or directories matching the regex patterns to the blacklist. The
+# Add files or directories matching the regex patterns to the exclude list. The
 # regex matches against base names, not paths.
 ignore-patterns=
 # Pickle collected data for later comparisons.
@@ -20,10 +20,6 @@ jobs=4
 # Allow loading of arbitrary C extensions. Extensions are imported into the
 # active Python interpreter and may run arbitrary code.
 unsafe-load-any-extension=no
-# A comma-separated list of package or module names from where C extensions may
-# be loaded. Extensions are loading into the active Python interpreter and may
-# run arbitrary code
-extension-pkg-whitelist=
 [MESSAGES CONTROL]
 # Only show warnings with the listed confidence levels. Leave empty to show
 # all. Valid levels: HIGH, INFERENCE, INFERENCE_FAILURE, UNDEFINED
