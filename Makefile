@@ -2,9 +2,9 @@ init:
 	pip install -r requirements.txt
 
 test:
-	nosetests --with-coverage --nocapture -v --cover-package=tfrutil
+	nosetests --with-coverage --nocapture -v --cover-package=tfrecorder
 
 pylint:
-	pylint tfrutil
+	pylint tfrecorder
 
 .PHONY: init glint coverage test

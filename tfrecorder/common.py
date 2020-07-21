@@ -21,7 +21,7 @@ import os
 
 import tensorflow as tf
 
-from tfrutil import constants
+from tfrecorder import constants
 
 
 def get_timestamp() -> str:

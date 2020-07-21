@@ -14,15 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for pandas accessor."""
+"""Tests for Pandas accessor."""
 
 import os
 import unittest
 
 # pylint: disable=unused-import
+import tfrecorder
 
-import tfrutil
-from tfrutil import test_utils
+from tfrecorder import test_utils
 
 
 class DataFrameAccessor(unittest.TestCase):
@@ -39,6 +39,7 @@ class DataFrameAccessor(unittest.TestCase):
     r = self.test_df.tensorflow.to_tfr(
         runner='DirectRunner', output_dir=self.output_dir)
     self.assertTrue('metrics' in r)
+
 
 if __name__ == '__main__':
   unittest.main()

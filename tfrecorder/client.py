@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Provides a common interface for TFRUtil to DF Accessor and CLI.
+"""Provides a common interface for TFRecorder to DF Accessor and CLI.
 
 client.py provides create_tfrecords() to upstream clients including
 the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
@@ -27,9 +27,9 @@ import apache_beam as beam
 import pandas as pd
 import tensorflow as tf
 
-from tfrutil import common
-from tfrutil import constants
-from tfrutil import beam_pipeline
+from tfrecorder import common
+from tfrecorder import constants
+from tfrecorder import beam_pipeline
 
 
 def _validate_data(df):
@@ -170,13 +170,13 @@ def create_tfrecords(
     num_shards: int = 0) -> Dict[str, Any]:
   """Generates TFRecord files from given input data.
 
-  TFRUtil provides an easy interface to create image-based tensorflow records
+  TFRecorder provides an easy interface to create image-based tensorflow records
   from a dataframe containing GCS locations of the images and labels.
 
   Usage:
-    import tfrutil
+    import tfrecorder
 
-    job_id = tfrutil.client.create_tfrecords(
+    job_id = tfrecorder.client.create_tfrecords(
         train_df,
         output_dir='gcs://foo/bar/train',
         runner='DirectFlowRunner)
@@ -228,7 +228,7 @@ def create_tfrecords(
   result = p.run()
 
   if runner == 'DirectRunner':
-    logging.info("Using DirectRunner. TFRUtil will block until job completes.")
+    logging.info('Using DirectRunner - blocking until job completes.')
     result.wait_until_finish()
 
     row_count_filter = beam.metrics.MetricsFilter().with_name('row_count')

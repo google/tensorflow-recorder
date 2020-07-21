@@ -14,23 +14,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Creates a pandas DataFrame accessor for TFRUtil.
+"""Creates a pandas DataFrame accessor for TFRecorder.
 
-accessor.py contains TFRUtilAccessor which provides a pandas DataFrame
+accessor.py contains TFRecorderAccessor which provides a pandas DataFrame
 accessor.  This accessor allows us to inject the to_tfr() function into
 pandas DataFrames.
 """
+
 from typing import Any, Dict, Optional, Union
 import pandas as pd
 from IPython.core import display
 
-from tfrutil import client
-from tfrutil import constants
+from tfrecorder import client
+from tfrecorder import constants
 
 
 @pd.api.extensions.register_dataframe_accessor('tensorflow')
-class TFRUtilAccessor:
-  """DataFrame Accessor class for TFRUtil."""
+class TFRecorderAccessor:
+  """DataFrame Accessor class for TFRecorder."""
 
   def __init__(self, pandas_obj):
     self._df = pandas_obj
@@ -46,15 +47,15 @@ class TFRUtilAccessor:
       job_label: str = 'to-tfr',
       compression: Optional[str] = 'gzip',
       num_shards: int = 0) -> Dict[str, Any]:
-    """TFRUtil Pandas Accessor.
+    """TFRecorder Pandas Accessor.
 
-    TFRUtil provides an easy interface to create image-based tensorflow records
-    from a dataframe containing GCS locations of the images and labels.
+    TFRecorder provides an easy interface to create image-based tensorflow
+    records from a dataframe containing GCS locations of the images and labels.
 
     Usage:
-      import tfrutil
+      import tfrecorder
 
-      df.tfrutil.to_tfr(
+      df.tfrecorder.to_tfr(
           output_dir='gcs://foo/bar/train',
           runner='DirectRunner',
           compression='gzip',

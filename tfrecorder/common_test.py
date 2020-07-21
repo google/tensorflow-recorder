@@ -20,8 +20,9 @@ import os
 import unittest
 import tempfile
 
-from tfrutil import common
-from tfrutil import constants
+from tfrecorder import common
+from tfrecorder import constants
+
 
 class CopyLogTest(unittest.TestCase):
   """Misc tests for _copy_logfile_to_gcs."""

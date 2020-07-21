@@ -14,9 +14,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""TFRUtil Beam Pipeline.
+"""TFRecorder Beam Pipeline.
 
-This file implements the full Beam pipeline for TFRUtil.
+This file implements the full Beam pipeline for TFRecorder.
 """
 
 from typing import Any, Dict, Generator, Union
@@ -30,9 +30,9 @@ import pandas as pd
 import tensorflow_transform as tft
 from tensorflow_transform import beam as tft_beam
 
-from tfrutil import beam_image
-from tfrutil import common
-from tfrutil import constants
+from tfrecorder import beam_image
+from tfrecorder import common
+from tfrecorder import constants
 
 
 def _get_setup_py_filepath() -> str:
@@ -56,7 +56,7 @@ def _get_job_name(job_label: str = None) -> str:
       insure uniqueness.
   """
 
-  job_name = 'tfrutil-' + common.get_timestamp()
+  job_name = 'tfrecorder-' + common.get_timestamp()
   if job_label:
     job_label = job_label.replace('_', '-')
     job_name += '-' + job_label
@@ -201,7 +201,7 @@ def build_pipeline(
     num_shards: int,
     dataflow_options: dict,
     integer_label: bool) -> beam.Pipeline:
-  """Runs TFRUtil Beam Pipeline.
+  """Runs TFRecorder Beam Pipeline.
 
   Args:
     df: Pandas DataFrame

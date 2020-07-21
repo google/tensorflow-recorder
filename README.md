@@ -1,10 +1,10 @@
-# TFRecord Utilities (TFRUtil)
+# TFRecorder
 
-TFRUtil makes it easy to create TFRecords from images and labels in 
+TFRecorder makes it easy to create TFRecords from images and labels in 
 Pandas DataFrames or CSV files.
-Today, TFRUtil supports data stored in 'image csv format' similar to 
+Today, TFRecorder supports data stored in 'image csv format' similar to 
 GCP AutoML Vision. 
-In the future TFRUtil will support converting any Pandas DataFrame or CSV 
+In the future TFRecorder will support converting any Pandas DataFrame or CSV 
 file into TFRecords. 
 
 ## Installation
@@ -23,7 +23,7 @@ pip install .
 
 ```bash
 import pandas as pd
-import tfrutil
+import tfrecorder
 df = pd.read_csv(...)
 df.tensorflow.to_tfrecord(output_dir="gs://my/bucket")
 ```
@@ -41,12 +41,14 @@ df.tensorflow.to_tfrecord(
 ### Command-line interface
 
 ```bash
-tfrutil create-tfrecords --output_dir="gs://my/bucket" data.csv
+tfrecorder create-tfrecords --output_dir="gs://my/bucket" data.csv
 ```
 
 ## Input format
 
-TFRUtil currently expects data to be in the same format as [AutoML Vision](https://cloud.google.com/vision/automl/docs/prepare).  This format looks like a pandas dataframe or CSV formatted as:
+TFRecorder currently expects data to be in the same format as 
+[AutoML Vision](https://cloud.google.com/vision/automl/docs/prepare).  
+This format looks like a pandas dataframe or CSV formatted as:
 
 | split | image_uri                 | label |
 |-------|---------------------------|-------|

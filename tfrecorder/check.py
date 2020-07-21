@@ -24,9 +24,9 @@ import os
 import tensorflow as tf
 import tensorflow_transform as tft
 
-from tfrutil import beam_image
-from tfrutil import constants
-from tfrutil import common
+from tfrecorder import beam_image
+from tfrecorder import constants
+from tfrecorder import common
 
 _OUT_IMAGE_TEMPLATE = 'image_{:0>3d}.png'
 

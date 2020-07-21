@@ -38,13 +38,13 @@ REQUIRED_PACKAGES = [
 
 
 setup(
-    name='tfrutil',
+    name='tfrecorder',
     version='0.1',
     install_requires=REQUIRED_PACKAGES,
     packages=find_packages(),
     include_package_data=True,
-    description='TFRUtil creates TensorFlow Records easily.',
+    description='TFRecorder creates TensorFlow Records easily.',
     entry_points = {
-        'console_scripts': ['tfrutil=tfrutil.cli:main'],
+        'console_scripts': ['tfrecorder=tfrecorder.cli:main'],
     },
 )

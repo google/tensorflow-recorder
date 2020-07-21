@@ -51,7 +51,7 @@ IMAGE_CSV_METADATA = dataset_metadata.DatasetMetadata(
 RAW_METADATA = dataset_metadata.DatasetMetadata(
     schema_utils.schema_from_feature_spec(RAW_FEATURE_SPEC))
 
-LOGFILE = 'tfrutil-beam.log'
+LOGFILE = 'tfrecorder-beam.log'
 LOGLEVEL = logging.INFO
 
 CONSOLE_DATAFLOW_URI = "https://console.cloud.google.com/dataflow/jobs/"

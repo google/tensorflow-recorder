@@ -26,9 +26,9 @@ import PIL
 from PIL import Image
 import tensorflow_transform as tft
 
-from tfrutil import beam_image
-from tfrutil import constants
-from tfrutil import test_utils
+from tfrecorder import beam_image
+from tfrecorder import constants
+from tfrecorder import test_utils
 
 
 class BeamImageTests(unittest.TestCase):
@@ -37,7 +37,7 @@ class BeamImageTests(unittest.TestCase):
   def setUp(self):
     self.pipeline = test_utils.get_test_pipeline()
     self.df = test_utils.get_test_df()
-    self.image_file = 'tfrutil/test_data/images/cat/cat-640x853-1.jpg'
+    self.image_file = 'tfrecorder/test_data/images/cat/cat-640x853-1.jpg'
 
   def test_load(self):
     """Tests the image loading function."""
@@ -47,7 +47,7 @@ class BeamImageTests(unittest.TestCase):
   def test_file_not_found_load(self):
     """Test loading an image that doesn't exist."""
     with self.assertRaises(OSError):
-      _ = beam_image.load('tfrutil/test_data/images/cat/food.jpg')
+      _ = beam_image.load('tfrecorder/test_data/images/cat/food.jpg')
 
   def test_mode_to_channel(self):
     """Tests `mode_to_channel`."""

@@ -26,10 +26,10 @@ import pandas as pd
 from pandas import testing as pdt
 import tensorflow as tf
 
-from tfrutil import beam_image
-from tfrutil import check
-from tfrutil import constants
-from tfrutil import test_utils
+from tfrecorder import beam_image
+from tfrecorder import check
+from tfrecorder import constants
+from tfrecorder import test_utils
 
 
 # pylint: disable=protected-access

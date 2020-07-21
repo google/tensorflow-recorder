@@ -15,6 +15,7 @@
 # limitations under the License.
 
 """Tests for client."""
+
 import os
 from typing import List
 
@@ -25,9 +26,9 @@ import unittest
 import mock
 import pandas as pd
 
-from tfrutil import client
-from tfrutil import constants
-from tfrutil import test_utils
+from tfrecorder import client
+from tfrecorder import constants
+from tfrecorder import test_utils
 
 
 class ClientTest(unittest.TestCase):
@@ -38,7 +39,7 @@ class ClientTest(unittest.TestCase):
     self.test_region = 'us-central1'
     self.test_project = 'foo'
 
-  @mock.patch('tfrutil.client.beam_pipeline')
+  @mock.patch('tfrecorder.client.beam_pipeline')
   def test_create_tfrecords_direct_runner(self, mock_beam):
     """Tests `create_tfrecords` Direct case."""
     mock_beam.build_pipeline().run().wait_until_finished.return_value = {
@@ -49,7 +50,7 @@ class ClientTest(unittest.TestCase):
         output_dir='/tmp/direct_runner')
     self.assertTrue('metrics' in r)
 
-  @mock.patch('tfrutil.client.beam_pipeline')
+  @mock.patch('tfrecorder.client.beam_pipeline')
   def test_create_tfrecords_dataflow_runner(self, mock_beam):
     """Tests `create_tfrecords` Dataflow case."""
     mock_beam.build_pipeline().run().job_id.return_value = 'foo_id'

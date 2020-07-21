@@ -23,7 +23,7 @@ from unittest import mock
 import apache_beam as beam
 import tensorflow as tf
 
-from tfrutil import beam_pipeline
+from tfrecorder import beam_pipeline
 
 
 # pylint: disable=protected-access
@@ -40,7 +40,7 @@ class BeamPipelineTests(unittest.TestCase):
     result = beam_pipeline._preprocessing_fn(element, integer_label=True)
     self.assertEqual(element, result)
 
-  @mock.patch('tfrutil.beam_pipeline.tft')
+  @mock.patch('tfrecorder.beam_pipeline.tft')
   def test_processing_fn_with_string_label(self, mock_transform):
     'Test preprocessing fn with string label.'
     mock_transform.compute_and_apply_vocabulary.return_value = tf.constant(

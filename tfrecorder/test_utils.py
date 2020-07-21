@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Common utilites for writing tfrutil tests."""
+"""Common utilites for writing tfrecorder tests."""
 
 from typing import Any, Dict, List
 
@@ -27,7 +27,7 @@ from apache_beam.testing import test_pipeline
 import pandas as pd
 
 
-TEST_DIR = 'tfrutil/test_data'
+TEST_DIR = 'tfrecorder/test_data'
 
 # TEST_DATA = collections.OrderedDict({
 #     constants.SPLIT_KEY:['TRAIN', 'VALIDATION', 'TEST'],

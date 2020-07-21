@@ -18,8 +18,8 @@
 
 import fire
 
-from tfrutil import client
-from tfrutil import check
+from tfrecorder import client
+from tfrecorder import check
 
 
 def main():
