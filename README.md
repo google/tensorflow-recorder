@@ -7,6 +7,8 @@ GCP AutoML Vision.
 In the future TFRecorder will support converting any Pandas DataFrame or CSV 
 file into TFRecords. 
 
+!["TFRecorder CI/CD Badge"](https://github.com/google/tensorflow-recorder/workflows/TFRecord%20CICD/badge.svg)
+
 ## Installation
 
 From the top directory of the repo, run the following command:
