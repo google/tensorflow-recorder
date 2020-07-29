@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: [3.7]
+        python-version: [3.6, 3.7]
 
     steps:
     - uses: actions/checkout@v2
@@ -27,6 +27,6 @@ jobs:
       run: |
         make pylint
 
-    - name: Test with pytest
+    - name: Run tests
       run: |
         make test
