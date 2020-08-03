@@ -97,6 +97,7 @@ class ExtractImagesDoFn(beam.DoFn):
     try:
       image_uri = element[self.image_key]
       image = load(image_uri)
+      # TODO(cezequiel): Remove path from image_uri -> image_name
       d['image'] = encode(image)
       d['image_width'], d['image_height'] = image.size
       d['image_channels'] = mode_to_channel(image.mode)
