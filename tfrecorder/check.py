@@ -93,15 +93,17 @@ def check_tfrecords(
     header = [k for k in constants.RAW_FEATURE_SPEC.keys() if k != 'image']
     writer.writerow(header)
 
-    for i, r in enumerate(dataset.take(num_records)):
+    for r in dataset.take(num_records):
       # Save non-image bytes data to CSV.
       # This will save image metadata as well.
       row = [_stringify(r[k]) for k in header]
       writer.writerow(row)
 
       # Save image data to a file
-      image_file = os.path.join(data_dir, _OUT_IMAGE_TEMPLATE.format(i))
-      _save_image_from_record(r, image_file)
+      if 'image_uri' in r:
+        _, image_filename = os.path.split(_stringify(r['image_uri']))
+        image_path = os.path.join(data_dir, image_filename)
+        _save_image_from_record(r, image_path)
 
     print('Output written to {}'.format(data_dir))
 

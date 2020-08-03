@@ -29,15 +29,6 @@ import pandas as pd
 
 TEST_DIR = 'tfrecorder/test_data'
 
-# TEST_DATA = collections.OrderedDict({
-#     constants.SPLIT_KEY:['TRAIN', 'VALIDATION', 'TEST'],
-#     constants.IMAGE_URI_KEY: [
-#         'gs://foo/bar/1.jpg',
-#         'gs://foo/bar/2.jpg',
-#         'gs://foo/bar/3.jpg',
-#     ],
-#     constants.LABEL_KEY: [0, 0, 1]})
-
 
 def get_test_df():
   """Gets a test dataframe that works with the data in test_data/."""

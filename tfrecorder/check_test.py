@@ -115,16 +115,17 @@ class CheckTFRecordsTest(unittest.TestCase):
 
       _ = self.data.pop('image')
 
+      # Check output CSV
       actual_df = pd.read_csv(actual_csv)
       expected_df = pd.DataFrame(self.data)
       pdt.assert_frame_equal(actual_df, expected_df)
 
+      # Check output images
       actual_image_files = [
-          f for f in os.listdir(actual_dir) if f.endswith('.png')]
-      self.assertCountEqual(
-          actual_image_files,
-          [check._OUT_IMAGE_TEMPLATE.format(i)
-           for i in range(self.num_records)])
+          f for f in os.listdir(actual_dir) if f.endswith('.jpg')]
+      expected_image_files = [
+          os.path.split(f)[-1] for f in self.data['image_uri']]
+      self.assertCountEqual(actual_image_files, expected_image_files)
 
 
 if __name__ == '__main__':

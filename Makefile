@@ -1,3 +1,5 @@
+all: init pylint coverage test
+
 init:
 	pip install -r requirements.txt
 
@@ -7,4 +9,4 @@ test:
 pylint:
 	pylint tfrecorder
 
-.PHONY: init glint coverage test
+.PHONY: all init test pylint 
