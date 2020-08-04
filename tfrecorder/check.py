@@ -100,8 +100,8 @@ def check_tfrecords(
       writer.writerow(row)
 
       # Save image data to a file
-      if 'image_uri' in r:
-        _, image_filename = os.path.split(_stringify(r['image_uri']))
+      if 'image_name' in r:
+        _, image_filename = os.path.split(_stringify(r['image_name']))
         image_path = os.path.join(data_dir, image_filename)
         _save_image_from_record(r, image_path)
 

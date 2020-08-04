@@ -26,7 +26,7 @@ feature {
   }
 }
 feature {
-  name: "image_uri"
+  name: "image_name"
   type: BYTES
   presence {
     min_fraction: 1.0

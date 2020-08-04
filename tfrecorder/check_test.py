@@ -86,6 +86,8 @@ class CheckTFRecordsTest(unittest.TestCase):
 
     data = test_utils.get_test_data()
     num_records = len(data[constants.IMAGE_URI_KEY])
+    image_uris = data.pop(constants.IMAGE_URI_KEY)
+    data['image_name'] = [os.path.split(uri)[-1] for uri in image_uris]
     data.update({
         'image': [beam_image.encode(image_fn())
                   for _ in range(num_records)],
@@ -123,8 +125,7 @@ class CheckTFRecordsTest(unittest.TestCase):
       # Check output images
       actual_image_files = [
           f for f in os.listdir(actual_dir) if f.endswith('.jpg')]
-      expected_image_files = [
-          os.path.split(f)[-1] for f in self.data['image_uri']]
+      expected_image_files = self.data['image_name']
       self.assertCountEqual(actual_image_files, expected_image_files)
 
 

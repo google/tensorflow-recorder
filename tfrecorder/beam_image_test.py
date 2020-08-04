@@ -112,6 +112,6 @@ class BeamImageTests(unittest.TestCase):
                   .format(actual_keys, expected_keys_))
         return _equal
 
-      expected_keys = ['image_uri', 'label', 'split', 'image',
+      expected_keys = ['image_name', 'label', 'split', 'image',
                        'image_height', 'image_width', 'image_channels']
       util.assert_that(data, key_matcher(expected_keys))
