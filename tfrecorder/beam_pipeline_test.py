@@ -98,7 +98,7 @@ class GetSplitCountsTest(unittest.TestCase):
   def setUp(self):
     self.df = test_utils.get_test_df()
     self.schema_map = schema.image_csv_schema
-    self.split_key = schema.get_key('split_key', self.schema_map)
+    self.split_key = schema.get_key(schema.SplitKeyType, self.schema_map)
 
   def test_all_splits(self):
     """Tests case where train, validation and test data exists"""

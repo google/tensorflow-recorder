@@ -22,3 +22,5 @@ LOGFILE = 'tfrecorder-beam.log'
 LOGLEVEL = logging.INFO
 
 CONSOLE_DATAFLOW_URI = "https://console.cloud.google.com/dataflow/jobs/"
+
+GCS_PREFIX = 'gs://'

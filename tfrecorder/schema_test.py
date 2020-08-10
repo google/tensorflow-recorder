@@ -33,7 +33,7 @@ class SchemaTest(unittest.TestCase):
 
   def test_valid_get_key(self):
     """Tests a valid split key."""
-    key = schema.get_key('split_key', schema.image_csv_schema)
+    key = schema.get_key(schema.SplitKeyType, schema.image_csv_schema)
     self.assertEqual(key, 'split')
 
   def test_no_get_split_key(self):
@@ -44,7 +44,7 @@ class SchemaTest(unittest.TestCase):
       if k != 'split':
         test_schema[k] = v
 
-    key = schema.get_key('split_key', test_schema)
+    key = schema.get_key(schema.SplitKeyType, test_schema)
     self.assertIsNone(key)
 
   def test_get_raw_metadata(self):

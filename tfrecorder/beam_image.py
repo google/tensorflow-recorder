@@ -60,7 +60,11 @@ def decode(b64_bytes, width, height, channels) -> Image:
 
 
 def load(image_uri):
-  """Loads an image."""
+  """Loads an image using Pillow.
+
+  Supported formats:
+  https://pillow.readthedocs.io/en/5.1.x/handbook/image-file-formats.html
+  """
 
   try:
     with tf.io.gfile.GFile(image_uri, 'rb') as f:

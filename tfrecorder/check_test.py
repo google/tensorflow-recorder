@@ -85,7 +85,7 @@ class CheckTFRecordsTest(unittest.TestCase):
         image_channels)
 
     data = test_utils.get_test_data()
-    image_uri_key = schema.get_key('image_uri', schema.image_csv_schema)
+    image_uri_key = schema.get_key(schema.ImageUriType, schema.image_csv_schema)
     num_records = len(data[image_uri_key])
     image_uris = data.pop(image_uri_key)
     data['image_name'] = [os.path.split(uri)[-1] for uri in image_uris]
