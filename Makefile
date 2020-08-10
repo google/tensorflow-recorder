@@ -1,4 +1,4 @@
-all: init pylint coverage test
+all: init test pylint
 
 init:
 	pip install -r requirements.txt

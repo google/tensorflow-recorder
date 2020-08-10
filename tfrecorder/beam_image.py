@@ -17,6 +17,7 @@
 
 import base64
 import logging
+import os
 from typing import Any, Dict, Generator, Tuple
 
 import apache_beam as beam
@@ -73,10 +74,10 @@ def load(image_uri):
 class ExtractImagesDoFn(beam.DoFn):
   """Adds image to PCollection."""
 
-  def __init__(self, image_key: str):
+  def __init__(self, image_uri_key: str):
     """Constructor."""
     super().__init__()
-    self.image_key = image_key
+    self.image_uri_key = image_uri_key
     self.image_good_counter = Metrics.counter(self.__class__, 'image_good')
     self.image_bad_counter = Metrics.counter(self.__class__, 'image_bad')
 
@@ -95,9 +96,9 @@ class ExtractImagesDoFn(beam.DoFn):
     d = {}
 
     try:
-      image_uri = element[self.image_key]
+      image_uri = element.pop(self.image_uri_key)
       image = load(image_uri)
-      # TODO(cezequiel): Remove path from image_uri -> image_name
+      element['image_name'] = os.path.split(image_uri)[-1]
       d['image'] = encode(image)
       d['image_width'], d['image_height'] = image.size
       d['image_channels'] = mode_to_channel(image.mode)
