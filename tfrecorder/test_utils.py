@@ -48,7 +48,7 @@ def get_raw_feature_df() -> pd.DataFrame:
 
   df = get_test_df()
   my_raw_schema = schema.get_raw_schema_map(schema.image_csv_schema)
-  image_key = schema.get_key('image_uri', schema.image_csv_schema)
+  image_key = schema.get_key(schema.ImageUriType, schema.image_csv_schema)
   df.drop([image_key], axis=1, inplace=True)
   df['image_name'] = 'image_name'
   df['image'] = 'image'

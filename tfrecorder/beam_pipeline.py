@@ -282,7 +282,7 @@ def build_pipeline(
     )
 
     # Extract images if an image_uri key exists.
-    image_uri_key = schema.get_key(type_name='image_uri', schema_map=schema_map)
+    image_uri_key = schema.get_key(schema.ImageUriType, schema_map)
     if image_uri_key:
       extract_images_fn = beam_image.ExtractImagesDoFn(image_uri_key)
 
@@ -292,7 +292,7 @@ def build_pipeline(
       )
 
     # If the schema contains a valid split key, partition the dataset.
-    split_key = schema.get_key(type_name='split_key', schema_map=schema_map)
+    split_key = schema.get_key(schema.SplitKeyType, schema_map)
 
     # Note: This will not always reflect actual number of samples per dataset
     # written as TFRecords. The succeeding `Partition` operation may mark
