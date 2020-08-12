@@ -69,9 +69,9 @@ tfrecorder create-tfrecords \
 
 Using Python interpreter:
 ```python
-import tfrecorder
+from tfrecorder import check
 
-tfrecorder.check_tfrecords(
+check.check_tfrecords(
     file_pattern='/path/to/tfrecords/train*.tfrecord.gz',
     num_records=5,
     output_dir='/tmp/output')
