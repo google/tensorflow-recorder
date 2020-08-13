@@ -17,3 +17,4 @@
 """Imports."""
 from tfrecorder import accessor
 from tfrecorder import client
+from tfrecorder import check
