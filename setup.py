@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+"""Package setup."""
+
 from setuptools import find_packages
 from setuptools import setup
 
@@ -25,6 +27,7 @@ REQUIRED_PACKAGES = [
     "coverage >= 5.1",
     "ipython >= 7.15.0",
     "fire >= 0.3.1",
+    "frozendict >= 1.2",
     "nose >= 1.3.7",
     "pandas >= 1.0.4",
     "Pillow >= 7.1.2",
@@ -44,7 +47,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     description='TFRecorder creates TensorFlow Records easily.',
-    entry_points = {
+    entry_points={
         'console_scripts': ['tfrecorder=tfrecorder.cli:main'],
     },
 )
