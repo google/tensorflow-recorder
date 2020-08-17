@@ -16,5 +16,5 @@
 
 """Imports."""
 from tfrecorder import accessor
-from tfrecorder import client
-from tfrecorder import check
+from tfrecorder.client import create_tfrecords
+from tfrecorder.check import check_tfrecords
