@@ -160,7 +160,7 @@ def _configure_logging(logfile):
 def create_tfrecords(
     input_data: Union[str, pd.DataFrame],
     output_dir: str,
-    schema_map: types.default_schema,
+    schema_map: Dict[str, Any] = types.default_schema,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
     runner: str = 'DirectRunner',
@@ -208,14 +208,18 @@ def create_tfrecords(
 
   df = to_dataframe(input_data, header, names)
 
+  # TODO(mikebernico): Implement schema_map
+  _ = schema_map
+
   _validate_data(df)
   _validate_runner(df, runner, project, region)
 
   logfile = os.path.join('/tmp', constants.LOGFILE)
   _configure_logging(logfile)
 
-
   integer_label = pd.api.types.is_integer_dtype(df[constants.LABEL_KEY])
+
+
   p = beam_pipeline.build_pipeline(
       df,
       job_label=job_label,

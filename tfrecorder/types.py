@@ -16,15 +16,14 @@
 
 """ Defines input types for tfrecorder's input schema. """
 
-from collections import OrderedDict
-
+import frozendict
 import tensorflow as tf
 
 image_uri = {'feature_spec': tf.io.FixedLenFeature([], tf.string)}
 split_key = {'feature_spec': tf.io.FixedLenFeature([], tf.string)}
 integerized_label = {'feature_spec': tf.io.FixedLenFeature([], tf.string)}
 
-default_schema = OrderedDict({
+default_schema = frozendict.FrozenOrderedDict({
     'split': split_key,
     'image_uri': image_uri,
     'label': integerized_label})
