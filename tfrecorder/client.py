@@ -27,9 +27,10 @@ import apache_beam as beam
 import pandas as pd
 import tensorflow as tf
 
+from tfrecorder import beam_pipeline
 from tfrecorder import common
 from tfrecorder import constants
-from tfrecorder import beam_pipeline
+from tfrecorder import types
 
 
 def _validate_data(df):
@@ -159,6 +160,7 @@ def _configure_logging(logfile):
 def create_tfrecords(
     input_data: Union[str, pd.DataFrame],
     output_dir: str,
+    schema_map: types.default_schema,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
     runner: str = 'DirectRunner',
@@ -184,6 +186,7 @@ def create_tfrecords(
   Args:
     input_data: Pandas DataFrame, CSV file or image directory path.
     output_dir: Local directory or GCS Location to save TFRecords to.
+    schema_map: A dict mapping column names to supported types.
     header: Indicates row/s to use as a header. Not used when `input_data` is
       a Pandas DataFrame.
       If 'infer' (default), header is taken from the first line of a CSV
