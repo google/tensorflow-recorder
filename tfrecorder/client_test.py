@@ -29,6 +29,7 @@ import pandas as pd
 from tfrecorder import client
 from tfrecorder import constants
 from tfrecorder import test_utils
+from tfrecorder import types
 
 
 class ClientTest(unittest.TestCase):
@@ -89,36 +90,39 @@ class InputValidationTest(unittest.TestCase):
     """Tests valid DataFrame input."""
     self.assertIsNone(
         client._validate_data(
-            self.test_df))
+            self.test_df,
+            types.image_csv_schema))
 
   def test_missing_image(self):
     """Tests missing image column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('image_uri', inplace=True, axis=1)
-      client._validate_data(df2)
+      client._validate_data(df2, types.image_csv_schema)
 
   def test_missing_label(self):
     """Tests missing label column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('label', inplace=True, axis=1)
-      client._validate_data(df2)
+      client._validate_data(df2, types.image_csv_schema)
 
   def test_missing_split(self):
     """Tests missing split column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('split', inplace=True, axis=1)
-      client._validate_data(df2)
+      client._validate_data(df2, types.image_csv_schema)
 
-  def test_columns_out_of_order(self):
-    """Tests validating wrong column order."""
-    with self.assertRaises(AttributeError):
-      df2 = self.test_df.copy()
-      cols = ['image_uri', 'split', 'label']
-      df2 = df2[cols]
-      client._validate_data(df2)
+  # TODO(mikebernico): Does order still matter?
+  # Depricated maybe?
+  # def test_columns_out_of_order(self):
+  #   """Tests validating wrong column order."""
+  #   with self.assertRaises(AttributeError):
+  #     df2 = self.test_df.copy()
+  #     cols = ['image_uri', 'split', 'label']
+  #     df2 = df2[cols]
+  #     client._validate_data(df2, types.image_csv_schema)
 
   def test_valid_runner(self):
     """Tests valid runner."""

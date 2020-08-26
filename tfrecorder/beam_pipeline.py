@@ -20,7 +20,7 @@ This file implements the full Beam pipeline for TFRecorder.
 """
 
 from typing import Any, Dict, Generator, Union
-
+import collections
 import functools
 import logging
 import os
@@ -33,6 +33,7 @@ from tensorflow_transform import beam as tft_beam
 from tfrecorder import beam_image
 from tfrecorder import common
 from tfrecorder import constants
+from tfrecorder import types
 
 
 def _get_setup_py_filepath() -> str:
@@ -177,15 +178,10 @@ class ToCSVRows(beam.DoFn):
       self,
       element: Dict[str, Any]
       ) -> Generator[Dict[str, Any], None, None]:
-    """Loads image and creates image features.
-
-    This DoFn extracts an image being stored on local disk or GCS and
-    yields a base64 encoded image, the image height, image width, and channels.
-    """
+    """Converts a pandas dataframe flat, column seperated row."""
     element = ','.join([str(item) for item in element])
     self.row_count.inc()
     yield element
-
 
 
 # pylint: disable=too-many-arguments
@@ -199,8 +195,8 @@ def build_pipeline(
     output_dir: str,
     compression: str,
     num_shards: int,
-    dataflow_options: dict,
-    integer_label: bool) -> beam.Pipeline:
+    schema_map: Dict[str, collections.namedtuple],
+    dataflow_options: dict) -> beam.Pipeline:
   """Runs TFRecorder Beam Pipeline.
 
   Args:
@@ -212,8 +208,8 @@ def build_pipeline(
     output_dir: GCS or Local Path for output.
     compression: gzip or None.
     num_shards: Number of shards.
+    schema_map: A schema map used to derive the input and target schema.
     dataflow_options: Dataflow Runner Options (optional)
-    integer_label: Flags if label is already an integer.
 
   Returns:
     beam.Pipeline
@@ -235,8 +231,7 @@ def build_pipeline(
   p = beam.Pipeline(options=options)
   with tft_beam.Context(temp_dir=os.path.join(job_dir, 'tft_tmp')):
 
-    converter = tft.coders.CsvCoder(constants.IMAGE_CSV_COLUMNS,
-                                    constants.IMAGE_CSV_METADATA.schema)
+    converter = types.get_tft_coder(df.columns, schema_map)
 
     extract_images_fn = beam_image.ExtractImagesDoFn(constants.IMAGE_URI_KEY)
     flatten_rows = ToCSVRows()
@@ -265,7 +260,7 @@ def build_pipeline(
     # TensorFlow Transform applied to all datasets.
     preprocessing_fn = functools.partial(
         _preprocessing_fn,
-        integer_label=integer_label)
+        integer_label=False) #TODO(mikebernico) Infer this flag.
     transformed_train_dataset, transform_fn = (
         train_dataset
         | 'AnalyzeAndTransformTrain' >> tft_beam.AnalyzeAndTransformDataset(

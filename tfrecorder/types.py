@@ -16,14 +16,53 @@
 
 """ Defines input types for tfrecorder's input schema. """
 
+import collections
+from typing import Dict, List
+
 import frozendict
 import tensorflow as tf
+import tensorflow_transform as tft
+from tensorflow_transform.tf_metadata import dataset_metadata
+from tensorflow_transform.tf_metadata import schema_utils
 
-image_uri = {'feature_spec': tf.io.FixedLenFeature([], tf.string)}
-split_key = {'feature_spec': tf.io.FixedLenFeature([], tf.string)}
-integerized_label = {'feature_spec': tf.io.FixedLenFeature([], tf.string)}
+# All supported types will be based on _supported_type.
+_supported_type = collections.namedtuple(
+    'tfrecordInputType',
+    ['type_name', 'feature_spec'],
+    defaults=[None, tf.io.FixedLenFeature([], tf.string)])
 
-default_schema = frozendict.FrozenOrderedDict({
+image_uri = _supported_type('image_uri')
+split_key = _supported_type('split_key')
+integerized_label = _supported_type('integerized_label')
+
+# Default schema supports the legacy image_csv format.
+image_csv_schema = frozendict.FrozenOrderedDict({
     'split': split_key,
     'image_uri': image_uri,
     'label': integerized_label})
+
+def get_tft_coder(columns: List[str],
+                  schema_map: Dict[str, collections.namedtuple]
+                  ) -> tft.coders.CsvCoder:
+  """Gets a TFT CSV Coder.
+
+  Args:
+    columns: Ordered dataframe column names, from df.column.
+    schema_map: Schema map used to infer the schema.
+
+  Returns:
+    tft.coders.CsvCoder
+  """
+  feature_spec = dict()
+
+  # Because the DF column name order may not match the feature_spec order
+  # This maps existing column names to their feature spec (req part of
+  # namedtuple)
+  for col in columns:
+    feature_spec[col] = schema_map[col].feature_spec
+
+
+  metadata = dataset_metadata.DatasetMetadata(
+      schema_utils.schema_from_feature_spec(feature_spec))
+  return tft.coders.CsvCoder(columns,
+                             metadata.schema)

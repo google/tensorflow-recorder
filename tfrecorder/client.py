@@ -19,6 +19,7 @@
 client.py provides create_tfrecords() to upstream clients including
 the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
+import collections
 import logging
 import os
 from typing import Any, Dict, Union, Optional, Sequence
@@ -33,23 +34,15 @@ from tfrecorder import constants
 from tfrecorder import types
 
 
-def _validate_data(df):
+def _validate_data(df: pd.DataFrame,
+                   schema_map: Dict[str, collections.namedtuple]):
   """ Verifies required image csv columsn exist in data."""
-  if constants.IMAGE_URI_KEY not in df.columns:
-  # or label_col not in df.columns:
-    raise AttributeError(
-        'DataFrame must contain image_uri column {}.')
-  if constants.LABEL_KEY not in df.columns:
-    raise AttributeError(
-        'DataFrame must contain label column.')
-  if constants.SPLIT_KEY not in df.columns:
-    raise AttributeError(
-        'DataFrame must contain split column.')
-  if list(df.columns) != constants.IMAGE_CSV_COLUMNS:
-    raise AttributeError(
-        'DataFrame column order must be {}'.format(
-            constants.IMAGE_CSV_COLUMNS))
 
+  for key, value in schema_map.items():
+    _ = value # TODO(mikebernico) Implement type checking.
+    if key not in df.columns:
+      raise AttributeError(
+          'DataFrame does not contain {} listed in schema'.format(key))
 
 def _validate_runner(
     df: pd.DataFrame,
@@ -160,7 +153,7 @@ def _configure_logging(logfile):
 def create_tfrecords(
     input_data: Union[str, pd.DataFrame],
     output_dir: str,
-    schema_map: Dict[str, Any] = types.default_schema,
+    schema_map: Dict[str, collections.namedtuple] = types.image_csv_schema,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
     runner: str = 'DirectRunner',
@@ -208,17 +201,11 @@ def create_tfrecords(
 
   df = to_dataframe(input_data, header, names)
 
-  # TODO(mikebernico): Implement schema_map
-  _ = schema_map
-
-  _validate_data(df)
+  _validate_data(df, schema_map)
   _validate_runner(df, runner, project, region)
 
   logfile = os.path.join('/tmp', constants.LOGFILE)
   _configure_logging(logfile)
-
-  integer_label = pd.api.types.is_integer_dtype(df[constants.LABEL_KEY])
-
 
   p = beam_pipeline.build_pipeline(
       df,
@@ -229,8 +216,8 @@ def create_tfrecords(
       output_dir=output_dir,
       compression=compression,
       num_shards=num_shards,
-      dataflow_options=dataflow_options,
-      integer_label=integer_label)
+      schema_map=schema_map,
+      dataflow_options=dataflow_options)
 
   result = p.run()
 
