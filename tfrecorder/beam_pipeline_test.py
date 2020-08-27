@@ -72,7 +72,7 @@ class BeamPipelineTests(unittest.TestCase):
 
     for i, part in enumerate(['TRAIN', 'VALIDATION', 'TEST', 'FOO']):
       test_data['split'] = part.encode('utf-8')
-      index = beam_pipeline._partition_fn(test_data)
+      index = beam_pipeline._partition_fn(test_data, split_key='split')
 
       self.assertEqual(
           index, i,

@@ -31,9 +31,9 @@ import tensorflow as tf
 from tfrecorder import beam_pipeline
 from tfrecorder import common
 from tfrecorder import constants
-from tfrecorder import types
+from tfrecorder import schema
 
-
+# TODO(mikebernico) Add test for only one split_key.
 def _validate_data(df: pd.DataFrame,
                    schema_map: Dict[str, collections.namedtuple]):
   """ Verifies required image csv columsn exist in data."""
@@ -52,11 +52,6 @@ def _validate_runner(
   """Validates an appropriate beam runner is chosen."""
   if runner not in ['DataflowRunner', 'DirectRunner']:
     raise AttributeError('Runner {} is not supported.'.format(runner))
-
-  # gcs_path is a bool, true if all image paths start with gs://
-  gcs_path = df[constants.IMAGE_URI_KEY].str.startswith('gs://').all()
-  if (runner == 'DataflowRunner') & (not gcs_path):
-    raise AttributeError('DataflowRunner requires GCS image locations.')
 
   if (runner == 'DataflowRunner') & (
       any(not v for v in [project, region])):
@@ -86,7 +81,9 @@ def read_csv(
   """Returns a a Pandas DataFrame from a CSV file."""
 
   if header is None and not names:
-    names = constants.IMAGE_CSV_COLUMNS
+    raise NotImplementedError(
+        'If header doesn\'t exist names must be specified.')
+    #names = constants.IMAGE_CSV_COLUMNS
 
   with tf.io.gfile.GFile(csv_file) as f:
     return pd.read_csv(f, names=names, header=header)
@@ -153,7 +150,7 @@ def _configure_logging(logfile):
 def create_tfrecords(
     input_data: Union[str, pd.DataFrame],
     output_dir: str,
-    schema_map: Dict[str, collections.namedtuple] = types.image_csv_schema,
+    schema_map: Dict[str, collections.namedtuple] = schema.image_csv_schema,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
     runner: str = 'DirectRunner',

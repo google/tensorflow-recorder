@@ -29,7 +29,7 @@ import pandas as pd
 from tfrecorder import client
 from tfrecorder import constants
 from tfrecorder import test_utils
-from tfrecorder import types
+from tfrecorder import schema
 
 
 class ClientTest(unittest.TestCase):
@@ -57,7 +57,7 @@ class ClientTest(unittest.TestCase):
     mock_beam.build_pipeline().run().job_id.return_value = 'foo_id'
 
     df2 = self.test_df.copy()
-    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
+    df2['image_uri'] = 'gs://' + df2['image_uri']
 
     outdir = '/tmp/dataflow_runner'
 
@@ -91,28 +91,28 @@ class InputValidationTest(unittest.TestCase):
     self.assertIsNone(
         client._validate_data(
             self.test_df,
-            types.image_csv_schema))
+            schema.image_csv_schema))
 
   def test_missing_image(self):
     """Tests missing image column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('image_uri', inplace=True, axis=1)
-      client._validate_data(df2, types.image_csv_schema)
+      client._validate_data(df2, schema.image_csv_schema)
 
   def test_missing_label(self):
     """Tests missing label column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('label', inplace=True, axis=1)
-      client._validate_data(df2, types.image_csv_schema)
+      client._validate_data(df2, schema.image_csv_schema)
 
   def test_missing_split(self):
     """Tests missing split column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('split', inplace=True, axis=1)
-      client._validate_data(df2, types.image_csv_schema)
+      client._validate_data(df2, schema.image_csv_schema)
 
   # TODO(mikebernico): Does order still matter?
   # Depricated maybe?
@@ -122,7 +122,7 @@ class InputValidationTest(unittest.TestCase):
   #     df2 = self.test_df.copy()
   #     cols = ['image_uri', 'split', 'label']
   #     df2 = df2[cols]
-  #     client._validate_data(df2, types.image_csv_schema)
+  #     client._validate_data(df2, schema.image_csv_schema)
 
   def test_valid_runner(self):
     """Tests valid runner."""
@@ -153,7 +153,7 @@ class InputValidationTest(unittest.TestCase):
   def test_gcs_path_with_dataflow_runner(self):
     """Tests DataflowRunner with GCS path."""
     df2 = self.test_df.copy()
-    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
+    df2[image_uri] = 'gs://' + df2[image_uri]
     self.assertIsNone(
         client._validate_runner(
             df2,
@@ -164,7 +164,7 @@ class InputValidationTest(unittest.TestCase):
   def test_gcs_path_with_dataflow_runner_missing_param(self):
     """Tests DataflowRunner with missing required parameter."""
     df2 = self.test_df.copy()
-    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
+    df2['image_uri'] = 'gs://' + df2['image_uri']
     for p, r in [
         (None, self.test_region), (self.test_project, None), (None, None)]:
       with self.assertRaises(AttributeError) as context:
@@ -205,12 +205,14 @@ class ReadCSVTest(unittest.TestCase):
     self.header = data.pop(0)
     self.sample_data = data
 
-  def test_valid_csv_no_header_no_names_specified(self):
-    """Tests a valid CSV without a header and no header names given."""
-    f = _make_csv_tempfile(self.sample_data)
-    actual = client.read_csv(f.name, header=None)
-    self.assertEqual(list(actual.columns), constants.IMAGE_CSV_COLUMNS)
-    self.assertEqual(actual.values.tolist(), self.sample_data)
+  # TODO(mikebernico) Talk with Carlos and depricate. 
+  # Can't support this case with flexible schema.
+  # def test_valid_csv_no_header_no_names_specified(self):
+  #   """Tests a valid CSV without a header and no header names given."""
+  #   f = _make_csv_tempfile(self.sample_data)
+  #   actual = client.read_csv(f.name, header=None)
+  #   self.assertEqual(list(actual.columns), constants.IMAGE_CSV_COLUMNS)
+  #   self.assertEqual(actual.values.tolist(), self.sample_data)
 
   def test_valid_csv_no_header_names_specified(self):
     """Tests valid CSV without a header, but header names are given."""
