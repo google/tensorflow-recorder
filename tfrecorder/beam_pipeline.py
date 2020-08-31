@@ -32,7 +32,6 @@ from tensorflow_transform import beam as tft_beam
 
 from tfrecorder import beam_image
 from tfrecorder import common
-from tfrecorder import constants
 from tfrecorder import schema
 
 
@@ -149,16 +148,15 @@ def _get_write_to_tfrecord(output_dir: str,
       num_shards=num_shards,
   )
 
-def _preprocessing_fn(inputs, integer_label: bool = False):
+def _preprocessing_fn(inputs, schema_map):
   """TensorFlow Transform preprocessing function."""
 
-  outputs = inputs.copy()
-
-  if not integer_label:
-    # Integerize string labels, if present.
-    outputs[constants.LABEL_KEY] = tft.compute_and_apply_vocabulary(
-        outputs[constants.LABEL_KEY])
-
+  outputs = {}
+  for name, supported_type in schema_map.items():
+    if supported_type.type_name == 'string_label':
+      outputs[name] = tft.compute_and_apply_vocabulary(inputs[name])
+    else:
+      outputs[name] = inputs[name]
   return outputs
 
 
@@ -228,12 +226,10 @@ def build_pipeline(
       region,
       dataflow_options)
 
-  #with beam.Pipeline(runner, options=options) as p:
   p = beam.Pipeline(options=options)
   with tft_beam.Context(temp_dir=os.path.join(job_dir, 'tft_tmp')):
 
     converter = schema.get_tft_coder(df.columns, schema_map)
-    extract_images_fn = beam_image.ExtractImagesDoFn(constants.IMAGE_URI_KEY)
     flatten_rows = ToCSVRows()
 
     # Each element in the data PCollection will be a dict
@@ -244,11 +240,20 @@ def build_pipeline(
         | 'ReadFromDataFrame' >> beam.Create(df.values.tolist())
         | 'ToCSVRows' >> beam.ParDo(flatten_rows)
         | 'DecodeCSV' >> beam.Map(converter.decode)
-        | 'ReadImage' >> beam.ParDo(extract_images_fn)
     )
 
+    # Extract images if an image_uri key exists.
+    image_uri_key = schema.get_key(type_name='image_uri', schema_map=schema_map)
+    if image_uri_key:
+      extract_images_fn = beam_image.ExtractImagesDoFn(image_uri_key)
+
+      data = (
+          data
+          | 'ReadImage' >> beam.ParDo(extract_images_fn)
+      )
+
     # If the schema contains a valid split key, we are partitioning the dataset.
-    split_key = schema.get_split_key(schema_map)
+    split_key = schema.get_key(type_name='split_key', schema_map=schema_map)
 
     # Raw metadata is the metadata after image insertion but before TFT
     raw_metadata = schema.get_raw_metadata(df.columns, schema_map)
@@ -265,14 +270,12 @@ def build_pipeline(
       test_dataset = (test_data, raw_metadata)
     else:
       train_dataset = (data, raw_metadata)
-      #TODO(mikebernico) Revisit this naming once partition is clear
-
-
 
     # TensorFlow Transform applied to all datasets.
-    preprocessing_fn = functools.partial( #TODO(mikebernico) Update for flexible types.
+    raw_schema_map = schema.get_raw_schema_map(schema_map=schema_map)
+    preprocessing_fn = functools.partial(
         _preprocessing_fn,
-        integer_label=False) #TODO(mikebernico) Infer this flag.
+        schema_map=raw_schema_map)
     transformed_train_dataset, transform_fn = (
         train_dataset
         | 'AnalyzeAndTransformTrain' >> tft_beam.AnalyzeAndTransformDataset(
@@ -305,20 +308,20 @@ def build_pipeline(
 
   # VAL and TEST aren only written if a split key is present.
   if split_key:
-      _ = (
-          transformed_val_data
-          | 'EncodeValData' >> beam.Map(transformed_data_coder.encode)
-          | 'WriteValData' >> tfr_writer(prefix='val'))
+    _ = (
+        transformed_val_data
+        | 'EncodeValData' >> beam.Map(transformed_data_coder.encode)
+        | 'WriteValData' >> tfr_writer(prefix='val'))
 
-      _ = (
-          transformed_test_data
-          | 'EncodeTestData' >> beam.Map(transformed_data_coder.encode)
-          | 'WriteTestData' >> tfr_writer(prefix='test'))
+    _ = (
+        transformed_test_data
+        | 'EncodeTestData' >> beam.Map(transformed_data_coder.encode)
+        | 'WriteTestData' >> tfr_writer(prefix='test'))
 
-      _ = (
-          discard_data
-          | 'DiscardDataWriter' >> beam.io.WriteToText(
-              os.path.join(job_dir, 'discarded-data')))
+    _ = (
+        discard_data
+        | 'DiscardDataWriter' >> beam.io.WriteToText(
+            os.path.join(job_dir, 'discarded-data')))
 
   # Output transform function and metadata
   _ = (transform_fn | 'WriteTransformFn' >> tft_beam.WriteTransformFn(

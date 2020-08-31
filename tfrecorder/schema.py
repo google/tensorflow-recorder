@@ -31,6 +31,7 @@ _supported_type = collections.namedtuple(
     ['type_name', 'feature_spec', 'allowed_values'],
     defaults=[None, tf.io.FixedLenFeature([], tf.string), []])
 
+
 # Supported type definitions here
 image_uri = _supported_type('image_uri')
 
@@ -38,15 +39,34 @@ allowed_split_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
 split_key = _supported_type('split_key',
                             tf.io.FixedLenFeature([], tf.string),
                             allowed_split_values)
-#DISCARD_INDEX = SPLIT_VALUES.index('DISCARD')
 
-integerized_label = _supported_type('integerized_label')
+integer_label = _supported_type(type_name='integer_label')
+string_label = _supported_type(type_name='string_label')
+image_support_type = _supported_type(type_name="image_support_type")
 
 # Default schema supports the legacy image_csv format.
 image_csv_schema = frozendict.FrozenOrderedDict({
     'split': split_key,
     'image_uri': image_uri,
-    'label': integerized_label})
+    'label': string_label})
+
+
+def get_raw_schema_map(
+    schema_map: Dict[str, collections.namedtuple]
+    ) -> Dict[str, collections.namedtuple]:
+  """Converts a schema to a raw (pre TFT / post image extraction) schema."""
+  raw_schema = {}
+  for k, v in schema_map.items():
+    if v.type_name == "image_uri":
+      raw_schema['image_name'] = image_support_type
+      raw_schema['image'] = image_support_type
+      raw_schema['image_height'] = image_support_type
+      raw_schema['image_width'] = image_support_type
+      raw_schema['image_channels'] = image_support_type
+    else:
+      raw_schema[k] = schema_map[k]
+  return raw_schema
+
 
 def get_tft_coder(columns: List[str],
                   schema_map: Dict[str, collections.namedtuple]
@@ -75,12 +95,17 @@ def get_tft_coder(columns: List[str],
                              metadata.schema)
 
 
-def get_split_key(
+def get_key(
+    type_name: str,
     schema_map: Dict[str, collections.namedtuple]
     ) -> Union[str, None]:
-  """Gets split key name if present, otherwise returns None"""
+  """Gets key of type 'type_name' from schema map if present,
+  otherwise returns None
+
+  Used by the beam pipeline to identify if images or split are present.
+  """
   for k, v in schema_map.items():
-    if v.type_name == 'split_key':
+    if v.type_name == type_name:
       return k
   return None
 

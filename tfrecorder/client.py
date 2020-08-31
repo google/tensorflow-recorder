@@ -45,7 +45,6 @@ def _validate_data(df: pd.DataFrame,
           'DataFrame does not contain {} listed in schema'.format(key))
 
 def _validate_runner(
-    df: pd.DataFrame,
     runner: str,
     project: str,
     region: str):
@@ -199,7 +198,7 @@ def create_tfrecords(
   df = to_dataframe(input_data, header, names)
 
   _validate_data(df, schema_map)
-  _validate_runner(df, runner, project, region)
+  _validate_runner(runner, project, region)
 
   logfile = os.path.join('/tmp', constants.LOGFILE)
   _configure_logging(logfile)

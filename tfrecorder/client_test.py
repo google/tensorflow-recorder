@@ -27,7 +27,6 @@ import mock
 import pandas as pd
 
 from tfrecorder import client
-from tfrecorder import constants
 from tfrecorder import test_utils
 from tfrecorder import schema
 
@@ -114,20 +113,9 @@ class InputValidationTest(unittest.TestCase):
       df2.drop('split', inplace=True, axis=1)
       client._validate_data(df2, schema.image_csv_schema)
 
-  # TODO(mikebernico): Does order still matter?
-  # Depricated maybe?
-  # def test_columns_out_of_order(self):
-  #   """Tests validating wrong column order."""
-  #   with self.assertRaises(AttributeError):
-  #     df2 = self.test_df.copy()
-  #     cols = ['image_uri', 'split', 'label']
-  #     df2 = df2[cols]
-  #     client._validate_data(df2, schema.image_csv_schema)
-
   def test_valid_runner(self):
     """Tests valid runner."""
     self.assertIsNone(client._validate_runner(
-        self.test_df,
         runner='DirectRunner',
         project=self.test_project,
         region=self.test_region))
@@ -136,45 +124,9 @@ class InputValidationTest(unittest.TestCase):
     """Tests invalid runner."""
     with self.assertRaises(AttributeError):
       client._validate_runner(
-          self.test_df,
           runner='FooRunner',
           project=self.test_project,
           region=self.test_region)
-
-  def test_local_path_with_dataflow_runner(self):
-    """Tests DataflowRunner conflict with local path."""
-    with self.assertRaises(AttributeError):
-      client._validate_runner(
-          self.df_test,
-          runner='DataflowRunner',
-          project=self.test_project,
-          region=self.test_region)
-
-  def test_gcs_path_with_dataflow_runner(self):
-    """Tests DataflowRunner with GCS path."""
-    df2 = self.test_df.copy()
-    df2[image_uri] = 'gs://' + df2[image_uri]
-    self.assertIsNone(
-        client._validate_runner(
-            df2,
-            runner='DataflowRunner',
-            project=self.test_project,
-            region=self.test_region))
-
-  def test_gcs_path_with_dataflow_runner_missing_param(self):
-    """Tests DataflowRunner with missing required parameter."""
-    df2 = self.test_df.copy()
-    df2['image_uri'] = 'gs://' + df2['image_uri']
-    for p, r in [
-        (None, self.test_region), (self.test_project, None), (None, None)]:
-      with self.assertRaises(AttributeError) as context:
-        client._validate_runner(
-            df2,
-            runner='DataflowRunner',
-            project=p,
-            region=r)
-      self.assertTrue('DataflowRunner requires valid `project` and `region`'
-                      in repr(context.exception))
 
 
 def _make_csv_tempfile(data: List[List[str]]) -> tempfile.NamedTemporaryFile:
@@ -205,7 +157,7 @@ class ReadCSVTest(unittest.TestCase):
     self.header = data.pop(0)
     self.sample_data = data
 
-  # TODO(mikebernico) Talk with Carlos and depricate. 
+  # TODO(mikebernico) Talk with Carlos and depricate.
   # Can't support this case with flexible schema.
   # def test_valid_csv_no_header_no_names_specified(self):
   #   """Tests a valid CSV without a header and no header names given."""

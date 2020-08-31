@@ -21,9 +21,11 @@ import unittest
 from unittest import mock
 
 import apache_beam as beam
+import frozendict
 import tensorflow as tf
 
 from tfrecorder import beam_pipeline
+from tfrecorder import schema
 
 
 # pylint: disable=protected-access
@@ -37,7 +39,12 @@ class BeamPipelineTests(unittest.TestCase):
         'split': 'TRAIN',
         'image_uri': 'gs://foo/bar.jpg',
         'label': 1}
-    result = beam_pipeline._preprocessing_fn(element, integer_label=True)
+    my_schema = frozendict.FrozenOrderedDict({
+        'split': schema.split_key,
+        'image_uri': schema.image_uri,
+        'label': schema.integer_label})
+
+    result = beam_pipeline._preprocessing_fn(element, schema_map=my_schema)
     self.assertEqual(element, result)
 
   @mock.patch('tfrecorder.beam_pipeline.tft')
@@ -49,7 +56,8 @@ class BeamPipelineTests(unittest.TestCase):
         'split': 'TRAIN',
         'image_uri': 'gs://foo/bar.jpg',
         'label': tf.constant('cat', dtype=tf.string)}
-    result = beam_pipeline._preprocessing_fn(element, integer_label=False)
+    result = beam_pipeline._preprocessing_fn(element,
+                                             schema_map=schema.image_csv_schema)
     result['label'] = result['label'].numpy()
     self.assertEqual(0, result['label'])
 

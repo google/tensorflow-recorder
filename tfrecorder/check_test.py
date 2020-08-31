@@ -28,8 +28,8 @@ import tensorflow as tf
 
 from tfrecorder import beam_image
 from tfrecorder import check
-from tfrecorder import constants
 from tfrecorder import test_utils
+from tfrecorder import schema
 
 
 # pylint: disable=protected-access
@@ -59,8 +59,8 @@ class ReadTFRecordsTest(unittest.TestCase):
         shuffle=False)
 
     for a, e in zip(actual, expected):
-      self.assertCountEqual(a.keys(), constants.RAW_FEATURE_SPEC)
-      for key in constants.IMAGE_CSV_FEATURE_SPEC:
+      self.assertCountEqual(a.keys(), schema.image_csv_schema)
+      for key in schema.image_csv_schema:
         self.assertEqual(a[key], e[key])
 
   def test_error_invalid_file_pattern(self):
@@ -85,8 +85,9 @@ class CheckTFRecordsTest(unittest.TestCase):
         image_channels)
 
     data = test_utils.get_test_data()
-    num_records = len(data[constants.IMAGE_URI_KEY])
-    image_uris = data.pop(constants.IMAGE_URI_KEY)
+    image_uri_key = schema.get_key('image_uri', schema.image_csv_schema)
+    num_records = len(data[image_uri_key])
+    image_uris = data.pop(image_uri_key)
     data['image_name'] = [os.path.split(uri)[-1] for uri in image_uris]
     data.update({
         'image': [beam_image.encode(image_fn())

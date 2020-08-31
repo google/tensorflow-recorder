@@ -30,9 +30,9 @@ class SchemaTest(unittest.TestCase):
     converter = schema.get_tft_coder(columns, schema.image_csv_schema)
     self.assertIsInstance(converter, tft.coders.CsvCoder)
 
-  def test_valid_get_split_key(self):
+  def test_valid_get_key(self):
     """Tests a valid split key."""
-    key = schema.get_split_key(schema.image_csv_schema)
+    key = schema.get_key('split_key', schema.image_csv_schema)
     self.assertEqual(key, 'split')
 
   def test_no_get_split_key(self):
@@ -43,7 +43,7 @@ class SchemaTest(unittest.TestCase):
       if k != 'split':
         test_schema[k] = v
 
-    key = schema.get_split_key(test_schema)
+    key = schema.get_key('split_key', test_schema)
     self.assertIsNone(key)
 
   def test_get_raw_metadata(self):
@@ -51,9 +51,9 @@ class SchemaTest(unittest.TestCase):
     columns = ['split', 'image_uri', 'label']
     raw_metadata = schema.get_raw_metadata(columns, schema.image_csv_schema)
     self.assertIsInstance(
-        raw_metadata, 
+        raw_metadata,
         tft.tf_metadata.dataset_metadata.DatasetMetadata)
 
-        
+
 if __name__ == '__main__':
   unittest.main()
