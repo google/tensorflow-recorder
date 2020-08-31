@@ -28,21 +28,26 @@ from tensorflow_transform.tf_metadata import schema_utils
 # All supported types will be based on _supported_type.
 _supported_type = collections.namedtuple(
     'tfrecordInputType',
-    ['type_name', 'feature_spec', 'allowed_values'],
-    defaults=[None, tf.io.FixedLenFeature([], tf.string), []])
+    ['type_name', 'feature_spec', 'allowed_values'])
 
 
 # Supported type definitions here
 image_uri = _supported_type('image_uri')
 
 allowed_split_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
-split_key = _supported_type('split_key',
-                            tf.io.FixedLenFeature([], tf.string),
-                            allowed_split_values)
-
-integer_label = _supported_type(type_name='integer_label')
-string_label = _supported_type(type_name='string_label')
-image_support_type = _supported_type(type_name="image_support_type")
+split_key = _supported_type(
+    type_name='split_key',
+    feature_spec=tf.io.FixedLenFeature([], tf.string),
+    allowed_values=allowed_split_values)
+integer_label = _supported_type(
+    type_name='integer_label',
+    feature_spec=tf.io.FixedLenFeature([], tf.int8))
+string_label = _supported_type(
+    type_name='string_label',
+    feature_spec=tf.io.FixedLenFeature([], tf.string))
+image_support_type = _supported_type(
+    type_name='image_support_type',
+    feature_spec=tf.io.FixedLenFeature([], tf.string))
 
 # Default schema supports the legacy image_csv format.
 image_csv_schema = frozendict.FrozenOrderedDict({
