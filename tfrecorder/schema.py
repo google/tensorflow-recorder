@@ -30,24 +30,32 @@ _supported_type = collections.namedtuple(
     'tfrecordInputType',
     ['type_name', 'feature_spec', 'allowed_values'])
 
-
-# Supported type definitions here
-image_uri = _supported_type('image_uri')
+# Supported type definitions here.
+image_uri = _supported_type(
+    type_name='image_uri',
+    feature_spec=tf.io.FixedLenFeature([], tf.string),
+    allowed_values=None)
 
 allowed_split_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
 split_key = _supported_type(
     type_name='split_key',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=allowed_split_values)
+
 integer_label = _supported_type(
     type_name='integer_label',
-    feature_spec=tf.io.FixedLenFeature([], tf.int8))
+    feature_spec=tf.io.FixedLenFeature([], tf.int8),
+    allowed_values=None)
+
 string_label = _supported_type(
     type_name='string_label',
-    feature_spec=tf.io.FixedLenFeature([], tf.string))
+    feature_spec=tf.io.FixedLenFeature([], tf.string),
+    allowed_values=None)
+
 image_support_type = _supported_type(
     type_name='image_support_type',
-    feature_spec=tf.io.FixedLenFeature([], tf.string))
+    feature_spec=tf.io.FixedLenFeature([], tf.string),
+    allowed_values=None)
 
 # Default schema supports the legacy image_csv format.
 image_csv_schema = frozendict.FrozenOrderedDict({
