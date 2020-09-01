@@ -42,9 +42,27 @@ split_key = _supported_type(
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=allowed_split_values)
 
+#TODO(mikebernico): Implement in preprocess_fn
+integer_input = _supported_type(
+    type_name='integer_input',
+    feature_spec=tf.io.FixedLenFeature([], tf.int64),
+    allowed_values=None)
+
+#TODO(mikebernico): Implement in preprocess_fn
+float_input = _supported_type(
+    type_name='float_input',
+    feature_spec=tf.io.FixedLenFeature([], tf.float64),
+    allowed_values=None)
+
+#TODO(mikebernico): Implement in preprocess_fn
+categorical_input = _supported_type(
+    type_name='categorical_input',
+    feature_spec=tf.io.FixedLenFeature([], tf.string),
+    allowed_values=None)
+
 integer_label = _supported_type(
     type_name='integer_label',
-    feature_spec=tf.io.FixedLenFeature([], tf.int8),
+    feature_spec=tf.io.FixedLenFeature([], tf.int64),
     allowed_values=None)
 
 string_label = _supported_type(

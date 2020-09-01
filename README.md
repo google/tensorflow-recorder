@@ -1,21 +1,34 @@
 # TFRecorder
 
-TFRecorder makes it easy to create TFRecords from images and labels in 
-Pandas DataFrames or CSV files.
-Today, TFRecorder supports data stored in 'image csv format' similar to 
-GCP AutoML Vision. 
-In the future TFRecorder will support converting any Pandas DataFrame or CSV 
-file into TFRecords. 
+TFRecorder makes it easy to create [TFRecords](https://www.tensorflow.org/tutorials/load_data/tfrecord) from [Pandas DataFrames](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) or CSV Files. TFRecord reads data, transforms it using [TensorFlow Transform](https://www.tensorflow.org/tfx/transform/get_started), stores it in the TFRecord format using [Apache Beam](https://beam.apache.org/) and optionally [Google Cloud DataFlow](https://cloud.google.com/dataflow). Most importantly, TFRecorder does this without requiring the user to write a beam pipeline or TensorFlow Transform code.
+
+TFRecorder can convert any Pandas DataFrame or CSV file into TFRecords. If your data includes images TFRecorder can also serialize those into TFRecords. By default, TFRecorder expects your DataFrame or CSV file to be in the same 'Image CSV' format that Google Cloud Platform's AutoML Vision product uses, however you can also specify an input data schema using TFRecorder's flexible schema system.
 
 !['TFRecorder CI/CD Badge'](https://github.com/google/tensorflow-recorder/workflows/TFRecord%20CICD/badge.svg)
 
+[Release Notes](RELEASE.md)
+
+
 ## Installation
 
-From the top directory of the repo, run the following command:
+### Install from Github
+
+1. Clone this repo.
 
 ```bash
-pip install tfrecorder
+https://github.com/google/tensorflow-recorder.git
 ```
+
+2. From the top directory of the repo, run the following command:
+
+```bash
+python setup.py install
+```
+
+### Install from PyPi
+```bash
+pip install tfrecorder
+````
 
 ## Example usage
 
@@ -89,9 +102,9 @@ tfrecorder check-tfrecords \
     --output_dir=/tmp/output
 ```
 
-## Input format
+## Image CSV Format Input
 
-TFRecorder currently expects data to be in the same format as 
+If you don't specify an input schema, TFRecorder expects data to be in the same format as 
 [AutoML Vision](https://cloud.google.com/vision/automl/docs/prepare).  
 This format looks like a Pandas DataFrame or CSV formatted as:
 
@@ -104,6 +117,108 @@ where:
 * `image_uri` specifies a local or google cloud storage location for the image file. 
 * `label` can be either a text based label that will be integerized or integer
 
+## Flexible Schema
+
+TFRecorder's flexible schema system allows you to use any schema you want for your input data, however to do so you must supply a schema map to TFRecorder.
+
+### Creating and using a schema map
+A schema map is a python dictionary that maps column names to supported
+TFRecorder types.
+
+For example, the default image CSV input is defined like this:
+
+```python
+image_csv_schema = frozendict.FrozenOrderedDict({
+    'split': schema.split_key,
+    'image_uri': schema.image_uri,
+    'label': schema.string_label})
+```
+Once created a schema_map can be sent to TFRecorder.
+
+```python
+import pandas as pd
+import tfrecorder
+
+df = pd.read_csv(...)
+df.tensorflow.to_tfr(
+    output_dir='gs://my/bucket',
+    schema_map=image_csv_schema,
+    runner='DataFlowRunner',
+    project='my-project',
+    region='us-central1')
+```
+
+### Supported types
+
+#### schema.image_uri 
+* Specifies the path to an image. When specifying, TFRecorder
+will load the specified image and store the image as a tf.string
+along with the image height, image width, and image channels.
+
+#### schema.split_key
+* Specifies a split key that TFRecord will use to partition the 
+input dataset on.
+* Allowed values are 'TRAIN', 'VALIDATION, and 'TEST'
+
+#### schema.integer_input
+* Specifies an int input.
+* Will be scaled to mean 0, variance 1.
+
+#### schema.float_input
+* Specifies an float input.
+* Will be scaled to mean 0, variance 1.
+
+#### schema.categorical_input
+* Specifies a string input.
+* Vocabulary computed and output integerized.
+
+#### schema.integer_label
+* Specifies an integer target.
+* Not transformed.
+
+#### schema.string_label
+* Specifies a string target.
+* Vocabulary computed and output integerized.
+
+### Flexible Schema Example
+
+Imagine you have a dataset you'd like to use with TFRecorder that 
+looks like this:
+
+| split | x     |   y  | label |
+|-------|-------|------|-------|
+| TRAIN | 0.32  | 42   |1      |
+
+First you'd define a schema map:
+
+```python
+schema_map = {
+    'split':schema.split_key,
+    'x':schema.float_input,
+    'y':schema.integer_input,
+    'label':schema.integer_label
+}
+```
+
+Now call TFRecorder with the specified schema_map
+
+```python
+import pandas as pd
+import tfrecorder
+
+df = pd.read_csv(...)
+df.tensorflow.to_tfr(
+    output_dir='gs://my/bucket',
+    schema_map=schema_map,
+    runner='DataFlowRunner',
+    project='my-project',
+    region='us-central1')
+```
+
 ## Contributing
 
-Pull requests are welcome. 
+Pull requests are welcome. Please see our [code of conduct](docs/code-of-conduct.md) and [contributing guide](docs/contributing.md).
+
+## Why TFRecorder?
+Using the TFRecord storage format is important for optimal machine learning pipelines and getting the most from your hardware (in cloud or on prem). In our work at [Google Cloud AI Services](https://cloud.google.com/consulting) we wanted to help our users spend their time writing AI/ML applications, and spend less time converting data. 
+
