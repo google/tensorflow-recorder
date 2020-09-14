@@ -35,16 +35,6 @@ from tfrecorder import common
 from tfrecorder import constants
 
 
-def _get_setup_py_filepath() -> str:
-  """Returns the file path to the setup.py file.
-
-  The location of the setup.py file is needed to run Dataflow jobs.
-  """
-
-  return os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), '..', 'setup.py')
-
-
 def _get_job_name(job_label: str = None) -> str:
   """Returns Beam runner job name.
 
@@ -76,6 +66,7 @@ def _get_pipeline_options(
     job_dir: str,
     project: str,
     region: str,
+    tfrecorder_wheel: str,
     dataflow_options: Union[Dict[str, Any], None]
     ) -> beam.pipeline.PipelineOptions:
   """Returns Beam pipeline options."""
@@ -95,7 +86,7 @@ def _get_pipeline_options(
   if region:
     options_dict['region'] = region
   if runner == 'DataflowRunner':
-    options_dict['setup_file'] = _get_setup_py_filepath()
+    options_dict['extra_packages'] = tfrecorder_wheel
   if dataflow_options:
     options_dict.update(dataflow_options)
 
@@ -199,6 +190,7 @@ def build_pipeline(
     output_dir: str,
     compression: str,
     num_shards: int,
+    tfrecorder_wheel: str,
     dataflow_options: dict,
     integer_label: bool) -> beam.Pipeline:
   """Runs TFRecorder Beam Pipeline.
@@ -212,6 +204,7 @@ def build_pipeline(
     output_dir: GCS or Local Path for output.
     compression: gzip or None.
     num_shards: Number of shards.
+    tfrecorder_wheel: Path to TFRecorder wheel for DataFlow
     dataflow_options: Dataflow Runner Options (optional)
     integer_label: Flags if label is already an integer.
 
@@ -229,6 +222,7 @@ def build_pipeline(
       job_dir,
       project,
       region,
+      tfrecorder_wheel,
       dataflow_options)
 
   #with beam.Pipeline(runner, options=options) as p:

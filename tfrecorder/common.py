@@ -39,4 +39,4 @@ def copy_logfile_to_gcs(logfile: str, output_dir: str):
         gcs_logfile.write(log)
   except FileNotFoundError as e:
     raise FileNotFoundError("Unable to copy log file {} to gcs.".format(
-        e.filename))
+        e.filename)) from e

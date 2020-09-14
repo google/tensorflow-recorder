@@ -65,8 +65,8 @@ def load(image_uri):
   try:
     with tf.io.gfile.GFile(image_uri, 'rb') as f:
       return Image.open(f)
-  except tf.python.framework.errors_impl.NotFoundError:
-    raise OSError('File {} was not found.'.format(image_uri))
+  except tf.python.framework.errors_impl.NotFoundError as e:
+    raise OSError('File {} was not found.'.format(image_uri)) from e
 
 
 # pylint: disable=abstract-method

@@ -54,7 +54,8 @@ def _validate_runner(
     df: pd.DataFrame,
     runner: str,
     project: str,
-    region: str):
+    region: str,
+    tfrecorder_wheel: str):
   """Validates an appropriate beam runner is chosen."""
   if runner not in ['DataflowRunner', 'DirectRunner']:
     raise AttributeError('Runner {} is not supported.'.format(runner))
@@ -70,6 +71,9 @@ def _validate_runner(
         'DataflowRunner requires valid `project` and `region` to be specified.'
         'The `project` is {} and `region` is {}'.format(project, region))
 
+  if (runner == 'DataflowRunner') & (not tfrecorder_wheel):
+    raise AttributeError(
+      'DataflowRunner requires a tfrecorder whl file for remote execution.')
 # def read_image_directory(dirpath) -> pd.DataFrame:
 #   """Reads image data from a directory into a Pandas DataFrame."""
 #
@@ -164,6 +168,7 @@ def create_tfrecords(
     runner: str = 'DirectRunner',
     project: Optional[str] = None,
     region: Optional[str] = None,
+    tfrecorder_wheel: Optional[str] = None,
     dataflow_options: Optional[Dict[str, Any]] = None,
     job_label: str = 'create-tfrecords',
     compression: Optional[str] = 'gzip',
@@ -190,6 +195,7 @@ def create_tfrecords(
     runner: Beam runner. Can be 'DirectRunner' or 'DataFlowRunner'
     project: GCP project name (Required if DataflowRunner)
     region: GCP region name (Required if DataflowRunner)
+    tfrecorder_wheel: Required for GCP Runs, path to the tfrecorder whl.
     dataflow_options: Options dict for DataflowRunner
     job_label: User supplied description for the Beam job name.
     compression: Can be 'gzip' or None for no compression.
@@ -206,7 +212,7 @@ def create_tfrecords(
   df = to_dataframe(input_data, header, names)
 
   _validate_data(df)
-  _validate_runner(df, runner, project, region)
+  _validate_runner(df, runner, project, region, tfrecorder_wheel)
 
   logfile = os.path.join('/tmp', constants.LOGFILE)
   _configure_logging(logfile)
@@ -222,6 +228,7 @@ def create_tfrecords(
       output_dir=output_dir,
       compression=compression,
       num_shards=num_shards,
+      tfrecorder_wheel=tfrecorder_wheel,
       dataflow_options=dataflow_options,
       integer_label=integer_label)
 
