@@ -35,6 +35,22 @@ df.tensorflow.to_tfr(output_dir='gs://my/bucket')
 
 ##### Running on Cloud Dataflow
 
+Google Cloud Platform Dataflow workers need to be supplied with the tfrecorder
+package that you would like to run remotely.  To do so first download or build
+the package (a python wheel file) and then specify the path the the file when
+tfrecorder is called.
+
+Step 1: Download or create the wheel file.
+
+To download the wheel from pip:
+`pip download tfrecorder --no-deps`
+
+To build from source/git:
+`python setup.py sdist`
+
+Step 2:
+Specify the project, region, and path to the tfrecorder wheel for remote execution.
+
 ```python
 import pandas as pd
 import tfrecorder
@@ -44,8 +60,10 @@ df.tensorflow.to_tfr(
     output_dir='gs://my/bucket',
     runner='DataFlowRunner',
     project='my-project',
-    region='us-central1')
+    region='us-central1'
+    tfrecorder_wheel='/path/to/my/tfrecorder.whl')
 ```
+
 
 #### From CSV
 
