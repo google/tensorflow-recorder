@@ -29,20 +29,21 @@ REQUIRED_PACKAGES = [
     "fire >= 0.3.1",
     "frozendict >= 1.2",
     "nose >= 1.3.7",
+    "numpy < 1.19.0",
     "pandas >= 1.0.4",
     "Pillow >= 7.1.2",
-    "pyarrow < 0.17, >= 0.16.0",
+    "pyarrow >= 0.17, < 0.18.0",
     "pylint >= 2.5.3",
     "pytz >= 2020.1",
     "python-dateutil",
-    "tensorflow == 2.2.0",
+    "tensorflow == 2.3.0",
     "tensorflow_transform >= 0.22",
 ]
 
 
 setup(
     name='tfrecorder',
-    version='0.1',
+    version='0.1.1',
     install_requires=REQUIRED_PACKAGES,
     packages=find_packages(),
     include_package_data=True,
