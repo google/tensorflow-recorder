@@ -35,16 +35,6 @@ from tfrecorder import common
 from tfrecorder import constants
 
 
-def _get_setup_py_filepath() -> str:
-  """Returns the file path to the setup.py file.
-
-  The location of the setup.py file is needed to run Dataflow jobs.
-  """
-
-  return os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), '..', 'setup.py')
-
-
 def _get_job_name(job_label: str = None) -> str:
   """Returns Beam runner job name.
 
