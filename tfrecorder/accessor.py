@@ -43,6 +43,7 @@ class TFRecorderAccessor:
       runner: str = 'DirectRunner',
       project: Optional[str] = None,
       region: Optional[str] = None,
+      tfrecorder_wheel: Optional[str] = None,
       dataflow_options: Union[Dict[str, Any], None] = None,
       job_label: str = 'to-tfr',
       compression: Optional[str] = 'gzip',
@@ -66,6 +67,9 @@ class TFRecorderAccessor:
       runner: Beam runner. Can be DirectRunner or  DataFlowRunner.
       project: GCP project name (Required if DataFlowRunner).
       region: GCP region name (Required if DataFlowRunner).
+      tfrecorder_wheel: Path to the tfrecorder wheel DataFlow will run.
+        (create with 'python setup.py sdist' or
+        'pip download tfrecorder --no-deps')
       dataflow_options: Optional dictionary containing DataFlow options.
       job_label: User supplied description for the beam job name.
       compression: Can be 'gzip' or None for no compression.
@@ -84,6 +88,7 @@ class TFRecorderAccessor:
         runner=runner,
         project=project,
         region=region,
+        tfrecorder_wheel=tfrecorder_wheel,
         dataflow_options=dataflow_options,
         job_label=job_label,
         compression=compression,

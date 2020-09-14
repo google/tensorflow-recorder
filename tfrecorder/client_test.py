@@ -38,6 +38,7 @@ class ClientTest(unittest.TestCase):
     self.test_df = test_utils.get_test_df()
     self.test_region = 'us-central1'
     self.test_project = 'foo'
+    self.test_wheel = '/my/path/wheel.whl'
 
   @mock.patch('tfrecorder.client.beam_pipeline')
   def test_create_tfrecords_direct_runner(self, mock_beam):
@@ -71,7 +72,8 @@ class ClientTest(unittest.TestCase):
         runner='DataflowRunner',
         output_dir=outdir,
         region=self.test_region,
-        project=self.test_project)
+        project=self.test_project,
+        tfrecorder_wheel=self.test_wheel)
     self.assertEqual(r, expected)
 
 
@@ -84,6 +86,7 @@ class InputValidationTest(unittest.TestCase):
     self.test_df = test_utils.get_test_df()
     self.test_region = 'us-central1'
     self.test_project = 'foo'
+    self.test_wheel = '/my/path/wheel.whl'
 
   def test_valid_dataframe(self):
     """Tests valid DataFrame input."""
@@ -126,7 +129,8 @@ class InputValidationTest(unittest.TestCase):
         self.test_df,
         runner='DirectRunner',
         project=self.test_project,
-        region=self.test_region))
+        region=self.test_region,
+        tfrecorder_wheel=None))
 
   def test_invalid_runner(self):
     """Tests invalid runner."""
@@ -135,7 +139,8 @@ class InputValidationTest(unittest.TestCase):
           self.test_df,
           runner='FooRunner',
           project=self.test_project,
-          region=self.test_region)
+          region=self.test_region,
+          tfrecorder_wheel=None)
 
   def test_local_path_with_dataflow_runner(self):
     """Tests DataflowRunner conflict with local path."""
@@ -144,7 +149,8 @@ class InputValidationTest(unittest.TestCase):
           self.df_test,
           runner='DataflowRunner',
           project=self.test_project,
-          region=self.test_region)
+          region=self.test_region,
+          tfrecorder_wheel=self.test_wheel)
 
   def test_gcs_path_with_dataflow_runner(self):
     """Tests DataflowRunner with GCS path."""
@@ -155,7 +161,8 @@ class InputValidationTest(unittest.TestCase):
             df2,
             runner='DataflowRunner',
             project=self.test_project,
-            region=self.test_region))
+            region=self.test_region,
+            tfrecorder_wheel=self.test_wheel))
 
   def test_gcs_path_with_dataflow_runner_missing_param(self):
     """Tests DataflowRunner with missing required parameter."""
@@ -168,8 +175,24 @@ class InputValidationTest(unittest.TestCase):
             df2,
             runner='DataflowRunner',
             project=p,
-            region=r)
+            region=r,
+            tfrecorder_wheel=self.test_wheel)
       self.assertTrue('DataflowRunner requires valid `project` and `region`'
+                      in repr(context.exception))
+
+
+  def test_gcs_path_with_dataflow_runner_missing_wheel(self):
+    """Tests DataflowRunner with missing required whl path."""
+    df2 = self.test_df.copy()
+    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
+    with self.assertRaises(AttributeError) as context:
+      client._validate_runner(
+          df2,
+          runner='DataflowRunner',
+          project=self.test_project,
+          region=self.test_region,
+          tfrecorder_wheel=None)
+      self.assertTrue('requires a tfrecorder whl file for remote execution.'
                       in repr(context.exception))
 
 
