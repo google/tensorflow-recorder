@@ -192,7 +192,6 @@ class InputValidationTest(unittest.TestCase):
           project=self.test_project,
           region=self.test_region,
           tfrecorder_wheel=None)
-      print(context.exception)
       self.assertTrue('requires a tfrecorder whl file for remote execution.'
                       in repr(context.exception))
 

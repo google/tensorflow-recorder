@@ -66,7 +66,7 @@ def _get_pipeline_options(
     job_dir: str,
     project: str,
     region: str,
-    tfrecorder_wheel:str,
+    tfrecorder_wheel: str,
     dataflow_options: Union[Dict[str, Any], None]
     ) -> beam.pipeline.PipelineOptions:
   """Returns Beam pipeline options."""
