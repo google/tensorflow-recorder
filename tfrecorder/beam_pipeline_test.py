@@ -16,7 +16,6 @@
 
 """Tests for beam_pipeline."""
 
-import os
 import unittest
 from unittest import mock
 
