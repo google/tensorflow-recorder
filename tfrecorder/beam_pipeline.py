@@ -86,7 +86,7 @@ def _get_pipeline_options(
   if region:
     options_dict['region'] = region
   if runner == 'DataflowRunner':
-    options_dict['extra_packages'] = tfrecorder_wheel
+    options_dict['extra_packages'] = [tfrecorder_wheel]
   if dataflow_options:
     options_dict.update(dataflow_options)
 
