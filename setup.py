@@ -21,7 +21,6 @@ from setuptools import setup
 
 
 REQUIRED_PACKAGES = [
-    "absl-py < 0.9, >= 0.7",
     "apache-beam[gcp] >= 2.22.0",
     "avro >= 1.10.0",
     "coverage >= 5.1",
