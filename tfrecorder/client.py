@@ -73,7 +73,9 @@ def _validate_runner(
 
   if (runner == 'DataflowRunner') & (not tfrecorder_wheel):
     raise AttributeError(
-      'DataflowRunner requires a tfrecorder whl file for remote execution.')
+        'DataflowRunner requires a tfrecorder whl file for remote execution.')
+
+
 # def read_image_directory(dirpath) -> pd.DataFrame:
 #   """Reads image data from a directory into a Pandas DataFrame."""
 #

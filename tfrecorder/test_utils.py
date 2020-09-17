@@ -26,11 +26,13 @@ from PIL import Image
 from apache_beam.testing import test_pipeline
 import pandas as pd
 
+from tfrecorder import constants
+
 
 TEST_DIR = 'tfrecorder/test_data'
 
 
-def get_test_df():
+def get_test_df() -> pd.DataFrame:
   """Gets a test dataframe that works with the data in test_data/."""
   return pd.read_csv(os.path.join(TEST_DIR, 'data.csv'))
 
@@ -39,6 +41,24 @@ def get_test_data() -> Dict[str, List[Any]]:
   """Returns test data in columnar format."""
 
   return get_test_df().to_dict(orient='list')
+
+
+def get_raw_feature_df() -> pd.DataFrame:
+  """Returns test dataframe having raw feature spec schema."""
+
+  df = get_test_df()
+  df.drop(constants.IMAGE_URI_KEY, axis=1, inplace=True)
+  df['image_name'] = 'image_name'
+  df['image'] = 'image'
+  # Note: TF Transform parser expects string values in input. They will
+  # be parsed based on the raw feature spec that is passed together with the
+  # data
+  df['image_height'] = '48'
+  df['image_width'] = '48'
+  df['image_channels'] = '3'
+  df = df[constants.RAW_FEATURE_SPEC.keys()]
+
+  return df
 
 
 def get_test_pipeline():
