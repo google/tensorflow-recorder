@@ -1,8 +1,8 @@
 # TFRecorder
 
-TFRecorder makes it easy to create [TFRecords](https://www.tensorflow.org/tutorials/load_data/tfrecord) from [Pandas DataFrames](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) or CSV Files. TFRecord reads data, transforms it using [TensorFlow Transform](https://www.tensorflow.org/tfx/transform/get_started), stores it in the TFRecord format using [Apache Beam](https://beam.apache.org/) and optionally [Google Cloud DataFlow](https://cloud.google.com/dataflow). Most importantly, TFRecorder does this without requiring the user to write a beam pipeline or TensorFlow Transform code.
+TFRecorder makes it easy to create [TFRecords](https://www.tensorflow.org/tutorials/load_data/tfrecord) from [Pandas DataFrames](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.html) or CSV Files. TFRecord reads data, transforms it using [TensorFlow Transform](https://www.tensorflow.org/tfx/transform/get_started), stores it in the TFRecord format using [Apache Beam](https://beam.apache.org/) and optionally [Google Cloud Dataflow](https://cloud.google.com/dataflow). Most importantly, TFRecorder does this without requiring the user to write an Apache Beam pipeline or TensorFlow Transform code.
 
-TFRecorder can convert any Pandas DataFrame or CSV file into TFRecords. If your data includes images TFRecorder can also serialize those into TFRecords. By default, TFRecorder expects your DataFrame or CSV file to be in the same 'Image CSV' format that Google Cloud Platform's AutoML Vision product uses, however you can also specify an input data schema using TFRecorder's flexible schema system.
+TFRecorder can convert any Pandas DataFrame or CSV file into TFRecords. If your data includes images TFRecorder can also serialize those into TFRecords. By default, TFRecorder expects your DataFrame or CSV file to be in the same ['Image CSV'](https://cloud.google.com/vision/automl/docs/prepare) format that Google Cloud Platform's AutoML Vision product uses, however you can also specify an input data schema using TFRecorder's flexible schema system.
 
 !['TFRecorder CI/CD Badge'](https://github.com/google/tensorflow-recorder/workflows/TFRecord%20CICD/badge.svg)
 
@@ -71,7 +71,7 @@ import tfrecorder
 df = pd.read_csv(...)
 df.tensorflow.to_tfr(
     output_dir='gs://my/bucket',
-    runner='DataFlowRunner',
+    runner='DataflowRunner',
     project='my-project',
     region='us-central1'
     tfrecorder_wheel='/path/to/my/tfrecorder.whl')
@@ -120,10 +120,10 @@ tfrecorder check-tfrecords \
     --output_dir=/tmp/output
 ```
 
-## Image CSV Format Input
+## Default Schema
 
 If you don't specify an input schema, TFRecorder expects data to be in the same format as 
-[AutoML Vision](https://cloud.google.com/vision/automl/docs/prepare).  
+[AutoML Vision input](https://cloud.google.com/vision/automl/docs/prepare).  
 This format looks like a Pandas DataFrame or CSV formatted as:
 
 | split | image_uri                 | label |
@@ -132,7 +132,7 @@ This format looks like a Pandas DataFrame or CSV formatted as:
 
 where:
 * `split` can take on the values TRAIN, VALIDATION, and TEST
-* `image_uri` specifies a local or google cloud storage location for the image file. 
+* `image_uri` specifies a local or Google Cloud Storage location for the image file. 
 * `label` can be either a text based label that will be integerized or integer
 
 ## Flexible Schema
@@ -161,7 +161,7 @@ df = pd.read_csv(...)
 df.tensorflow.to_tfr(
     output_dir='gs://my/bucket',
     schema_map=image_csv_schema,
-    runner='DataFlowRunner',
+    runner='DataflowRunner',
     project='my-project',
     region='us-central1')
 ```
@@ -228,7 +228,7 @@ df = pd.read_csv(...)
 df.tensorflow.to_tfr(
     output_dir='gs://my/bucket',
     schema_map=schema_map,
-    runner='DataFlowRunner',
+    runner='DataflowRunner',
     project='my-project',
     region='us-central1')
 ```

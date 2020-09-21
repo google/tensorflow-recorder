@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for types."""
+"""Tests for TFRecorder types."""
 
 import unittest
 import tensorflow_transform as tft

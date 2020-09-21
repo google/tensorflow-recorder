@@ -144,12 +144,12 @@ def get_key(
 def get_raw_feature_spec(columns: List[str],
                          schema_map: Dict[str, collections.namedtuple]
                          ) -> Dict[str, tf.io.FixedLenFeature]:
-  """Get's RAW (pre TFT) feature spec."""
+  """Gets RAW (pre TFT) feature spec."""
 
   feature_spec = dict()
 
   # Because the DF column name order may not match the feature_spec order
-  # This maps existing column names to their feature spec (req part of
+  # this maps existing column names to their feature spec (req part of
   # namedtuple)
   for col in columns:
     if schema_map[col].type_name == "image_uri":
@@ -162,7 +162,7 @@ def get_raw_feature_spec(columns: List[str],
       feature_spec['image_width'] = tf.io.FixedLenFeature([], tf.int64)
       feature_spec['image_channels'] = tf.io.FixedLenFeature([], tf.int64)
     else:
-      # Copy feature as/is.
+      # Copy feature as-is.
       feature_spec[col] = schema_map[col].feature_spec
   return feature_spec
 
@@ -170,7 +170,10 @@ def get_raw_feature_spec(columns: List[str],
 def get_raw_metadata(columns: List[str],
                      schema_map: Dict[str, collections.namedtuple]
                      ) -> dataset_metadata.DatasetMetadata:
-  """Get's RAW (pre TFT) schema."""
+  """Get's RAW (pre TFT) schema.
+  
+  Note: takes base schema_map as input, not raw_schema_map.
+  """
   feature_spec = get_raw_feature_spec(columns, schema_map)
   return dataset_metadata.DatasetMetadata(
       schema_utils.schema_from_feature_spec(feature_spec))
