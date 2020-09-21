@@ -171,7 +171,7 @@ def get_raw_metadata(columns: List[str],
                      schema_map: Dict[str, collections.namedtuple]
                      ) -> dataset_metadata.DatasetMetadata:
   """Get's RAW (pre TFT) schema.
-  
+
   Note: takes base schema_map as input, not raw_schema_map.
   """
   feature_spec = get_raw_feature_spec(columns, schema_map)

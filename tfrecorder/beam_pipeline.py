@@ -312,10 +312,6 @@ def build_pipeline(
         data | 'SplitDataset' >> beam.Partition(
             partition_fn, len(schema.split_key.allowed_values)))
 
-    train_dataset = (train_data, raw_metadata)
-    val_dataset = (val_data, raw_metadata)
-    test_dataset = (test_data, raw_metadata)
-
     raw_schema_map = schema.get_raw_schema_map(schema_map=schema_map)
     preprocessing_fn = functools.partial(
         _preprocessing_fn,
@@ -327,19 +323,19 @@ def build_pipeline(
 
     transform_fn = _transform_and_write_tfr(
         train_data, tfr_writer, preprocessing_fn=preprocessing_fn,
-        raw_metadata=schema.get_raw_metadata(df.columns, schema_map),
+        raw_metadata=raw_metadata,
         label='Train')
 
     if 'VALIDATION' in split_counts:
       _transform_and_write_tfr(
-          val_data, tfr_writer, transform_fn=transform_fn, 
-          raw_metadata=schema.get_raw_metadata(df.columns, schema_map),
+          val_data, tfr_writer, transform_fn=transform_fn,
+          raw_metadata=raw_metadata,
           label='Validation')
 
     if 'TEST' in split_counts:
       _transform_and_write_tfr(
           test_data, tfr_writer, transform_fn=transform_fn,
-          raw_metadata=schema.get_raw_metadata(df.columns, schema_map),
+          raw_metadata=raw_metadata,
           label='Test')
 
     _ = (

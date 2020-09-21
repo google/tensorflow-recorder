@@ -26,7 +26,6 @@ from unittest import mock
 import apache_beam as beam
 import frozendict
 import tensorflow as tf
-import tensorflow_transform as tft
 from tensorflow_transform import beam as tft_beam
 
 from tfrecorder import beam_pipeline
@@ -120,6 +119,7 @@ class GetSplitCountsTest(unittest.TestCase):
     with self.assertRaises(AssertionError):
       beam_pipeline.get_split_counts(df, self.split_key)
 
+# pylint: disable=too-many-instance-attributes
 
 class TransformAndWriteTfrTest(unittest.TestCase):
   """Tests `_transform_and_write_tfr` function."""
@@ -155,7 +155,7 @@ class TransformAndWriteTfrTest(unittest.TestCase):
       with tft_beam.Context(temp_dir=os.path.join(self.test_dir, 'tmp')):
         df = self.raw_df[self.raw_df.split == 'TRAIN']
         dataset = self._get_dataset(p, df)
-        preprocessing_fn = functools.partial(beam_pipeline._preprocessing_fn, 
+        preprocessing_fn = functools.partial(beam_pipeline._preprocessing_fn,
                                              schema_map=self.raw_schema)
         transform_fn = (
             beam_pipeline._transform_and_write_tfr(
