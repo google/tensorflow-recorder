@@ -16,16 +16,22 @@
 
 """Tests for beam_pipeline."""
 
+import functools
+import glob
 import os
+import tempfile
 import unittest
 from unittest import mock
 
 import apache_beam as beam
 import frozendict
 import tensorflow as tf
+import tensorflow_transform as tft
+from tensorflow_transform import beam as tft_beam
 
 from tfrecorder import beam_pipeline
 from tfrecorder import schema
+from tfrecorder import test_utils
 
 
 # pylint: disable=protected-access
@@ -86,11 +92,103 @@ class BeamPipelineTests(unittest.TestCase):
           index, i,
           '{} should be index {} but was index {}'.format(part, i, index))
 
-  def test_get_setup_py_filepath(self):
-    """Tests `_get_setup_py_filepath`."""
-    filepath = beam_pipeline._get_setup_py_filepath()
-    self.assertTrue(os.path.isfile(filepath))
-    self.assertTrue(os.path.isabs(filepath))
+
+class GetSplitCountsTest(unittest.TestCase):
+  """Tests `get_split_counts` function."""
+
+  def setUp(self):
+    self.df = test_utils.get_test_df()
+    self.schema_map = schema.image_csv_schema
+    self.split_key = schema.get_key('split_key', self.schema_map)
+
+  def test_all_splits(self):
+    """Tests case where train, validation and test data exists"""
+    expected = {'TRAIN': 2, 'VALIDATION': 2, 'TEST': 2}
+    actual = beam_pipeline.get_split_counts(self.df, self.split_key)
+    self.assertEqual(actual, expected)
+
+  def test_one_split(self):
+    """Tests case where only one split (train) exists."""
+    df = self.df[self.df.split == 'TRAIN']
+    expected = {'TRAIN': 2}
+    actual = beam_pipeline.get_split_counts(df, self.split_key)
+    self.assertEqual(actual, expected)
+
+  def test_error_no_split_key(self):
+    """Tests case no split key/column exists."""
+    df = self.df.drop(self.split_key, axis=1)
+    with self.assertRaises(AssertionError):
+      beam_pipeline.get_split_counts(df, self.split_key)
+
+
+class TransformAndWriteTfrTest(unittest.TestCase):
+  """Tests `_transform_and_write_tfr` function."""
+
+  def setUp(self):
+    self.pipeline = test_utils.get_test_pipeline()
+    self.raw_df = test_utils.get_raw_feature_df()
+    self.temp_dir_obj = tempfile.TemporaryDirectory(dir='/tmp', prefix='test-')
+    self.test_dir = self.temp_dir_obj.name
+    self.tfr_writer = functools.partial(
+        beam_pipeline._get_write_to_tfrecord, output_dir=self.test_dir,
+        compress='gzip', num_shards=2)
+    self.raw_schema = schema.get_raw_schema_map(schema.image_csv_schema)
+    self.raw_metadata = schema.get_raw_metadata(self.raw_df.columns,
+                                                self.raw_schema)
+    self.converter = schema.get_tft_coder(self.raw_df.columns, self.raw_schema)
+    self.transform_fn_path = ('./tfrecorder/test_data/sample_tfrecords')
+
+  def tearDown(self):
+    self.temp_dir_obj.cleanup()
+
+  def _get_dataset(self, pipeline, df):
+    """Returns dataset `PCollection`."""
+    return (pipeline
+            | beam.Create(df.values.tolist())
+            | beam.ParDo(beam_pipeline.ToCSVRows())
+            | beam.Map(self.converter.decode))
+
+  def test_train(self):
+    """Tests case where training data is passed."""
+
+    with self.pipeline as p:
+      with tft_beam.Context(temp_dir=os.path.join(self.test_dir, 'tmp')):
+        df = self.raw_df[self.raw_df.split == 'TRAIN']
+        dataset = self._get_dataset(p, df)
+        preprocessing_fn = functools.partial(beam_pipeline._preprocessing_fn, 
+                                             schema_map=self.raw_schema)
+        transform_fn = (
+            beam_pipeline._transform_and_write_tfr(
+                dataset, self.tfr_writer,
+                preprocessing_fn=preprocessing_fn,
+                raw_metadata=self.raw_metadata,
+                label='Train'))
+        _ = transform_fn | tft_beam.WriteTransformFn(self.test_dir)
+
+    self.assertTrue(
+        os.path.isdir(os.path.join(self.test_dir, 'transform_fn')))
+    self.assertTrue(
+        os.path.isdir(os.path.join(self.test_dir, 'transformed_metadata')))
+    self.assertTrue(glob.glob(os.path.join(self.test_dir, 'train*.gz')))
+    self.assertFalse(glob.glob(os.path.join(self.test_dir, 'validation*.gz')))
+    self.assertFalse(glob.glob(os.path.join(self.test_dir, 'test*.gz')))
+
+  def test_non_training(self):
+    """Tests case where dataset contains non-training (e.g. test) data."""
+
+    with self.pipeline as p:
+      with tft_beam.Context(temp_dir=os.path.join(self.test_dir, 'tmp')):
+
+        df = self.raw_df[self.raw_df.split == 'TEST']
+        dataset = self._get_dataset(p, df)
+        transform_fn = p | tft_beam.ReadTransformFn(self.transform_fn_path)
+        beam_pipeline._transform_and_write_tfr(
+            dataset, self.tfr_writer, transform_fn=transform_fn,
+            raw_metadata=self.raw_metadata, label='Test')
+
+    self.assertFalse(glob.glob(os.path.join(self.test_dir, 'train*.gz')))
+    self.assertFalse(glob.glob(os.path.join(self.test_dir, 'validation*.gz')))
+    self.assertTrue(glob.glob(os.path.join(self.test_dir, 'test*.gz')))
 
 
 if __name__ == '__main__':

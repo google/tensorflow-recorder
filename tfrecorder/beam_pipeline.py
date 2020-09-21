@@ -19,13 +19,15 @@
 This file implements the full Beam pipeline for TFRecorder.
 """
 
-from typing import Any, Dict, Generator, Union
 import collections
+from typing import Any, Callable, Dict, Generator, List, Optional, Union
+
 import functools
 import logging
 import os
 
 import apache_beam as beam
+from apache_beam import pvalue
 import pandas as pd
 import tensorflow_transform as tft
 from tensorflow_transform import beam as tft_beam
@@ -33,16 +35,7 @@ from tensorflow_transform import beam as tft_beam
 from tfrecorder import beam_image
 from tfrecorder import common
 from tfrecorder import schema
-
-
-def _get_setup_py_filepath() -> str:
-  """Returns the file path to the setup.py file.
-
-  The location of the setup.py file is needed to run Dataflow jobs.
-  """
-
-  return os.path.join(
-      os.path.dirname(os.path.abspath(__file__)), '..', 'setup.py')
+from tfrecorder import types
 
 
 def _get_job_name(job_label: str = None) -> str:
@@ -76,6 +69,7 @@ def _get_pipeline_options(
     job_dir: str,
     project: str,
     region: str,
+    tfrecorder_wheel: str,
     dataflow_options: Union[Dict[str, Any], None]
     ) -> beam.pipeline.PipelineOptions:
   """Returns Beam pipeline options."""
@@ -95,7 +89,7 @@ def _get_pipeline_options(
   if region:
     options_dict['region'] = region
   if runner == 'DataflowRunner':
-    options_dict['setup_file'] = _get_setup_py_filepath()
+    options_dict['extra_packages'] = [tfrecorder_wheel]
   if dataflow_options:
     options_dict.update(dataflow_options)
 
@@ -123,9 +117,7 @@ def _get_write_to_tfrecord(output_dir: str,
                            num_shards: int = 0) \
                            -> beam.io.tfrecordio.WriteToTFRecord:
   """Returns `beam.io.tfrecordio.WriteToTFRecord` object.
-
   This configures a Beam sink to output TFRecord files.
-
   Args:
     output_dir: Directory to output TFRecord files.
     prefix: TFRecord file prefix.
@@ -148,7 +140,9 @@ def _get_write_to_tfrecord(output_dir: str,
       num_shards=num_shards,
   )
 
-def _preprocessing_fn(inputs, schema_map):
+
+def _preprocessing_fn(inputs: Dict[str, Any],
+                      schema_map: Dict[str, collections.namedtuple]):
   """TensorFlow Transform preprocessing function."""
 
   outputs = {}
@@ -175,12 +169,51 @@ class ToCSVRows(beam.DoFn):
   # pylint: disable=arguments-differ
   def process(
       self,
-      element: Dict[str, Any]
+      element: List[str],
       ) -> Generator[Dict[str, Any], None, None]:
     """Converts a pandas dataframe flat, column seperated row."""
     element = ','.join([str(item) for item in element])
     self.row_count.inc()
     yield element
+
+
+def get_split_counts(df: pd.DataFrame, split_key: str):
+  """Returns number of rows for each data split type given dataframe."""
+  assert split_key in df.columns
+  return df[split_key].value_counts().to_dict()
+
+
+def _transform_and_write_tfr(
+    dataset: pvalue.PCollection,
+    tfr_writer: Callable[[], beam.io.tfrecordio.WriteToTFRecord],
+    raw_metadata: types.BeamDatasetMetadata,
+    preprocessing_fn: Optional[Callable] = None,
+    transform_fn: Optional[types.TransformFn] = None,
+    label: str = 'data'):
+  """Applies TF Transform to dataset and outputs it as TFRecords."""
+
+  dataset_metadata = (dataset, raw_metadata)
+
+  if transform_fn:
+    transformed_dataset, transformed_metadata = (
+        (dataset_metadata, transform_fn)
+        | f'Transform{label}' >> tft_beam.TransformDataset())
+  else:
+    if not preprocessing_fn:
+      preprocessing_fn = lambda x: x
+    (transformed_dataset, transformed_metadata), transform_fn = (
+        dataset_metadata
+        | f'AnalyzeAndTransform{label}' >>
+        tft_beam.AnalyzeAndTransformDataset(preprocessing_fn))
+
+  transformed_data_coder = tft.coders.ExampleProtoCoder(
+      transformed_metadata.schema)
+  _ = (
+      transformed_dataset
+      | f'Encode{label}' >> beam.Map(transformed_data_coder.encode)
+      | f'Write{label}' >> tfr_writer(prefix=label.lower()))
+
+  return transform_fn
 
 
 # pylint: disable=too-many-arguments
@@ -195,6 +228,7 @@ def build_pipeline(
     compression: str,
     num_shards: int,
     schema_map: Dict[str, collections.namedtuple],
+    tfrecorder_wheel: str,
     dataflow_options: dict) -> beam.Pipeline:
   """Runs TFRecorder Beam Pipeline.
 
@@ -208,6 +242,7 @@ def build_pipeline(
     compression: gzip or None.
     num_shards: Number of shards.
     schema_map: A schema map used to derive the input and target schema.
+    tfrecorder_wheel: Path to TFRecorder wheel for DataFlow
     dataflow_options: Dataflow Runner Options (optional)
 
   Returns:
@@ -224,6 +259,7 @@ def build_pipeline(
       job_dir,
       project,
       region,
+      tfrecorder_wheel,
       dataflow_options)
 
   p = beam.Pipeline(options=options)
@@ -255,80 +291,64 @@ def build_pipeline(
     # If the schema contains a valid split key, we are partitioning the dataset.
     split_key = schema.get_key(type_name='split_key', schema_map=schema_map)
 
+    # Note: This will not always reflect actual number of samples per dataset
+    # written as TFRecords. The succeeding `Partition` operation may mark
+    # additional samples from other splits as discarded. If a split has all
+    # its samples discarded, the pipeline will still generate a TFRecord
+    # file for that split, albeit empty.
+    split_counts = get_split_counts(df, split_key)
+
     # Raw metadata is the metadata after image insertion but before TFT
     raw_metadata = schema.get_raw_metadata(df.columns, schema_map)
 
-    if split_key:
+    # Require training set to be available in the input data. The transform_fn
+    # and transformed_metadata will be generated from the training set and
+    # applied to the other datasets, if any
+    assert 'TRAIN' in split_counts
+
       # Split dataset into train, validation, test.
-      partition_fn = functools.partial(_partition_fn, split_key=split_key)
-      train_data, val_data, test_data, discard_data = (
-          data | 'SplitDataset' >> beam.Partition(
-              partition_fn, len(schema.split_key.allowed_values)))
+    partition_fn = functools.partial(_partition_fn, split_key=split_key)
+    train_data, val_data, test_data, discard_data = (
+        data | 'SplitDataset' >> beam.Partition(
+            partition_fn, len(schema.split_key.allowed_values)))
 
-      train_dataset = (train_data, raw_metadata)
-      val_dataset = (val_data, raw_metadata)
-      test_dataset = (test_data, raw_metadata)
-    else:
-      train_dataset = (data, raw_metadata)
+    train_dataset = (train_data, raw_metadata)
+    val_dataset = (val_data, raw_metadata)
+    test_dataset = (test_data, raw_metadata)
 
-    # TensorFlow Transform applied to all datasets.
     raw_schema_map = schema.get_raw_schema_map(schema_map=schema_map)
     preprocessing_fn = functools.partial(
         _preprocessing_fn,
         schema_map=raw_schema_map)
-    transformed_train_dataset, transform_fn = (
-        train_dataset
-        | 'AnalyzeAndTransformTrain' >> tft_beam.AnalyzeAndTransformDataset(
-            preprocessing_fn))
 
-    transformed_train_data, transformed_metadata = transformed_train_dataset
-    transformed_data_coder = tft.coders.ExampleProtoCoder(
-        transformed_metadata.schema)
+    tfr_writer = functools.partial(
+        _get_write_to_tfrecord, output_dir=job_dir, compress=compression,
+        num_shards=num_shards)
 
-    transformed_val_data, _ = (
-        (val_dataset, transform_fn)
-        | 'TransformVal' >> tft_beam.TransformDataset()
-    )
+    transform_fn = _transform_and_write_tfr(
+        train_data, tfr_writer, preprocessing_fn=preprocessing_fn,
+        raw_metadata=schema.get_raw_metadata(df.columns, schema_map),
+        label='Train')
 
-    transformed_test_data, _ = (
-        (test_dataset, transform_fn)
-        | 'TransformTest' >> tft_beam.TransformDataset()
-    )
+    if 'VALIDATION' in split_counts:
+      _transform_and_write_tfr(
+          val_data, tfr_writer, transform_fn=transform_fn, 
+          raw_metadata=schema.get_raw_metadata(df.columns, schema_map),
+          label='Validation')
 
-    # Sinks for TFRecords and metadata.
-    tfr_writer = functools.partial(_get_write_to_tfrecord,
-                                   output_dir=job_dir,
-                                   compress=compression,
-                                   num_shards=num_shards)
-
-    _ = (
-        transformed_train_data
-        | 'EncodeTrainData' >> beam.Map(transformed_data_coder.encode)
-        | 'WriteTrainData' >> tfr_writer(prefix='train'))
-
-  # VAL and TEST aren only written if a split key is present.
-  if split_key:
-    _ = (
-        transformed_val_data
-        | 'EncodeValData' >> beam.Map(transformed_data_coder.encode)
-        | 'WriteValData' >> tfr_writer(prefix='val'))
-
-    _ = (
-        transformed_test_data
-        | 'EncodeTestData' >> beam.Map(transformed_data_coder.encode)
-        | 'WriteTestData' >> tfr_writer(prefix='test'))
+    if 'TEST' in split_counts:
+      _transform_and_write_tfr(
+          test_data, tfr_writer, transform_fn=transform_fn,
+          raw_metadata=schema.get_raw_metadata(df.columns, schema_map),
+          label='Test')
 
     _ = (
         discard_data
-        | 'DiscardDataWriter' >> beam.io.WriteToText(
+        | 'WriteDiscardedData' >> beam.io.WriteToText(
             os.path.join(job_dir, 'discarded-data')))
 
-  # Output transform function and metadata
-  _ = (transform_fn | 'WriteTransformFn' >> tft_beam.WriteTransformFn(
-      job_dir))
-
-  # Output metadata schema
-  _ = (transformed_metadata | 'WriteMetadata' >> tft_beam.WriteMetadata(
-      job_dir, pipeline=p))
+    # Note: `transform_fn` already contains the transformed metadata
+    _ = (transform_fn | 'WriteTransformFn' >> tft_beam.WriteTransformFn(
+        job_dir))
 
   return p

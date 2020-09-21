@@ -65,8 +65,8 @@ def load(image_uri):
   try:
     with tf.io.gfile.GFile(image_uri, 'rb') as f:
       return Image.open(f)
-  except tf.python.framework.errors_impl.NotFoundError as nfe:
-    raise OSError('File {} was not found.'.format(image_uri)) from nfe
+  except tf.python.framework.errors_impl.NotFoundError as e:
+    raise OSError('File {} was not found.'.format(image_uri)) from e
 
 
 # pylint: disable=abstract-method
@@ -109,6 +109,7 @@ class ExtractImagesDoFn(beam.DoFn):
       logging.warning('Could not load image: %s', image_uri)
       logging.error('Exception was: %s', str(e))
       self.image_bad_counter.inc()
+      d['split'] = 'DISCARD'
 
     element.update(d)
     yield element
