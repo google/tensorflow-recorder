@@ -86,9 +86,7 @@ def read_csv(
   """Returns a a Pandas DataFrame from a CSV file."""
 
   if header is None and not names:
-    raise NotImplementedError(
-        'If header doesn\'t exist names must be specified.')
-    #names = constants.IMAGE_CSV_COLUMNS
+    names = list(schema.image_csv_schema.keys())
 
   with tf.io.gfile.GFile(csv_file) as f:
     return pd.read_csv(f, names=names, header=header)

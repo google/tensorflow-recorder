@@ -229,7 +229,7 @@ def build_pipeline(
     num_shards: int,
     schema_map: Dict[str, collections.namedtuple],
     tfrecorder_wheel: str,
-    dataflow_options: dict) -> beam.Pipeline:
+    dataflow_options: Dict[str, Any]) -> beam.Pipeline:
   """Runs TFRecorder Beam Pipeline.
 
   Args:

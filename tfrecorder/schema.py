@@ -25,56 +25,59 @@ import tensorflow_transform as tft
 from tensorflow_transform.tf_metadata import dataset_metadata
 from tensorflow_transform.tf_metadata import schema_utils
 
+# TODO(mikebernico): Refactor types into data classes
 # All supported types will be based on _supported_type.
-_supported_type = collections.namedtuple(
+supported_type = collections.namedtuple(
     'tfrecordInputType',
     ['type_name', 'feature_spec', 'allowed_values'])
 
 # Supported type definitions here.
-image_uri = _supported_type(
+image_uri = supported_type(
     type_name='image_uri',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=None)
 
+# Note: split_key is an immutable type and these allowed values cannot change.
 allowed_split_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
-split_key = _supported_type(
+split_key = supported_type(
     type_name='split_key',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=allowed_split_values)
 
 #TODO(mikebernico): Implement in preprocess_fn
-integer_input = _supported_type(
+integer_input = supported_type(
     type_name='integer_input',
     feature_spec=tf.io.FixedLenFeature([], tf.int64),
     allowed_values=None)
 
 #TODO(mikebernico): Implement in preprocess_fn
-float_input = _supported_type(
+float_input = supported_type(
     type_name='float_input',
     feature_spec=tf.io.FixedLenFeature([], tf.float64),
     allowed_values=None)
 
 #TODO(mikebernico): Implement in preprocess_fn
-categorical_input = _supported_type(
+categorical_input = supported_type(
     type_name='categorical_input',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=None)
 
-integer_label = _supported_type(
+integer_label = supported_type(
     type_name='integer_label',
     feature_spec=tf.io.FixedLenFeature([], tf.int64),
     allowed_values=None)
 
-string_label = _supported_type(
+string_label = supported_type(
     type_name='string_label',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=None)
 
-image_support_type = _supported_type(
+image_support_type = supported_type(
     type_name='image_support_type',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=None)
 
+# TODO(mikebernico): Refactor schema_map to a container class.
 # Default schema supports the legacy image_csv format.
 image_csv_schema = frozendict.FrozenOrderedDict({
     'split': split_key,
@@ -88,7 +91,7 @@ def get_raw_schema_map(
   """Converts a schema to a raw (pre TFT / post image extraction) schema."""
   raw_schema = {}
   for k, v in schema_map.items():
-    if v.type_name == "image_uri":
+    if v.type_name == 'image_uri':
       raw_schema['image_name'] = image_support_type
       raw_schema['image'] = image_support_type
       raw_schema['image_height'] = image_support_type
@@ -99,9 +102,10 @@ def get_raw_schema_map(
   return raw_schema
 
 
-def get_tft_coder(columns: List[str],
-                  schema_map: Dict[str, collections.namedtuple]
-                  ) -> tft.coders.CsvCoder:
+def get_tft_coder(
+    columns: List[str],
+    schema_map: Dict[str, collections.namedtuple]
+    ) -> tft.coders.CsvCoder:
   """Gets a TFT CSV Coder.
 
   Args:
@@ -126,12 +130,10 @@ def get_tft_coder(columns: List[str],
                              metadata.schema)
 
 
-def get_key(
-    type_name: str,
-    schema_map: Dict[str, collections.namedtuple]
+def get_key(type_name: str, schema_map: Dict[str, collections.namedtuple]
     ) -> Union[str, None]:
   """Gets key of type 'type_name' from schema map if present,
-  otherwise returns None
+  otherwise returns None.
 
   Used by the beam pipeline to identify if images or split are present.
   """
@@ -152,7 +154,7 @@ def get_raw_feature_spec(columns: List[str],
   # this maps existing column names to their feature spec (req part of
   # namedtuple)
   for col in columns:
-    if schema_map[col].type_name == "image_uri":
+    if schema_map[col].type_name == 'image_uri':
       # Modify feature_spec for extracted image, don't include image_uri.
       # TODO(mikebernico) This only works in the case where the input has
       # ONLY 1 image. Generalize to multiple images someday?
@@ -170,7 +172,7 @@ def get_raw_feature_spec(columns: List[str],
 def get_raw_metadata(columns: List[str],
                      schema_map: Dict[str, collections.namedtuple]
                      ) -> dataset_metadata.DatasetMetadata:
-  """Get's RAW (pre TFT) schema.
+  """Returns metadata prior to TF Transform preprocessing
 
   Note: takes base schema_map as input, not raw_schema_map.
   """

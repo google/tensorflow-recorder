@@ -16,7 +16,7 @@ TFRecorder can convert any Pandas DataFrame or CSV file into TFRecords. If your 
 1. Clone this repo.
 
 ```bash
-https://github.com/google/tensorflow-recorder.git
+git clone https://github.com/google/tensorflow-recorder.git
 ```
 
 2. From the top directory of the repo, run the following command:
@@ -43,7 +43,7 @@ import pandas as pd
 import tfrecorder
 
 df = pd.read_csv(...)
-df.tensorflow.to_tfr(output_dir='gs://my/bucket')
+df.tensorflow.to_tfr(output_dir='/my/output/path')
 ```
 
 ##### Running on Cloud Dataflow
@@ -63,6 +63,11 @@ To build from source/git:
 
 Step 2:
 Specify the project, region, and path to the tfrecorder wheel for remote execution.
+
+*Cloud Dataflow Requirements*
+* The output_dir must be a Google Cloud Storage location.
+* The image files specified in an image_uri column must be located in Google Cloud Storage.
+* If being run from your local machine, the user must be [authenticated to use Google Cloud.](https://cloud.google.com/docs/authentication/getting-started)
 
 ```python
 import pandas as pd
@@ -137,13 +142,14 @@ where:
 
 ## Flexible Schema
 
-TFRecorder's flexible schema system allows you to use any schema you want for your input data, however to do so you must supply a schema map to TFRecorder.
+TFRecorder's flexible schema system allows you to use any schema you want for your input data. To support any input data schema, provide a schema map to TFRecorder. A TFRecorder schema_map creates a mapping between your dataframe column names and their types in the resulting
+TFRecord.
 
 ### Creating and using a schema map
-A schema map is a python dictionary that maps column names to supported
-TFRecorder types.
+A schema map is a Python dictionary that maps DataFrame column names to [supported
+TFRecorder types.](#Supported-types)
 
-For example, the default image CSV input is defined like this:
+For example, the default image CSV input can be defined like this:
 
 ```python
 image_csv_schema = frozendict.FrozenOrderedDict({

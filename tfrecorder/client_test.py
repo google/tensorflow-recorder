@@ -189,14 +189,12 @@ class ReadCSVTest(unittest.TestCase):
     self.header = data.pop(0)
     self.sample_data = data
 
-  # TODO(mikebernico) Talk with Carlos and depricate.
-  # Can't support this case with flexible schema.
-  # def test_valid_csv_no_header_no_names_specified(self):
-  #   """Tests a valid CSV without a header and no header names given."""
-  #   f = _make_csv_tempfile(self.sample_data)
-  #   actual = client.read_csv(f.name, header=None)
-  #   self.assertEqual(list(actual.columns), constants.IMAGE_CSV_COLUMNS)
-  #   self.assertEqual(actual.values.tolist(), self.sample_data)
+  def test_valid_csv_no_header_no_names_specified(self):
+    """Tests a valid CSV without a header and no header names given."""
+    f = _make_csv_tempfile(self.sample_data)
+    actual = client.read_csv(f.name, header=None)
+    self.assertEqual(list(actual.columns), list(schema.image_csv_schema.keys()))
+    self.assertEqual(actual.values.tolist(), self.sample_data)
 
   def test_valid_csv_no_header_names_specified(self):
     """Tests valid CSV without a header, but header names are given."""

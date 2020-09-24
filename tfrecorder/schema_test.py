@@ -24,6 +24,7 @@ from tfrecorder import schema
 
 class SchemaTest(unittest.TestCase):
   """Tests for type module."""
+
   def test_valid_get_tft_coder(self):
     """Tests a valid call on get_tft_coder."""
     columns = ['split', 'image_uri', 'label']
