@@ -171,7 +171,9 @@ class ToCSVRows(beam.DoFn):
       self,
       element: List[str],
       ) -> Generator[Dict[str, Any], None, None]:
-    """Converts a pandas dataframe flat, column seperated row."""
+    """Converts an input pandas DataFrame row (List of strings) into a flat
+      column seperated row. This is necessary so that the input DataFrame 
+      can operate with TF Transform Coders."""
     element = ','.join([str(item) for item in element])
     self.row_count.inc()
     yield element
@@ -241,7 +243,8 @@ def build_pipeline(
     output_dir: GCS or Local Path for output.
     compression: gzip or None.
     num_shards: Number of shards.
-    schema_map: A schema map used to derive the input and target schema.
+    schema_map: A schema map (Dictionary mapping Dataframe columns to types)
+     used to derive the input and target schema.
     tfrecorder_wheel: Path to TFRecorder wheel for DataFlow
     dataflow_options: Dataflow Runner Options (optional)
 
@@ -288,7 +291,7 @@ def build_pipeline(
           | 'ReadImage' >> beam.ParDo(extract_images_fn)
       )
 
-    # If the schema contains a valid split key, we are partitioning the dataset.
+    # If the schema contains a valid split key, partition the dataset.
     split_key = schema.get_key(type_name='split_key', schema_map=schema_map)
 
     # Note: This will not always reflect actual number of samples per dataset
@@ -298,7 +301,8 @@ def build_pipeline(
     # file for that split, albeit empty.
     split_counts = get_split_counts(df, split_key)
 
-    # Raw metadata is the metadata after image insertion but before TFT
+    # Raw metadata is the TFT metadata after image insertion but before TFT
+    # e.g Image columns have been added if necessary.
     raw_metadata = schema.get_raw_metadata(df.columns, schema_map)
 
     # Require training set to be available in the input data. The transform_fn
@@ -306,7 +310,7 @@ def build_pipeline(
     # applied to the other datasets, if any
     assert 'TRAIN' in split_counts
 
-      # Split dataset into train, validation, test.
+      # Split dataset into train, validation, test sets.
     partition_fn = functools.partial(_partition_fn, split_key=split_key)
     train_data, val_data, test_data, discard_data = (
         data | 'SplitDataset' >> beam.Partition(

@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-""" Defines input types for tfrecorder's input schema. """
+"""Defines input types for TFRecorder's input schema."""
 
 import collections
 from typing import Dict, List, Union
@@ -72,9 +72,14 @@ string_label = supported_type(
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=None)
 
-image_support_type = supported_type(
-    type_name='image_support_type',
+image_support_string = supported_type(
+    type_name='image_support_string',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
+    allowed_values=None)
+
+image_support_int = supported_type(
+    type_name='image_support_int',
+    feature_spec=tf.io.FixedLenFeature([], tf.int64),
     allowed_values=None)
 
 # TODO(mikebernico): Refactor schema_map to a container class.
@@ -92,11 +97,11 @@ def get_raw_schema_map(
   raw_schema = {}
   for k, v in schema_map.items():
     if v.type_name == 'image_uri':
-      raw_schema['image_name'] = image_support_type
-      raw_schema['image'] = image_support_type
-      raw_schema['image_height'] = image_support_type
-      raw_schema['image_width'] = image_support_type
-      raw_schema['image_channels'] = image_support_type
+      raw_schema['image_name'] = image_support_string
+      raw_schema['image'] = image_support_string
+      raw_schema['image_height'] = image_support_int
+      raw_schema['image_width'] = image_support_int
+      raw_schema['image_channels'] = image_support_int
     else:
       raw_schema[k] = schema_map[k]
   return raw_schema
@@ -109,33 +114,30 @@ def get_tft_coder(
   """Gets a TFT CSV Coder.
 
   Args:
-    columns: Ordered dataframe column names, from df.column.
+    columns: Ordered DataFrame column names, from df.column.
     schema_map: Schema map used to infer the schema.
 
   Returns:
     tft.coders.CsvCoder
   """
-  feature_spec = dict()
-
+  feature_spec = {}
   # Because the DF column name order may not match the feature_spec order
-  # This maps existing column names to their feature spec (req part of
+  # This maps existing column names to their feature spec (required part of
   # namedtuple)
   for col in columns:
     feature_spec[col] = schema_map[col].feature_spec
 
-
   metadata = dataset_metadata.DatasetMetadata(
       schema_utils.schema_from_feature_spec(feature_spec))
-  return tft.coders.CsvCoder(columns,
-                             metadata.schema)
+
+  return tft.coders.CsvCoder(columns, metadata.schema)
 
 
 def get_key(type_name: str, schema_map: Dict[str, collections.namedtuple]
     ) -> Union[str, None]:
-  """Gets key of type 'type_name' from schema map if present,
-  otherwise returns None.
+  """Gets key of type 'type_name' from schema map.
 
-  Used by the beam pipeline to identify if images or split are present.
+  Returns type_name if present, otherwise returns None.
   """
   for k, v in schema_map.items():
     if v.type_name == type_name:

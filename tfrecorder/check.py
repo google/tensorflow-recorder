@@ -88,7 +88,8 @@ def check_tfrecords(
     for data in dataset.take(1).as_numpy_iterator():
       # .as_numpy_iterator() converts from Tuple of Tensors to a dict.
       # list() yields the keys of that dict.
-      header = [k for k in list(data) if k != 'image']
+      #TODO(mikebernico): Check the schema type instead of image substring. 
+      header = [k for k in list(data) if 'image' not in k]
       writer.writerow(header)
 
     for r in dataset.take(num_records):

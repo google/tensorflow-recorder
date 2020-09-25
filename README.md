@@ -152,7 +152,7 @@ TFRecorder types.](#Supported-types)
 For example, the default image CSV input can be defined like this:
 
 ```python
-image_csv_schema = frozendict.FrozenOrderedDict({
+image_csv_schema = Dict({
     'split': schema.split_key,
     'image_uri': schema.image_uri,
     'label': schema.string_label})
@@ -173,16 +173,26 @@ df.tensorflow.to_tfr(
 ```
 
 ### Supported types
+TFRecorder's schema system supports several types, all listed below. You can use
+these types by referencing them in the schema map. Each type informs TFRecorder how 
+to treat your DataFrame columns.  For example, the schema mapping 
+`my_split_key: schema.split_key` tells TFRecorder to treat the column `my_split_key` as
+type `schema.split_key` and create dataset splits based on it's contents. 
 
 #### schema.image_uri 
-* Specifies the path to an image. When specifying, TFRecorder
-will load the specified image and store the image as a tf.string
+* Specifies the path to an image. When specified, TFRecorder
+will load the specified image and store the image as a [tf.string](https://www.tensorflow.org/tutorials/load_data/unicode)
 along with the image height, image width, and image channels.
 
 #### schema.split_key
-* Specifies a split key that TFRecord will use to partition the 
+A split key is required for TFRecorder at this time.
+
+* Specifies a split key that TFRecorder will use to partition the 
 input dataset on.
 * Allowed values are 'TRAIN', 'VALIDATION, and 'TEST'
+
+Note: If you do not want your data to be partitioned please include a split_key and
+set all rows to TRAIN.
 
 #### schema.integer_input
 * Specifies an int input.
@@ -202,18 +212,18 @@ input dataset on.
 
 #### schema.string_label
 * Specifies a string target.
-* Vocabulary computed and output integerized.
+* Vocabulary computed and *output integerized.*
 
 ### Flexible Schema Example
 
-Imagine you have a dataset you'd like to use with TFRecorder that 
+Imagine that you have a dataset that you would like to convert to TFRecords that 
 looks like this:
 
 | split | x     |   y  | label |
 |-------|-------|------|-------|
 | TRAIN | 0.32  | 42   |1      |
 
-First you'd define a schema map:
+First define a schema map:
 
 ```python
 schema_map = {
@@ -238,11 +248,22 @@ df.tensorflow.to_tfr(
     project='my-project',
     region='us-central1')
 ```
+After calling TFRecorder's to_tfr() function, TFRecorder will create an Apache beam pipeline, either locally or in this case
+using Google Cloud's Dataflow runner. This beam pipeline will use the schema map to identify the types you've associated with
+each data column and process your data using [TensorFlow Transform](https://www.tensorflow.org/tfx/transform/get_started) and TFRecorder's image processing functions to convert the data into into TFRecords.
 
 ## Contributing
 
 Pull requests are welcome. Please see our [code of conduct](docs/code-of-conduct.md) and [contributing guide](docs/contributing.md).
 
 ## Why TFRecorder?
-Using the TFRecord storage format is important for optimal machine learning pipelines and getting the most from your hardware (in cloud or on prem). In our work at [Google Cloud AI Services](https://cloud.google.com/consulting) we wanted to help our users spend their time writing AI/ML applications, and spend less time converting data. 
+Using the TFRecord storage format is important for optimal machine learning pipelines and getting the most from your hardware (in cloud or on prem). 
+
+TFRecords help when:
+* Your model is input bound (reading data is impacting training time).
+* Anytime you want to use tf.Dataset
+* When your dataset can't fit into memory
+
+
+In our work at [Google Cloud AI Services](https://cloud.google.com/consulting) we wanted to help our users spend their time writing AI/ML applications, and spend less time converting data. 
 

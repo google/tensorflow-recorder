@@ -67,13 +67,14 @@ class TFRecorderAccessor:
     Args:
       schema_map: A dict mapping column names to supported types.
       output_dir: Local directory or GCS Location to save TFRecords to.
-      runner: Beam runner. Can be DirectRunner or  DataFlowRunner.
-      project: GCP project name (Required if DataFlowRunner).
-      region: GCP region name (Required if DataFlowRunner).
-      tfrecorder_wheel: Path to the tfrecorder wheel DataFlow will run.
+        Note: GCS required for DataflowRunner
+      runner: Beam runner. Can be DirectRunner or  DataflowRunner.
+      project: GCP project name (Required if DataflowRunner).
+      region: GCP region name (Required if DataflowRunner).
+      tfrecorder_wheel: Path to the tfrecorder wheel Dataflow will run.
         (create with 'python setup.py sdist' or
         'pip download tfrecorder --no-deps')
-      dataflow_options: Optional dictionary containing DataFlow options.
+      dataflow_options: Optional dictionary containing Dataflow options.
       job_label: User supplied description for the beam job name.
       compression: Can be 'gzip' or None for no compression.
       num_shards: Number of shards to divide the TFRecords into. Default is
