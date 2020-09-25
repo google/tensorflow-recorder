@@ -120,6 +120,7 @@ class CheckTFRecordsTest(unittest.TestCase):
 
       # Check output CSV
       actual_df = pd.read_csv(actual_csv)
+      print(actual_df)
       expected_df = pd.DataFrame(self.data)
       pdt.assert_frame_equal(actual_df, expected_df)
 

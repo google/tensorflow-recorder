@@ -172,7 +172,7 @@ class ToCSVRows(beam.DoFn):
       element: List[str],
       ) -> Generator[Dict[str, Any], None, None]:
     """Converts an input pandas DataFrame row (List of strings) into a flat
-      column seperated row. This is necessary so that the input DataFrame 
+      column seperated row. This is necessary so that the input DataFrame
       can operate with TF Transform Coders."""
     element = ','.join([str(item) for item in element])
     self.row_count.inc()
