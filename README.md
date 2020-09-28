@@ -8,6 +8,14 @@ TFRecorder can convert any Pandas DataFrame or CSV file into TFRecords. If your 
 
 [Release Notes](RELEASE.md)
 
+## Why TFRecorder?
+Using the TFRecord storage format is important for optimal machine learning pipelines and getting the most from your hardware (in cloud or on prem). The TFRecorder project started inside [Google Cloud AI Services](https://cloud.google.com/consulting) when we realized we were writing TFRecord conversion code over and over again.  
+
+When to use TFRecords:
+* Your model is input bound (reading data is impacting training time).
+* Anytime you want to use tf.Dataset
+* When your dataset can't fit into memory
+
 
 ## Installation
 
@@ -176,17 +184,19 @@ df.tensorflow.to_tfr(
 TFRecorder's schema system supports several types, all listed below. You can use
 these types by referencing them in the schema map. Each type informs TFRecorder how 
 to treat your DataFrame columns.  For example, the schema mapping 
-`my_split_key: schema.split_key` tells TFRecorder to treat the column `my_split_key` as
-type `schema.split_key` and create dataset splits based on it's contents. 
+`my_split_key: schema.SplitKeyType` tells TFRecorder to treat the column `my_split_key` as
+type `schema.SplitKeyType` and create dataset splits based on it's contents. 
 
-#### schema.image_uri 
+#### schema.ImageUriType
 * Specifies the path to an image. When specified, TFRecorder
-will load the specified image and store the image as a [tf.string](https://www.tensorflow.org/tutorials/load_data/unicode)
-along with the image height, image width, and image channels.
+will load the specified image and store the image as a [base64 encoded](https://docs.python.org/3/library/base64.html)
+ [tf.string](https://www.tensorflow.org/tutorials/load_data/unicode) in the key 'image' 
+along with the height, width, and image channels  as integers using they keys 'image_height', 'image_width', and 'image_channels'.
+* A schema can contain only one imageUriType
 
-#### schema.split_key
-A split key is required for TFRecorder at this time.
-
+#### schema.SplitKeyType
+* A split key is required for TFRecorder at this time.
+* Only one split key is allowed.
 * Specifies a split key that TFRecorder will use to partition the 
 input dataset on.
 * Allowed values are 'TRAIN', 'VALIDATION, and 'TEST'
@@ -194,23 +204,23 @@ input dataset on.
 Note: If you do not want your data to be partitioned please include a split_key and
 set all rows to TRAIN.
 
-#### schema.integer_input
+#### schema.IntegerInputType
 * Specifies an int input.
 * Will be scaled to mean 0, variance 1.
 
-#### schema.float_input
+#### schema.FloatInputType
 * Specifies an float input.
 * Will be scaled to mean 0, variance 1.
 
-#### schema.categorical_input
+#### schema.CategoricalInputType
 * Specifies a string input.
 * Vocabulary computed and output integerized.
 
-#### schema.integer_label
+#### schema.IntegerLabelType
 * Specifies an integer target.
 * Not transformed.
 
-#### schema.string_label
+#### schema.StringLabelType
 * Specifies a string target.
 * Vocabulary computed and *output integerized.*
 
@@ -227,10 +237,10 @@ First define a schema map:
 
 ```python
 schema_map = {
-    'split':schema.split_key,
-    'x':schema.float_input,
-    'y':schema.integer_input,
-    'label':schema.integer_label
+    'split':schema.SplitKeyType,
+    'x':schema.FloatInputType,
+    'y':schema.IntegerInputType,
+    'label':schema.IntegerLabelType
 }
 ```
 

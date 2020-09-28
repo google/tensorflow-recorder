@@ -45,9 +45,9 @@ class BeamPipelineTests(unittest.TestCase):
         'image_uri': 'gs://foo/bar.jpg',
         'label': 1}
     my_schema = frozendict.FrozenOrderedDict({
-        'split': schema.split_key,
-        'image_uri': schema.image_uri,
-        'label': schema.integer_label})
+        'split': schema.SplitKeyType,
+        'image_uri': schema.ImageUriType,
+        'label': schema.IntegerLabelType})
 
     result = beam_pipeline._preprocessing_fn(element, schema_map=my_schema)
     self.assertEqual(element, result)

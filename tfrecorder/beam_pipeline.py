@@ -104,11 +104,11 @@ def _partition_fn(
   del unused_num_partitions
   dataset_type = element[split_key].decode('utf-8')
   try:
-    index = schema.split_key.allowed_values.index(dataset_type)
+    index = schema.SplitKeyType.allowed_values.index(dataset_type)
   except ValueError as e:
     logging.warning('Unable to index dataset type %s: %s.',
                     dataset_type, str(e))
-    index = schema.split_key.allowed_values.index('DISCARD')
+    index = schema.SplitKeyType.allowed_values.index('DISCARD')
   return index
 
 def _get_write_to_tfrecord(output_dir: str,
@@ -310,11 +310,11 @@ def build_pipeline(
     # applied to the other datasets, if any
     assert 'TRAIN' in split_counts
 
-      # Split dataset into train, validation, test sets.
+    # Split dataset into train, validation, test sets.
     partition_fn = functools.partial(_partition_fn, split_key=split_key)
     train_data, val_data, test_data, discard_data = (
         data | 'SplitDataset' >> beam.Partition(
-            partition_fn, len(schema.split_key.allowed_values)))
+            partition_fn, len(schema.SplitKeyType.allowed_values)))
 
     raw_schema_map = schema.get_raw_schema_map(schema_map=schema_map)
     preprocessing_fn = functools.partial(

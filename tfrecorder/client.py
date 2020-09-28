@@ -36,7 +36,7 @@ from tfrecorder import schema
 # TODO(mikebernico) Add test for only one split_key.
 def _validate_data(df: pd.DataFrame,
                    schema_map: Dict[str, collections.namedtuple]):
-  """ Verifies required image csv columns exist in data."""
+  """Verifies required image csv columns exist in data."""
 
   for key, value in schema_map.items():
     _ = value # TODO(mikebernico) Implement type checking.

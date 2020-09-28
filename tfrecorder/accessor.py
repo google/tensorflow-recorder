@@ -41,7 +41,7 @@ class TFRecorderAccessor:
   def to_tfr(
       self,
       output_dir: str,
-      schema_map: Dict[str, schema.supported_type] = schema.image_csv_schema,
+      schema_map: Dict[str, schema.SchemaMapType] = schema.image_csv_schema,
       runner: str = 'DirectRunner',
       project: Optional[str] = None,
       region: Optional[str] = None,

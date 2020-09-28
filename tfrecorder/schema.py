@@ -26,68 +26,70 @@ from tensorflow_transform.tf_metadata import dataset_metadata
 from tensorflow_transform.tf_metadata import schema_utils
 
 # TODO(mikebernico): Refactor types into data classes
-# All supported types will be based on _supported_type.
-supported_type = collections.namedtuple(
+# All supported types will be based on SupportedType.
+SupportedType = collections.namedtuple(
     'tfrecordInputType',
     ['type_name', 'feature_spec', 'allowed_values'])
 
 # Supported type definitions here.
-image_uri = supported_type(
+ImageUriType = SupportedType(
     type_name='image_uri',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=None)
 
 # Note: split_key is an immutable type and these allowed values cannot change.
 allowed_split_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
-split_key = supported_type(
+SplitKeyType = SupportedType(
     type_name='split_key',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=allowed_split_values)
 
 #TODO(mikebernico): Implement in preprocess_fn
-integer_input = supported_type(
+IntegerInputType = SupportedType(
     type_name='integer_input',
     feature_spec=tf.io.FixedLenFeature([], tf.int64),
     allowed_values=None)
 
 #TODO(mikebernico): Implement in preprocess_fn
-float_input = supported_type(
+FloatInputType = SupportedType(
     type_name='float_input',
     feature_spec=tf.io.FixedLenFeature([], tf.float64),
     allowed_values=None)
 
 #TODO(mikebernico): Implement in preprocess_fn
-categorical_input = supported_type(
+CategoricalInputType = SupportedType(
     type_name='categorical_input',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=None)
 
-integer_label = supported_type(
+IntegerLabelType = SupportedType(
     type_name='integer_label',
     feature_spec=tf.io.FixedLenFeature([], tf.int64),
     allowed_values=None)
 
-string_label = supported_type(
+StringLabelType = SupportedType(
     type_name='string_label',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=None)
 
-image_support_string = supported_type(
+ImageSupportStringType = SupportedType(
     type_name='image_support_string',
     feature_spec=tf.io.FixedLenFeature([], tf.string),
     allowed_values=None)
 
-image_support_int = supported_type(
+ImageSupportIntType = SupportedType(
     type_name='image_support_int',
     feature_spec=tf.io.FixedLenFeature([], tf.int64),
     allowed_values=None)
 
 # TODO(mikebernico): Refactor schema_map to a container class.
 # Default schema supports the legacy image_csv format.
+SchemaMapType = Dict[str, SupportedType]
+
 image_csv_schema = frozendict.FrozenOrderedDict({
-    'split': split_key,
-    'image_uri': image_uri,
-    'label': string_label})
+    'split': SplitKeyType,
+    'image_uri': ImageUriType,
+    'label': StringLabelType})
 
 
 def get_raw_schema_map(
@@ -97,11 +99,11 @@ def get_raw_schema_map(
   raw_schema = {}
   for k, v in schema_map.items():
     if v.type_name == 'image_uri':
-      raw_schema['image_name'] = image_support_string
-      raw_schema['image'] = image_support_string
-      raw_schema['image_height'] = image_support_int
-      raw_schema['image_width'] = image_support_int
-      raw_schema['image_channels'] = image_support_int
+      raw_schema['image_name'] = ImageSupportStringType
+      raw_schema['image'] = ImageSupportStringType
+      raw_schema['image_height'] = ImageSupportIntType
+      raw_schema['image_width'] = ImageSupportIntType
+      raw_schema['image_channels'] = ImageSupportIntType
     else:
       raw_schema[k] = schema_map[k]
   return raw_schema
@@ -135,10 +137,11 @@ def get_tft_coder(
 
 def get_key(type_name: str, schema_map: Dict[str, collections.namedtuple]
     ) -> Union[str, None]:
-  """Gets key of type 'type_name' from schema map.
+  """Gets first instance of key of type 'type_name' from schema map.
 
-  Returns type_name if present, otherwise returns None.
+  Returns key name if present, otherwise returns None.
   """
+  #TODO(mikebernico): Fix so that multiples of a key type work in future version.
   for k, v in schema_map.items():
     if v.type_name == type_name:
       return k
