@@ -141,7 +141,7 @@ def get_key(type_name: str, schema_map: Dict[str, collections.namedtuple]
 
   Returns key name if present, otherwise returns None.
   """
-  #TODO(mikebernico): Fix so that multiples of a key type work in future version.
+  #TODO(mikebernico): Fix so that multiples of a key type work in future.
   for k, v in schema_map.items():
     if v.type_name == type_name:
       return k
