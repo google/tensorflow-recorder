@@ -27,8 +27,8 @@ import mock
 import pandas as pd
 
 from tfrecorder import client
-from tfrecorder import constants
 from tfrecorder import test_utils
+from tfrecorder import schema
 
 
 class ClientTest(unittest.TestCase):
@@ -57,7 +57,7 @@ class ClientTest(unittest.TestCase):
     mock_beam.build_pipeline().run().job_id.return_value = 'foo_id'
 
     df2 = self.test_df.copy()
-    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
+    df2['image_uri'] = 'gs://' + df2['image_uri']
 
     outdir = '/tmp/dataflow_runner'
 
@@ -87,46 +87,39 @@ class InputValidationTest(unittest.TestCase):
     self.test_region = 'us-central1'
     self.test_project = 'foo'
     self.test_wheel = '/my/path/wheel.whl'
+    self.test_schema_map = schema.image_csv_schema
 
   def test_valid_dataframe(self):
     """Tests valid DataFrame input."""
     self.assertIsNone(
         client._validate_data(
-            self.test_df))
+            self.test_df,
+            schema.image_csv_schema))
 
   def test_missing_image(self):
     """Tests missing image column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('image_uri', inplace=True, axis=1)
-      client._validate_data(df2)
+      client._validate_data(df2, schema.image_csv_schema)
 
   def test_missing_label(self):
     """Tests missing label column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('label', inplace=True, axis=1)
-      client._validate_data(df2)
+      client._validate_data(df2, schema.image_csv_schema)
 
   def test_missing_split(self):
     """Tests missing split column."""
     with self.assertRaises(AttributeError):
       df2 = self.test_df.copy()
       df2.drop('split', inplace=True, axis=1)
-      client._validate_data(df2)
-
-  def test_columns_out_of_order(self):
-    """Tests validating wrong column order."""
-    with self.assertRaises(AttributeError):
-      df2 = self.test_df.copy()
-      cols = ['image_uri', 'split', 'label']
-      df2 = df2[cols]
-      client._validate_data(df2)
+      client._validate_data(df2, schema.image_csv_schema)
 
   def test_valid_runner(self):
     """Tests valid runner."""
     self.assertIsNone(client._validate_runner(
-        self.test_df,
         runner='DirectRunner',
         project=self.test_project,
         region=self.test_region,
@@ -136,43 +129,18 @@ class InputValidationTest(unittest.TestCase):
     """Tests invalid runner."""
     with self.assertRaises(AttributeError):
       client._validate_runner(
-          self.test_df,
           runner='FooRunner',
           project=self.test_project,
           region=self.test_region,
           tfrecorder_wheel=None)
 
-  def test_local_path_with_dataflow_runner(self):
-    """Tests DataflowRunner conflict with local path."""
-    with self.assertRaises(AttributeError):
-      client._validate_runner(
-          self.df_test,
-          runner='DataflowRunner',
-          project=self.test_project,
-          region=self.test_region,
-          tfrecorder_wheel=self.test_wheel)
-
-  def test_gcs_path_with_dataflow_runner(self):
-    """Tests DataflowRunner with GCS path."""
-    df2 = self.test_df.copy()
-    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
-    self.assertIsNone(
-        client._validate_runner(
-            df2,
-            runner='DataflowRunner',
-            project=self.test_project,
-            region=self.test_region,
-            tfrecorder_wheel=self.test_wheel))
 
   def test_gcs_path_with_dataflow_runner_missing_param(self):
     """Tests DataflowRunner with missing required parameter."""
-    df2 = self.test_df.copy()
-    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
     for p, r in [
         (None, self.test_region), (self.test_project, None), (None, None)]:
       with self.assertRaises(AttributeError) as context:
         client._validate_runner(
-            df2,
             runner='DataflowRunner',
             project=p,
             region=r,
@@ -183,11 +151,8 @@ class InputValidationTest(unittest.TestCase):
 
   def test_gcs_path_with_dataflow_runner_missing_wheel(self):
     """Tests DataflowRunner with missing required whl path."""
-    df2 = self.test_df.copy()
-    df2[constants.IMAGE_URI_KEY] = 'gs://' + df2[constants.IMAGE_URI_KEY]
     with self.assertRaises(AttributeError) as context:
       client._validate_runner(
-          df2,
           runner='DataflowRunner',
           project=self.test_project,
           region=self.test_region,
@@ -228,7 +193,7 @@ class ReadCSVTest(unittest.TestCase):
     """Tests a valid CSV without a header and no header names given."""
     f = _make_csv_tempfile(self.sample_data)
     actual = client.read_csv(f.name, header=None)
-    self.assertEqual(list(actual.columns), constants.IMAGE_CSV_COLUMNS)
+    self.assertEqual(list(actual.columns), list(schema.image_csv_schema.keys()))
     self.assertEqual(actual.values.tolist(), self.sample_data)
 
   def test_valid_csv_no_header_names_specified(self):

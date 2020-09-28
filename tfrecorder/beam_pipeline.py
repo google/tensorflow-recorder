@@ -19,6 +19,7 @@
 This file implements the full Beam pipeline for TFRecorder.
 """
 
+import collections
 from typing import Any, Callable, Dict, Generator, List, Optional, Union
 
 import functools
@@ -33,7 +34,7 @@ from tensorflow_transform import beam as tft_beam
 
 from tfrecorder import beam_image
 from tfrecorder import common
-from tfrecorder import constants
+from tfrecorder import schema
 from tfrecorder import types
 
 
@@ -97,16 +98,17 @@ def _get_pipeline_options(
 
 def _partition_fn(
     element: Dict[str, str],
-    unused_num_partitions: int = -1) -> int:
+    unused_num_partitions: int = -1,
+    split_key: str = 'split') -> int:
   """Returns index used to partition an element from a PCollection."""
   del unused_num_partitions
-  dataset_type = element[constants.SPLIT_KEY].decode('utf-8')
+  dataset_type = element[split_key].decode('utf-8')
   try:
-    index = constants.SPLIT_VALUES.index(dataset_type)
+    index = schema.SplitKeyType.allowed_values.index(dataset_type)
   except ValueError as e:
     logging.warning('Unable to index dataset type %s: %s.',
                     dataset_type, str(e))
-    index = constants.DISCARD_INDEX
+    index = schema.SplitKeyType.allowed_values.index('DISCARD')
   return index
 
 def _get_write_to_tfrecord(output_dir: str,
@@ -115,9 +117,7 @@ def _get_write_to_tfrecord(output_dir: str,
                            num_shards: int = 0) \
                            -> beam.io.tfrecordio.WriteToTFRecord:
   """Returns `beam.io.tfrecordio.WriteToTFRecord` object.
-
   This configures a Beam sink to output TFRecord files.
-
   Args:
     output_dir: Directory to output TFRecord files.
     prefix: TFRecord file prefix.
@@ -140,16 +140,17 @@ def _get_write_to_tfrecord(output_dir: str,
       num_shards=num_shards,
   )
 
-def _preprocessing_fn(inputs: Dict[str, Any], integer_label: bool = False):
+
+def _preprocessing_fn(inputs: Dict[str, Any],
+                      schema_map: Dict[str, collections.namedtuple]):
   """TensorFlow Transform preprocessing function."""
 
-  outputs = inputs.copy()
-
-  if not integer_label:
-    # Integerize string labels, if present.
-    outputs[constants.LABEL_KEY] = tft.compute_and_apply_vocabulary(
-        outputs[constants.LABEL_KEY])
-
+  outputs = {}
+  for name, supported_type in schema_map.items():
+    if supported_type.type_name == 'string_label':
+      outputs[name] = tft.compute_and_apply_vocabulary(inputs[name])
+    else:
+      outputs[name] = inputs[name]
   return outputs
 
 
@@ -170,31 +171,30 @@ class ToCSVRows(beam.DoFn):
       self,
       element: List[str],
       ) -> Generator[Dict[str, Any], None, None]:
-    """Loads image and creates image features.
-
-    This DoFn extracts an image being stored on local disk or GCS and
-    yields a base64 encoded image, the image height, image width, and channels.
-    """
+    """Converts an input pandas DataFrame row (List of strings) into a flat
+      column seperated row. This is necessary so that the input DataFrame
+      can operate with TF Transform Coders."""
     element = ','.join([str(item) for item in element])
     self.row_count.inc()
     yield element
 
 
-def get_split_counts(df: pd.DataFrame):
+def get_split_counts(df: pd.DataFrame, split_key: str):
   """Returns number of rows for each data split type given dataframe."""
-  assert constants.SPLIT_KEY in df.columns
-  return df[constants.SPLIT_KEY].value_counts().to_dict()
+  assert split_key in df.columns
+  return df[split_key].value_counts().to_dict()
 
 
 def _transform_and_write_tfr(
     dataset: pvalue.PCollection,
-    tfr_writer: Callable = None,
+    tfr_writer: Callable[[], beam.io.tfrecordio.WriteToTFRecord],
+    raw_metadata: types.BeamDatasetMetadata,
     preprocessing_fn: Optional[Callable] = None,
     transform_fn: Optional[types.TransformFn] = None,
     label: str = 'data'):
   """Applies TF Transform to dataset and outputs it as TFRecords."""
 
-  dataset_metadata = (dataset, constants.RAW_METADATA)
+  dataset_metadata = (dataset, raw_metadata)
 
   if transform_fn:
     transformed_dataset, transformed_metadata = (
@@ -229,9 +229,9 @@ def build_pipeline(
     output_dir: str,
     compression: str,
     num_shards: int,
+    schema_map: Dict[str, collections.namedtuple],
     tfrecorder_wheel: str,
-    dataflow_options: dict,
-    integer_label: bool) -> beam.Pipeline:
+    dataflow_options: Dict[str, Any]) -> beam.Pipeline:
   """Runs TFRecorder Beam Pipeline.
 
   Args:
@@ -243,9 +243,10 @@ def build_pipeline(
     output_dir: GCS or Local Path for output.
     compression: gzip or None.
     num_shards: Number of shards.
+    schema_map: A schema map (Dictionary mapping Dataframe columns to types)
+     used to derive the input and target schema.
     tfrecorder_wheel: Path to TFRecorder wheel for DataFlow
     dataflow_options: Dataflow Runner Options (optional)
-    integer_label: Flags if label is already an integer.
 
   Returns:
     beam.Pipeline
@@ -264,62 +265,82 @@ def build_pipeline(
       tfrecorder_wheel,
       dataflow_options)
 
-  #with beam.Pipeline(runner, options=options) as p:
   p = beam.Pipeline(options=options)
   with tft_beam.Context(temp_dir=os.path.join(job_dir, 'tft_tmp')):
 
-    converter = tft.coders.CsvCoder(constants.IMAGE_CSV_COLUMNS,
-                                    constants.IMAGE_CSV_METADATA.schema)
-
-    extract_images_fn = beam_image.ExtractImagesDoFn(constants.IMAGE_URI_KEY)
+    converter = schema.get_tft_coder(df.columns, schema_map)
     flatten_rows = ToCSVRows()
 
-    # Each element in the image_csv_data PCollection will be a dict
+    # Each element in the data PCollection will be a dict
     # including the image_csv_columns and the image features created from
     # extract_images_fn.
-    image_csv_data = (
+    data = (
         p
         | 'ReadFromDataFrame' >> beam.Create(df.values.tolist())
         | 'ToCSVRows' >> beam.ParDo(flatten_rows)
         | 'DecodeCSV' >> beam.Map(converter.decode)
-        | 'ReadImage' >> beam.ParDo(extract_images_fn)
     )
+
+    # Extract images if an image_uri key exists.
+    image_uri_key = schema.get_key(type_name='image_uri', schema_map=schema_map)
+    if image_uri_key:
+      extract_images_fn = beam_image.ExtractImagesDoFn(image_uri_key)
+
+      data = (
+          data
+          | 'ReadImage' >> beam.ParDo(extract_images_fn)
+      )
+
+    # If the schema contains a valid split key, partition the dataset.
+    split_key = schema.get_key(type_name='split_key', schema_map=schema_map)
 
     # Note: This will not always reflect actual number of samples per dataset
     # written as TFRecords. The succeeding `Partition` operation may mark
     # additional samples from other splits as discarded. If a split has all
     # its samples discarded, the pipeline will still generate a TFRecord
     # file for that split, albeit empty.
-    split_counts = get_split_counts(df)
+    split_counts = get_split_counts(df, split_key)
+
+    # Raw metadata is the TFT metadata after image insertion but before TFT
+    # e.g Image columns have been added if necessary.
+    raw_metadata = schema.get_raw_metadata(df.columns, schema_map)
 
     # Require training set to be available in the input data. The transform_fn
     # and transformed_metadata will be generated from the training set and
     # applied to the other datasets, if any
     assert 'TRAIN' in split_counts
 
+    # Split dataset into train, validation, test sets.
+    partition_fn = functools.partial(_partition_fn, split_key=split_key)
     train_data, val_data, test_data, discard_data = (
-        image_csv_data | 'SplitDataset' >> beam.Partition(
-            _partition_fn, len(constants.SPLIT_VALUES))
-    )
+        data | 'SplitDataset' >> beam.Partition(
+            partition_fn, len(schema.SplitKeyType.allowed_values)))
 
+    raw_schema_map = schema.get_raw_schema_map(schema_map=schema_map)
     preprocessing_fn = functools.partial(
         _preprocessing_fn,
-        integer_label=integer_label)
+        schema_map=raw_schema_map)
 
     tfr_writer = functools.partial(
         _get_write_to_tfrecord, output_dir=job_dir, compress=compression,
         num_shards=num_shards)
+
     transform_fn = _transform_and_write_tfr(
         train_data, tfr_writer, preprocessing_fn=preprocessing_fn,
+        raw_metadata=raw_metadata,
         label='Train')
 
     if 'VALIDATION' in split_counts:
       _transform_and_write_tfr(
-          val_data, tfr_writer, transform_fn=transform_fn, label='Validation')
+          val_data, tfr_writer, transform_fn=transform_fn,
+          raw_metadata=raw_metadata,
+          label='Validation')
 
     if 'TEST' in split_counts:
       _transform_and_write_tfr(
-          test_data, tfr_writer, transform_fn=transform_fn, label='Test')
+          test_data, tfr_writer, transform_fn=transform_fn,
+          raw_metadata=raw_metadata,
+          label='Test')
 
     _ = (
         discard_data

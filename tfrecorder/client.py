@@ -19,6 +19,7 @@
 client.py provides create_tfrecords() to upstream clients including
 the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
+import collections
 import logging
 import os
 from typing import Any, Dict, Union, Optional, Sequence
@@ -27,31 +28,23 @@ import apache_beam as beam
 import pandas as pd
 import tensorflow as tf
 
+from tfrecorder import beam_pipeline
 from tfrecorder import common
 from tfrecorder import constants
-from tfrecorder import beam_pipeline
+from tfrecorder import schema
 
+# TODO(mikebernico) Add test for only one split_key.
+def _validate_data(df: pd.DataFrame,
+                   schema_map: Dict[str, collections.namedtuple]):
+  """Verifies data is consistent with schema."""
 
-def _validate_data(df):
-  """ Verifies required image csv columsn exist in data."""
-  if constants.IMAGE_URI_KEY not in df.columns:
-  # or label_col not in df.columns:
-    raise AttributeError(
-        'DataFrame must contain image_uri column {}.')
-  if constants.LABEL_KEY not in df.columns:
-    raise AttributeError(
-        'DataFrame must contain label column.')
-  if constants.SPLIT_KEY not in df.columns:
-    raise AttributeError(
-        'DataFrame must contain split column.')
-  if list(df.columns) != constants.IMAGE_CSV_COLUMNS:
-    raise AttributeError(
-        'DataFrame column order must be {}'.format(
-            constants.IMAGE_CSV_COLUMNS))
-
+  for key, value in schema_map.items():
+    _ = value # TODO(mikebernico) Implement type checking.
+    if key not in df.columns:
+      raise AttributeError(
+          'DataFrame does not contain column {} listed in schema'.format(key))
 
 def _validate_runner(
-    df: pd.DataFrame,
     runner: str,
     project: str,
     region: str,
@@ -59,11 +52,6 @@ def _validate_runner(
   """Validates an appropriate beam runner is chosen."""
   if runner not in ['DataflowRunner', 'DirectRunner']:
     raise AttributeError('Runner {} is not supported.'.format(runner))
-
-  # gcs_path is a bool, true if all image paths start with gs://
-  gcs_path = df[constants.IMAGE_URI_KEY].str.startswith('gs://').all()
-  if (runner == 'DataflowRunner') & (not gcs_path):
-    raise AttributeError('DataflowRunner requires GCS image locations.')
 
   if (runner == 'DataflowRunner') & (
       any(not v for v in [project, region])):
@@ -98,7 +86,7 @@ def read_csv(
   """Returns a a Pandas DataFrame from a CSV file."""
 
   if header is None and not names:
-    names = constants.IMAGE_CSV_COLUMNS
+    names = list(schema.image_csv_schema.keys())
 
   with tf.io.gfile.GFile(csv_file) as f:
     return pd.read_csv(f, names=names, header=header)
@@ -165,6 +153,7 @@ def _configure_logging(logfile):
 def create_tfrecords(
     input_data: Union[str, pd.DataFrame],
     output_dir: str,
+    schema_map: Dict[str, collections.namedtuple] = schema.image_csv_schema,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
     runner: str = 'DirectRunner',
@@ -191,6 +180,7 @@ def create_tfrecords(
   Args:
     input_data: Pandas DataFrame, CSV file or image directory path.
     output_dir: Local directory or GCS Location to save TFRecords to.
+    schema_map: A dict mapping column names to supported types.
     header: Indicates row/s to use as a header. Not used when `input_data` is
       a Pandas DataFrame.
       If 'infer' (default), header is taken from the first line of a CSV
@@ -213,14 +203,12 @@ def create_tfrecords(
 
   df = to_dataframe(input_data, header, names)
 
-  _validate_data(df)
-  _validate_runner(df, runner, project, region, tfrecorder_wheel)
+  _validate_data(df, schema_map)
+  _validate_runner(runner, project, region, tfrecorder_wheel)
 
   logfile = os.path.join('/tmp', constants.LOGFILE)
   _configure_logging(logfile)
 
-
-  integer_label = pd.api.types.is_integer_dtype(df[constants.LABEL_KEY])
   p = beam_pipeline.build_pipeline(
       df,
       job_label=job_label,
@@ -230,9 +218,9 @@ def create_tfrecords(
       output_dir=output_dir,
       compression=compression,
       num_shards=num_shards,
+      schema_map=schema_map,
       tfrecorder_wheel=tfrecorder_wheel,
-      dataflow_options=dataflow_options,
-      integer_label=integer_label)
+      dataflow_options=dataflow_options)
 
   result = p.run()
 
