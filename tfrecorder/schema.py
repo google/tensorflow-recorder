@@ -84,7 +84,7 @@ ImageSupportIntType = SupportedType(
 
 # TODO(mikebernico): Refactor schema_map to a container class.
 # Default schema supports the legacy image_csv format.
-SchemaMapType = Dict[str, SupportedType]
+SchemaMap = Dict[str, SupportedType]
 
 image_csv_schema = frozendict.FrozenOrderedDict({
     'split': SplitKeyType,
