@@ -65,7 +65,13 @@ def _validate_runner(
 
 
 def _path_split(filepath: str) -> Tuple[str, str]:
-  """Splits `filepath` into (head, tail) where `tail` is the last pathname.
+  """Splits `filepath` into (head, tail) where `tail` part after last '/'.
+
+  e.g.
+    filepath = '/path/to/image/file.jpg'
+    head, tail = _path_split(filepath)
+    # head -> '/path/to/image'
+    # tail -> 'file.jpg'
 
   Similar to `os.path.split` but supports GCS paths (prefix: gs://).
   """
@@ -197,7 +203,7 @@ def _configure_logging(logfile):
 # pylint: disable=too-many-locals
 
 def create_tfrecords(
-    input_data: Union[str, pd.DataFrame],
+    source: Union[str, pd.DataFrame],
     output_dir: str,
     schema_map: Dict[str, collections.namedtuple] = schema.image_csv_schema,
     header: Optional[Union[str, int, Sequence]] = 'infer',
@@ -224,7 +230,7 @@ def create_tfrecords(
         runner='DirectFlowRunner)
 
   Args:
-    input_data: Pandas DataFrame, CSV file or image directory path.
+    source: Pandas DataFrame, CSV file or image directory path.
     output_dir: Local directory or GCS Location to save TFRecords to.
     schema_map: A dict mapping column names to supported types.
     header: Indicates row/s to use as a header. Not used when `input_data` is
@@ -247,7 +253,7 @@ def create_tfrecords(
       dataflow_url: (optional) Job URL for DataflowRunner
   """
 
-  df = to_dataframe(input_data, header, names)
+  df = to_dataframe(source, header, names)
 
   _validate_data(df, schema_map)
   _validate_runner(runner, project, region, tfrecorder_wheel)

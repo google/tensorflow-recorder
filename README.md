@@ -98,7 +98,7 @@ Using Python interpreter:
 import tfrecorder
 
 tfrecorder.create_tfrecords(
-    input_data='/path/to/data.csv',
+    source='/path/to/data.csv',
     output_dir='gs://my/bucket')
 ```
 
@@ -109,13 +109,13 @@ tfrecorder create-tfrecords \
     --output_dir=gs://my/bucket
 ```
 
-#### From image directory
+#### From an image directory
 
 ```python
 import tfrecorder
 
 tfrecorder.create_tfrecords(
-    input_data='/path/to/image_dir',
+    source='/path/to/image_dir',
     output_dir='gs://my/bucket'
 )
 ```
