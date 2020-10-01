@@ -107,6 +107,8 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
         ...
 
   Output will be based on `schema.image_csv_schema`.
+  The subdirectories should only contain image files.
+  See `beam_image.load` for supported image formats.
   """
 
   rows = []
@@ -118,6 +120,7 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
       if split not in split_values:
         logging.warning('Unexpected split value: %s. Skipping %s',
                         split, root)
+      # TODO(cezequiel): Add guard for non image files (e.g. .DS_Store)
       for f in files:
         image_uri = os.path.join(root, f)
         row = [split, image_uri, label]
