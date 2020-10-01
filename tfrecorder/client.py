@@ -22,7 +22,7 @@ the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 import collections
 import logging
 import os
-from typing import Any, Dict, Union, Optional, Sequence
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import apache_beam as beam
 import pandas as pd
@@ -64,19 +64,75 @@ def _validate_runner(
         'DataflowRunner requires a tfrecorder whl file for remote execution.')
 
 
-# def read_image_directory(dirpath) -> pd.DataFrame:
-#   """Reads image data from a directory into a Pandas DataFrame."""
-#
-#   # TODO(cezequiel): Implement in phase 2.
-#   _ = dirpath
-#   raise NotImplementedError
+def _path_split(filepath: str) -> Tuple[str, str]:
+  """Splits `filepath` into (head, tail) where `tail` part after last '/'.
+
+  e.g.
+    filepath = '/path/to/image/file.jpg'
+    head, tail = _path_split(filepath)
+    # head -> '/path/to/image'
+    # tail -> 'file.jpg'
+
+  Similar to `os.path.split` but supports GCS paths (prefix: gs://).
+  """
+
+  if filepath.startswith(constants.GCS_PREFIX):
+    _, path = filepath.split(constants.GCS_PREFIX)
+    head, tail = os.path.split(path)
+    return constants.GCS_PREFIX + head, tail
+
+  return os.path.split(filepath)
+
+
+def _read_image_directory(image_dir: str) -> pd.DataFrame:
+  """Reads image data from a directory into a Pandas DataFrame.
+
+  Expected directory structure:
+    image_dir/
+      <dataset split>/
+        <label>/
+          <image file>
+
+  Example expected directory structure:
+    image_dir/
+      TRAIN/
+        label0/
+          image_000.jpg
+          image_001.jpg
+          ...
+        label1/
+          image_100.jpg
+          ...
+      VALIDATION/
+        ...
+
+  Output will be based on `schema.image_csv_schema`.
+  The subdirectories should only contain image files.
+  See `beam_image.load` for supported image formats.
+  """
+
+  rows = []
+  split_values = schema.allowed_split_values
+  for root, _, files in tf.io.gfile.walk(image_dir):
+    if files:
+      root_, label = _path_split(root)
+      _, split = _path_split(root_)
+      if split not in split_values:
+        logging.warning('Unexpected split value: %s. Skipping %s',
+                        split, root)
+      # TODO(cezequiel): Add guard for non image files (e.g. .DS_Store)
+      for f in files:
+        image_uri = os.path.join(root, f)
+        row = [split, image_uri, label]
+        rows.append(row)
+
+  return pd.DataFrame(rows, columns=schema.image_csv_schema.keys())
 
 
 def _is_directory(input_data) -> bool:
   """Returns True if `input_data` is a directory; False otherwise."""
-  # TODO(cezequiel): Implement in phase 2.
-  _ = input_data
-  return False
+
+  return tf.io.gfile.isdir(input_data)
 
 
 def read_csv(
@@ -105,8 +161,7 @@ def to_dataframe(
     df = read_csv(input_data, header, names)
 
   elif isinstance(input_data, str) and _is_directory(input_data):
-    # TODO(cezequiel): Implement in phase 2
-    raise NotImplementedError
+    df = _read_image_directory(input_data)
 
   else:
     raise ValueError('Unsupported `input_data`: {}'.format(type(input_data)))
@@ -151,7 +206,7 @@ def _configure_logging(logfile):
 # pylint: disable=too-many-locals
 
 def create_tfrecords(
-    input_data: Union[str, pd.DataFrame],
+    source: Union[str, pd.DataFrame],
     output_dir: str,
     schema_map: Dict[str, collections.namedtuple] = schema.image_csv_schema,
     header: Optional[Union[str, int, Sequence]] = 'infer',
@@ -178,7 +233,7 @@ def create_tfrecords(
         runner='DirectFlowRunner)
 
   Args:
-    input_data: Pandas DataFrame, CSV file or image directory path.
+    source: Pandas DataFrame, CSV file or image directory path.
     output_dir: Local directory or GCS Location to save TFRecords to.
     schema_map: A dict mapping column names to supported types.
     header: Indicates row/s to use as a header. Not used when `input_data` is
@@ -201,7 +256,7 @@ def create_tfrecords(
       dataflow_url: (optional) Job URL for DataflowRunner
   """
 
-  df = to_dataframe(input_data, header, names)
+  df = to_dataframe(source, header, names)
 
   _validate_data(df, schema_map)
   _validate_runner(runner, project, region, tfrecorder_wheel)

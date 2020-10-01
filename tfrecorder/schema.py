@@ -135,15 +135,16 @@ def get_tft_coder(
   return tft.coders.CsvCoder(columns, metadata.schema)
 
 
-def get_key(type_name: str, schema_map: Dict[str, collections.namedtuple]
-    ) -> Union[str, None]:
+def get_key(
+    type_: SupportedType,
+    schema_map: Dict[str, collections.namedtuple]) -> Union[str, None]:
   """Gets first instance of key of type 'type_name' from schema map.
 
   Returns key name if present, otherwise returns None.
   """
   #TODO(mikebernico): Fix so that multiples of a key type work in future.
   for k, v in schema_map.items():
-    if v.type_name == type_name:
+    if v.type_name == type_.type_name:
       return k
   return None
 
