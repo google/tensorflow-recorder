@@ -20,6 +20,9 @@ from setuptools import find_packages
 from setuptools import setup
 
 
+# Semantic versioning (PEP 440)
+VERSION = '1.0'
+
 REQUIRED_PACKAGES = [
     "apache-beam[gcp] >= 2.22.0",
     "avro >= 1.10.0",
@@ -35,14 +38,14 @@ REQUIRED_PACKAGES = [
     "pylint >= 2.5.3",
     "pytz >= 2020.1",
     "python-dateutil",
-    "tensorflow == 2.3.0",
+    "tensorflow == 2.3.1",
     "tensorflow_transform >= 0.22",
 ]
 
 
 setup(
     name='tfrecorder',
-    version='0.1.2',
+    version=VERSION,
     install_requires=REQUIRED_PACKAGES,
     packages=find_packages(),
     include_package_data=True,
