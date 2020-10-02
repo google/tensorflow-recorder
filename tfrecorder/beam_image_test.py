@@ -24,11 +24,10 @@ from apache_beam.testing import util
 import numpy as np
 import PIL
 from PIL import Image
-import tensorflow_transform as tft
 
 from tfrecorder import beam_image
-from tfrecorder import constants
 from tfrecorder import test_utils
+from tfrecorder import schema
 
 
 class BeamImageTests(unittest.TestCase):
@@ -84,10 +83,11 @@ class BeamImageTests(unittest.TestCase):
 
     with self.pipeline as p:
 
-      converter = tft.coders.CsvCoder(constants.IMAGE_CSV_COLUMNS,
-                                      constants.IMAGE_CSV_METADATA.schema)
+      converter = schema.get_tft_coder(['split', 'image_uri', 'label'],
+                                       schema.image_csv_schema)
 
-      extract_images_fn = beam_image.ExtractImagesDoFn(constants.IMAGE_URI_KEY)
+
+      extract_images_fn = beam_image.ExtractImagesDoFn('image_uri')
 
       data = (
           p

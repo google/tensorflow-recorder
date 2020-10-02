@@ -49,3 +49,5 @@ class CopyLogTest(unittest.TestCase):
         common.copy_logfile_to_gcs(infile, tmpdirname)
 
 # pylint: disable=protected-access
+if __name__ == '__main__':
+  unittest.main()

@@ -18,42 +18,9 @@
 
 import logging
 
-import frozendict
-import tensorflow as tf
-from tensorflow_transform.tf_metadata import dataset_metadata
-from tensorflow_transform.tf_metadata import schema_utils
-
-
-SPLIT_KEY = 'split'
-SPLIT_VALUES = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
-DISCARD_INDEX = SPLIT_VALUES.index('DISCARD')
-IMAGE_URI_KEY = 'image_uri'
-LABEL_KEY = 'label'
-IMAGE_CSV_COLUMNS = [SPLIT_KEY, IMAGE_URI_KEY, LABEL_KEY]
-
-IMAGE_CSV_FEATURE_SPEC = frozendict.FrozenOrderedDict({
-    SPLIT_KEY: tf.io.FixedLenFeature([], tf.string),
-    IMAGE_URI_KEY: tf.io.FixedLenFeature([], tf.string),
-    LABEL_KEY: tf.io.FixedLenFeature([], tf.string),
-})
-
-RAW_FEATURE_SPEC = frozendict.FrozenOrderedDict({
-    SPLIT_KEY: tf.io.FixedLenFeature([], tf.string),
-    LABEL_KEY: tf.io.FixedLenFeature([], tf.string),
-    'image_name': tf.io.FixedLenFeature([], tf.string),
-    'image': tf.io.FixedLenFeature([], tf.string),
-    'image_height': tf.io.FixedLenFeature([], tf.int64),
-    'image_width': tf.io.FixedLenFeature([], tf.int64),
-    'image_channels':  tf.io.FixedLenFeature([], tf.int64)
-})
-
-IMAGE_CSV_METADATA = dataset_metadata.DatasetMetadata(
-    schema_utils.schema_from_feature_spec(IMAGE_CSV_FEATURE_SPEC))
-
-RAW_METADATA = dataset_metadata.DatasetMetadata(
-    schema_utils.schema_from_feature_spec(RAW_FEATURE_SPEC))
-
 LOGFILE = 'tfrecorder-beam.log'
 LOGLEVEL = logging.INFO
 
 CONSOLE_DATAFLOW_URI = "https://console.cloud.google.com/dataflow/jobs/"
+
+GCS_PREFIX = 'gs://'

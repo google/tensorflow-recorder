@@ -27,6 +27,7 @@ from IPython.core import display
 
 from tfrecorder import client
 from tfrecorder import constants
+from tfrecorder import schema
 
 
 @pd.api.extensions.register_dataframe_accessor('tensorflow')
@@ -40,6 +41,7 @@ class TFRecorderAccessor:
   def to_tfr(
       self,
       output_dir: str,
+      schema_map: Dict[str, schema.SchemaMap] = schema.image_csv_schema,
       runner: str = 'DirectRunner',
       project: Optional[str] = None,
       region: Optional[str] = None,
@@ -63,14 +65,16 @@ class TFRecorderAccessor:
           num_shards=10)
 
     Args:
+      schema_map: A dict mapping column names to supported types.
       output_dir: Local directory or GCS Location to save TFRecords to.
-      runner: Beam runner. Can be DirectRunner or  DataFlowRunner.
-      project: GCP project name (Required if DataFlowRunner).
-      region: GCP region name (Required if DataFlowRunner).
-      tfrecorder_wheel: Path to the tfrecorder wheel DataFlow will run.
+        Note: GCS required for DataflowRunner
+      runner: Beam runner. Can be DirectRunner or  DataflowRunner.
+      project: GCP project name (Required if DataflowRunner).
+      region: GCP region name (Required if DataflowRunner).
+      tfrecorder_wheel: Path to the tfrecorder wheel Dataflow will run.
         (create with 'python setup.py sdist' or
         'pip download tfrecorder --no-deps')
-      dataflow_options: Optional dictionary containing DataFlow options.
+      dataflow_options: Optional dictionary containing Dataflow options.
       job_label: User supplied description for the beam job name.
       compression: Can be 'gzip' or None for no compression.
       num_shards: Number of shards to divide the TFRecords into. Default is
@@ -85,6 +89,7 @@ class TFRecorderAccessor:
     r = client.create_tfrecords(
         self._df,
         output_dir=output_dir,
+        schema_map=schema_map,
         runner=runner,
         project=project,
         region=region,

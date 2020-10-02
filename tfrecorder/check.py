@@ -25,7 +25,6 @@ import tensorflow as tf
 import tensorflow_transform as tft
 
 from tfrecorder import beam_image
-from tfrecorder import constants
 from tfrecorder import common
 
 _OUT_IMAGE_TEMPLATE = 'image_{:0>3d}.png'
@@ -37,7 +36,7 @@ def _stringify(scalar: tf.Tensor) -> str:
   val = scalar.numpy()
   return val.decode('utf-8') if isinstance(val, bytes) else str(val)
 
-
+# pylint: disable=too-many-locals
 def _read_tfrecords(
     file_pattern: Union[str, Sequence[str]],
     tft_output_dir: Optional[str] = None,
@@ -53,10 +52,6 @@ def _read_tfrecords(
     tft_output_dir = os.path.dirname(file_pattern)
   tf_transform_output = tft.TFTransformOutput(tft_output_dir)
   feature_spec = tf_transform_output.transformed_feature_spec()
-
-  if set(feature_spec.keys()) != set(constants.RAW_FEATURE_SPEC):
-    raise ValueError('Unsupported schema: {}'.format(feature_spec.keys()))
-
   dataset = tf.data.TFRecordDataset(files, compression_type)
   return dataset.map(lambda x: tf.io.parse_single_example(
       x, feature_spec))
@@ -90,8 +85,12 @@ def check_tfrecords(
     writer = csv.writer(f)
 
     # Write CSV header
-    header = [k for k in constants.RAW_FEATURE_SPEC.keys() if k != 'image']
-    writer.writerow(header)
+    for data in dataset.take(1).as_numpy_iterator():
+      # .as_numpy_iterator() converts from Tuple of Tensors to a dict.
+      # list() yields the keys of that dict.
+      #TODO(mikebernico): Check the schema type instead of image key name.
+      header = [k for k in list(data) if k != 'image']
+      writer.writerow(header)
 
     for r in dataset.take(num_records):
       # Save non-image bytes data to CSV.
