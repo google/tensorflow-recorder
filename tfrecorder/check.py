@@ -37,6 +37,7 @@ def _stringify(scalar: tf.Tensor) -> str:
   return val.decode('utf-8') if isinstance(val, bytes) else str(val)
 
 # pylint: disable=too-many-locals
+# TODO(cezequiel): deprecate in favor of `dataset.load`.
 def _read_tfrecords(
     file_pattern: Union[str, Sequence[str]],
     tft_output_dir: Optional[str] = None,

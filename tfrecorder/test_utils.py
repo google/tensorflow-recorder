@@ -30,6 +30,7 @@ from tfrecorder import schema
 
 
 TEST_DIR = 'tfrecorder/test_data'
+TEST_TFRECORDS_DIR = os.path.join(TEST_DIR, 'sample_tfrecords')
 
 
 def get_test_df() -> pd.DataFrame:
