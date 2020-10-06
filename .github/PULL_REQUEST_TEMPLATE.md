@@ -1,5 +1,3 @@
-# Pull Request Template
-
 ## Description
 
 Please include the following:
@@ -7,7 +5,7 @@ Please include the following:
 - Context/reason for change and issue # if applicable
 - Any dependencies that are required for this change.
 
-Fixes # (issue)
+Fixes #<issue>
 
 ## Type of change
 
@@ -20,6 +18,8 @@ Please delete options that are not relevant.
 
 ## Checklist
 
+Please delete options that are not relevant.
+
 - [ ] My code adheres to the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
 - [ ] I ran `make pylint` and code is rated 10/10
 - [ ] I have added tests that prove my fix is effective or that my feature works
@@ -29,3 +29,4 @@ Please delete options that are not relevant.
 - [ ] I have made relevant changes to the documentation, if needed
 - [ ] My changes generate no new warnings
 - [ ] I have corrected any misspellings in my code
+- [ ] (For hotfix/release) I have updated the package version number in `setup.py` (i.e. [MAJOR.MINOR.PATCH](https://semver.org/))
