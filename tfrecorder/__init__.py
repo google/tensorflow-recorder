@@ -18,3 +18,4 @@
 from tfrecorder import accessor
 from tfrecorder.client import create_tfrecords
 from tfrecorder.check import check_tfrecords
+from tfrecorder.dataset import load
