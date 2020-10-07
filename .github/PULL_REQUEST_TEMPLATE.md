@@ -30,3 +30,4 @@ Please delete options that are not relevant.
 - [ ] My changes generate no new warnings
 - [ ] I have corrected any misspellings in my code
 - [ ] (For hotfix/release) I have updated the package version number in `setup.py` (i.e. [MAJOR.MINOR.PATCH](https://semver.org/))
+- [ ] (For hotfix/release) I have updated RELEASE.md with notes regarding the changes.
