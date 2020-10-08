@@ -3,6 +3,9 @@
 We'd love to accept your patches and contributions to this project. There are
 just a few small guidelines you need to follow.
 
+## Workflow
+We are currently using the [Git flow](https://nvie.com/posts/a-successful-git-branching-model/) branching model for our development workflow. For pull requests, we suggest using a similar Git branch naming scheme (e.g. for new features, use `feature/<name>` as the branch name) and comparing against our development branch, `dev`.
+
 ## Contributor License Agreement
 
 Contributions to this project must be accompanied by a Contributor License
