@@ -27,6 +27,8 @@ When to use TFRecords:
 git clone https://github.com/google/tensorflow-recorder.git
 ```
 
+For "bleeding edge" changes, check out the `dev` branch.
+
 2. From the top directory of the repo, run the following command:
 
 ```bash
@@ -86,7 +88,7 @@ df.tensorflow.to_tfr(
     output_dir='gs://my/bucket',
     runner='DataflowRunner',
     project='my-project',
-    region='us-central1'
+    region='us-central1',
     tfrecorder_wheel='/path/to/my/tfrecorder.whl')
 ```
 
@@ -116,7 +118,7 @@ import tfrecorder
 
 tfrecorder.create_tfrecords(
     source='/path/to/image_dir',
-    output_dir='gs://my/bucket'
+    output_dir='gs://my/bucket',
 )
 ```
 
@@ -285,22 +287,22 @@ looks like this:
 |-------|-------|------|-------|
 | TRAIN | 0.32  | 42   |1      |
 
-First define a schema map:
+You can use TFRecorder as shown below:
 
 ```python
+import pandas as pd
+import tfrecorder
+from tfrecorder import schema
+
+# First create a schema map
 schema_map = {
     'split':schema.SplitKeyType,
     'x':schema.FloatInputType,
     'y':schema.IntegerInputType,
     'label':schema.IntegerLabelType
 }
-```
 
-Now call TFRecorder with the specified schema_map
-
-```python
-import pandas as pd
-import tfrecorder
+# Now call TFRecorder with the specified schema_map
 
 df = pd.read_csv(...)
 df.tensorflow.to_tfr(
