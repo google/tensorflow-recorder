@@ -17,7 +17,8 @@
 """Defines input types for TFRecorder's input schema."""
 
 import collections
-from typing import Dict, List, Union
+from dataclasses import dataclass
+from typing import Any, Dict, List, Union
 
 import frozendict
 import tensorflow as tf
@@ -25,62 +26,66 @@ import tensorflow_transform as tft
 from tensorflow_transform.tf_metadata import dataset_metadata
 from tensorflow_transform.tf_metadata import schema_utils
 
-# TODO(mikebernico): Refactor types into data classes
-# All supported types will be based on SupportedType.
-SupportedType = collections.namedtuple(
-    'tfrecordInputType',
-    ['type_name', 'feature_spec', 'allowed_values'])
+@dataclass
+class SupportedType:
+  """Base type for TFRecorder Types."""
+  feature_spec: tf.io.FixedLenFeature
+  allowed_values: List(Any)
 
-# Supported type definitions here.
-ImageUriType = SupportedType(
-    type_name='image_uri',
-    feature_spec=tf.io.FixedLenFeature([], tf.string),
-    allowed_values=None)
+@dataclass
+class ImageUriType(SupportedType, frozen=True):
+  """Supports image uri columns."""
+  feature_spec=tf.io.FixedLenFeature([], tf.string)
+  allowed_values=[]
 
-# Note: split_key is an immutable type and these allowed values cannot change.
-allowed_split_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
-SplitKeyType = SupportedType(
-    type_name='split_key',
-    feature_spec=tf.io.FixedLenFeature([], tf.string),
-    allowed_values=allowed_split_values)
+@dataclass
+class SplitKeyType(SupportedType, frozen=True):
+  """Supports split key columns."""
+  feature_spec=tf.io.FixedLenFeature([], tf.string)
+  allowed_split_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
+
+@dataclass
+class IntegerInputType(SupportedType, frozen=True):
+  """Supports integer columns."""
+  feature_spec=tf.io.FixedLenFeature([], tf.int64)
+  allowed_values=[]
+
+@dataclass
+class FloatInputType (SupportedType, frozen=True):
+  """Supports float columns."""
+  feature_spec=tf.io.FixedLenFeature([], tf.float64)
+  allowed_values=[]
 
 #TODO(mikebernico): Implement in preprocess_fn
-IntegerInputType = SupportedType(
-    type_name='integer_input',
-    feature_spec=tf.io.FixedLenFeature([], tf.int64),
-    allowed_values=None)
+@dataclass
+class StringInputType(SupportedType, frozen=True):
+  """Supports string input columns."""
+  feature_spec=tf.io.FixedLenFeature([], tf.string)
+  allowed_values=[]
 
-#TODO(mikebernico): Implement in preprocess_fn
-FloatInputType = SupportedType(
-    type_name='float_input',
-    feature_spec=tf.io.FixedLenFeature([], tf.float64),
-    allowed_values=None)
+@dataclass
+class IntegerLabelType(SupportedType, frozen=True):
+  """Supports integer labels."""
+  feature_spec=tf.io.FixedLenFeature([], tf.int64)
+  allowed_values=[]
 
-#TODO(mikebernico): Implement in preprocess_fn
-CategoricalInputType = SupportedType(
-    type_name='categorical_input',
-    feature_spec=tf.io.FixedLenFeature([], tf.string),
-    allowed_values=None)
+@dataclass
+class StringLabelType(SupportedType, frozen=True):
+  """Supports string labels."""
+  feature_spec=tf.io.FixedLenFeature([], tf.string)
+  allowed_values=[]
 
-IntegerLabelType = SupportedType(
-    type_name='integer_label',
-    feature_spec=tf.io.FixedLenFeature([], tf.int64),
-    allowed_values=None)
+@dataclass
+class ImageSupportStringType(SupportedType, frozen=True):
+  """Supports generated image bytestrings."""
+  feature_spec=tf.io.FixedLenFeature([], tf.string)
+  allowed_values=[]
 
-StringLabelType = SupportedType(
-    type_name='string_label',
-    feature_spec=tf.io.FixedLenFeature([], tf.string),
-    allowed_values=None)
-
-ImageSupportStringType = SupportedType(
-    type_name='image_support_string',
-    feature_spec=tf.io.FixedLenFeature([], tf.string),
-    allowed_values=None)
-
-ImageSupportIntType = SupportedType(
-    type_name='image_support_int',
-    feature_spec=tf.io.FixedLenFeature([], tf.int64),
-    allowed_values=None)
+@dataclass
+class ImageSupportIntType(SupportedType, frozen=True):
+  """Supports generated image ints (height, width, channels)."""
+  feature_spec=tf.io.FixedLenFeature([], tf.int64)
+  allowed_values=[]
 
 # TODO(mikebernico): Refactor schema_map to a container class.
 # Default schema supports the legacy image_csv format.
