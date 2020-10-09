@@ -27,7 +27,7 @@ from PIL import Image
 
 from tfrecorder import beam_image
 from tfrecorder import test_utils
-from tfrecorder import schema
+from tfrecorder import input_schema
 
 
 class BeamImageTests(unittest.TestCase):

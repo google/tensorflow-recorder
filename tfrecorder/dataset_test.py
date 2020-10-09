@@ -21,7 +21,7 @@ import tempfile
 import unittest
 
 from tfrecorder import dataset
-from tfrecorder import schema
+from tfrecorder import input_schema
 from tfrecorder import test_utils
 
 # pylint: disable=protected-access

@@ -16,12 +16,14 @@
 
 """Custom types."""
 
-from typing import Tuple
+from typing import OrderedDict, Tuple
 
 from apache_beam.pvalue import PCollection
 from tensorflow_transform import beam as tft_beam
 
+import schema
 
 BeamDatasetMetadata = tft_beam.tft_beam_io.beam_metadata_io.BeamDatasetMetadata
 TransformedMetadata = BeamDatasetMetadata
 TransformFn = Tuple[PCollection, TransformedMetadata]
+SchemaMapType = OrderedDict[str, schema.SupportedType]

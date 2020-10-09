@@ -29,7 +29,7 @@ import tensorflow as tf
 from tfrecorder import beam_image
 from tfrecorder import check
 from tfrecorder import test_utils
-from tfrecorder import schema
+from tfrecorder import input_schema
 
 
 # pylint: disable=protected-access

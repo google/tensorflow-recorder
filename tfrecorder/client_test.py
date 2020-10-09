@@ -28,7 +28,7 @@ import pandas as pd
 
 from tfrecorder import client
 from tfrecorder import test_utils
-from tfrecorder import schema
+from tfrecorder import input_schema
 
 
 # pylint: disable=protected-access
@@ -99,35 +99,7 @@ class InputValidationTest(unittest.TestCase):
     self.test_region = 'us-central1'
     self.test_project = 'foo'
     self.test_wheel = '/my/path/wheel.whl'
-    self.test_schema_map = schema.image_csv_schema
-
-  def test_valid_dataframe(self):
-    """Tests valid DataFrame input."""
-    self.assertIsNone(
-        client._validate_data(
-            self.test_df,
-            schema.image_csv_schema))
-
-  def test_missing_image(self):
-    """Tests missing image column."""
-    with self.assertRaises(AttributeError):
-      df2 = self.test_df.copy()
-      df2.drop('image_uri', inplace=True, axis=1)
-      client._validate_data(df2, schema.image_csv_schema)
-
-  def test_missing_label(self):
-    """Tests missing label column."""
-    with self.assertRaises(AttributeError):
-      df2 = self.test_df.copy()
-      df2.drop('label', inplace=True, axis=1)
-      client._validate_data(df2, schema.image_csv_schema)
-
-  def test_missing_split(self):
-    """Tests missing split column."""
-    with self.assertRaises(AttributeError):
-      df2 = self.test_df.copy()
-      df2.drop('split', inplace=True, axis=1)
-      client._validate_data(df2, schema.image_csv_schema)
+    self.test_schema_map = input_schema.image_csv_schema_map
 
   def test_valid_runner(self):
     """Tests valid runner."""
@@ -198,12 +170,6 @@ class ReadImageDirectoryTest(unittest.TestCase):
 
   def setUp(self):
     self.image_data = test_utils.get_test_df()
-    self.split_key = schema.get_key(
-        schema.SplitKeyType, schema.image_csv_schema)
-    self.label_key = schema.get_key(
-        schema.StringLabelType, schema.image_csv_schema)
-    self.image_uri_key = schema.get_key(
-        schema.ImageUriType, schema.image_csv_schema)
     self.tempfiles = []
     self.tempdir = None
 
@@ -230,7 +196,7 @@ class ReadImageDirectoryTest(unittest.TestCase):
         self.tempfiles.append(fp)
         rows.append([split, fp.name, label])
 
-    columns = list(schema.image_csv_schema.keys())
+    columns = list(input_schema.image_csv_schema.keys())
     actual = client._read_image_directory(self.tempdir.name)
     actual.sort_values(by=columns, inplace=True)
     actual.reset_index(drop=True, inplace=True)
@@ -252,7 +218,9 @@ class ReadCSVTest(unittest.TestCase):
     """Tests a valid CSV without a header and no header names given."""
     f = _make_csv_tempfile(self.sample_data)
     actual = client.read_csv(f.name, header=None)
-    self.assertEqual(list(actual.columns), list(schema.image_csv_schema.keys()))
+    self.assertEqual(
+      list(actual.columns),
+      list(input_schema.image_csv_schema_map.keys()))
     self.assertEqual(actual.values.tolist(), self.sample_data)
 
   def test_valid_csv_no_header_names_specified(self):

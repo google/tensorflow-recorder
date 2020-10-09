@@ -23,7 +23,7 @@ from typing import Dict
 import tensorflow as tf
 import tensorflow_transform as tft
 
-from tfrecorder import schema
+from tfrecorder import input_schema
 
 
 TRANSFORMED_METADATA_DIR = tft.TFTransformOutput.TRANSFORMED_METADATA_DIR

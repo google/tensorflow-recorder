@@ -19,7 +19,7 @@
 import unittest
 import tensorflow_transform as tft
 
-from tfrecorder import schema
+from tfrecorder import input_schema
 
 
 class SchemaTest(unittest.TestCase):

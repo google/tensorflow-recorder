@@ -27,7 +27,7 @@ from IPython.core import display
 
 from tfrecorder import client
 from tfrecorder import constants
-from tfrecorder import schema
+from tfrecorder import input_schema
 
 
 @pd.api.extensions.register_dataframe_accessor('tensorflow')

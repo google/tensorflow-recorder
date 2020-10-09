@@ -29,7 +29,7 @@ import tensorflow as tf
 from tensorflow_transform import beam as tft_beam
 
 from tfrecorder import beam_pipeline
-from tfrecorder import schema
+from tfrecorder import input_schema
 from tfrecorder import test_utils
 
 
