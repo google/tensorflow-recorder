@@ -319,7 +319,7 @@ def build_pipeline(
         _get_write_to_tfrecord, output_dir=job_dir, compress=compression,
         num_shards=num_shards)
 
-    pre_tft_metadata = schema.get_pre_tft_metadata() 
+    pre_tft_metadata = schema.get_pre_tft_metadata()
 
     transform_fn = _transform_and_write_tfr(
         train_data, tfr_writer, preprocessing_fn=preprocessing_fn,

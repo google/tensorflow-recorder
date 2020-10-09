@@ -28,6 +28,7 @@ from IPython.core import display
 from tfrecorder import client
 from tfrecorder import constants
 from tfrecorder import input_schema
+from tfrecorder import types
 
 
 @pd.api.extensions.register_dataframe_accessor('tensorflow')
@@ -41,7 +42,7 @@ class TFRecorderAccessor:
   def to_tfr(
       self,
       output_dir: str,
-      schema_map: Dict[str, schema.SchemaMap] = schema.image_csv_schema,
+      schema_map: types.SchemaMapType = input_schema.image_csv_schema_map,
       runner: str = 'DirectRunner',
       project: Optional[str] = None,
       region: Optional[str] = None,
