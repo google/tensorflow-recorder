@@ -15,13 +15,13 @@
 # limitations under the License.
 
 """Package setup."""
-
+import sys
 from setuptools import find_packages
 from setuptools import setup
 
 
 # Semantic versioning (PEP 440)
-VERSION = '1.1.2'
+VERSION = '1.2.0'
 
 REQUIRED_PACKAGES = [
     "apache-beam[gcp] >= 2.22.0",
@@ -41,6 +41,9 @@ REQUIRED_PACKAGES = [
     "tensorflow == 2.3.1",
     "tensorflow_transform >= 0.22",
 ]
+
+if sys.version_info < 3.7:
+  REQUIRED_PACKAGES.append("dataclasses >= 0.5")
 
 
 setup(
