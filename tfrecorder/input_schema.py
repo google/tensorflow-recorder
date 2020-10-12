@@ -16,8 +16,9 @@
 
 """Defines input types for TFRecorder's input schema."""
 
+from collections import OrderedDict
 from dataclasses import dataclass
-from typing import Any, Dict, List, OrderedDict
+from typing import Any, Dict, List
 
 import frozendict
 import tensorflow as tf
@@ -91,7 +92,7 @@ class ImageSupportIntType(SupportedType):
 class Schema:
   """Defines a TFRecorder input schema."""
   def __init__(self,
-               schema_map:OrderedDict[str, SupportedType]
+               schema_map: OrderedDict
                ) -> None:
     """Defines TFRecorder input schema.
 
@@ -159,4 +160,4 @@ image_csv_schema_map = frozendict.FrozenOrderedDict({
 
 ImageCsvSchema = Schema(image_csv_schema_map)
 
-SchemaMapType = OrderedDict[str, SupportedType]
+SchemaMapType = OrderedDict
