@@ -172,31 +172,31 @@ class ReadImageDirectoryTest(unittest.TestCase):
     self.image_data = test_utils.get_test_df()
     self.tempfiles = []
     self.tempdir = None
+    self.schema = input_schema.Schema(input_schema.image_csv_schema_map)
 
   def tearDown(self):
     for fp in self.tempfiles:
       fp.close()
-
     self.tempdir.cleanup()
 
   def test_normal(self):
     """Tests conversion of expected directory structure on local machine."""
 
-    g = self.image_data.groupby([self.split_key, self.label_key])
+    g = self.image_data.groupby([self.schema.split_key, self.schema.label_key])
 
     self.tempdir = tempfile.TemporaryDirectory()
     rows = []
     for (split, label), indices in g.groups.items():
       dir_ = os.path.join(self.tempdir.name, split, label)
       os.makedirs(dir_)
-      for f in list(self.image_data.loc[indices, self.image_uri_key]):
+      for f in list(self.image_data.loc[indices, self.schema.image_uri_key]):
         _, name = os.path.split(f)
         fp = tempfile.NamedTemporaryFile(
             dir=dir_, suffix='.jpg', prefix=name)
         self.tempfiles.append(fp)
         rows.append([split, fp.name, label])
 
-    columns = list(input_schema.image_csv_schema.keys())
+    columns = list(input_schema.image_csv_schema_map.keys())
     actual = client._read_image_directory(self.tempdir.name)
     actual.sort_values(by=columns, inplace=True)
     actual.reset_index(drop=True, inplace=True)

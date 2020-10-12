@@ -49,10 +49,11 @@ def _get_tfrecord_files_per_split(tfrecord_dir: str):
   """Returns TFRecord files for each split.
 
   The TFRecord filenames should have a prefix based on lowercase versions of
-  items in `schema.allowed_split_values`. DISCARD split is not checked.
+  items in `input_schema.SplitKeyType. allowed_split_values`. DISCARD split is
+  not checked.
   """
   split_to_files = {}
-  for split in schema.allowed_split_values[:-1]:
+  for split in input_schema.SplitKeyType.allowed_values[:-1]:
     prefix = split.lower()
     files = glob.glob(os.path.join(tfrecord_dir, prefix + '*'))
     if files:

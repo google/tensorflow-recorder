@@ -147,7 +147,7 @@ def _preprocessing_fn(inputs: Dict[str, Any],
 
   outputs = {}
   for name, supported_type in schema_map.items():
-    if supported_type.type_name == 'string_label':
+    if supported_type.__name__ ==  input_schema.StringLabelType.__name__:
       outputs[name] = tft.compute_and_apply_vocabulary(inputs[name])
     else:
       outputs[name] = inputs[name]
@@ -309,7 +309,7 @@ def build_pipeline(
     partition_fn = functools.partial(_partition_fn, split_key=split_key)
     train_data, val_data, test_data, discard_data = (
         data | 'SplitDataset' >> beam.Partition(
-            partition_fn, len(schema.SplitKeyType.allowed_values)))
+            partition_fn, len(input_schema.SplitKeyType.allowed_values)))
 
     preprocessing_fn = functools.partial(
         _preprocessing_fn,

@@ -31,7 +31,6 @@ from tfrecorder import beam_pipeline
 from tfrecorder import common
 from tfrecorder import constants
 from tfrecorder import input_schema
-from tfrecorder import types
 
 
 def _validate_runner(
@@ -102,7 +101,7 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
   """
 
   rows = []
-  split_values = input_schema.SplitKeyType().allowed_values
+  split_values = input_schema.SplitKeyType.allowed_values
   for root, _, files in tf.io.gfile.walk(image_dir):
     if files:
       root_, label = _path_split(root)
@@ -192,13 +191,14 @@ def _configure_logging(logfile):
   tf_logger.handlers = []
   tf_logger.addHandler(handler)
 
+
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 
 def create_tfrecords(
     source: Union[str, pd.DataFrame],
     output_dir: str,
-    schema_map: types.SchemaMapType = input_schema.image_csv_schema_map,
+    schema_map: input_schema.SchemaMapType = input_schema.image_csv_schema_map,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
     runner: str = 'DirectRunner',

@@ -22,37 +22,37 @@ import tensorflow_transform as tft
 from tfrecorder import input_schema
 
 
-class SchemaTest(unittest.TestCase):
+class InputSchemaTest(unittest.TestCase):
   """Tests for type module."""
 
-  def test_valid_get_tft_coder(self):
-    """Tests a valid call on get_tft_coder."""
-    columns = ['split', 'image_uri', 'label']
-    converter = schema.get_tft_coder(columns, schema.image_csv_schema)
+  def setUp(self):
+    self.schema = input_schema.Schema(input_schema.image_csv_schema_map)
+
+  def test_valid_get_input_coder(self):
+    """Tests a valid call on get_input_coder."""
+    converter = self.schema.get_input_coder()
     self.assertIsInstance(converter, tft.coders.CsvCoder)
 
   def test_valid_get_key(self):
     """Tests a valid split key."""
-    key = schema.get_key(schema.SplitKeyType, schema.image_csv_schema)
-    self.assertEqual(key, 'split')
+    self.assertEqual(self.schema.split_key, 'split')
 
   def test_no_get_split_key(self):
     """Tests no split key present."""
-    test_schema = dict()
-    for k, v in schema.image_csv_schema.items():
+    test_schema_map = dict()
+    for k, v in input_schema.image_csv_schema_map.items():
       # Brute force copy because OG is a FrozenOrderedDict.
       if k != 'split':
-        test_schema[k] = v
+        test_schema_map[k] = v
 
-    key = schema.get_key(schema.SplitKeyType, test_schema)
-    self.assertIsNone(key)
+    with self.assertRaises(AttributeError):
+      _ = input_schema.Schema(test_schema_map)
 
   def test_get_raw_metadata(self):
     """Tests a valid call to get_raw_metadata."""
-    columns = ['split', 'image_uri', 'label']
-    raw_metadata = schema.get_raw_metadata(columns, schema.image_csv_schema)
+    pre_tft_metadata = self.schema.get_pre_tft_metadata()
     self.assertIsInstance(
-        raw_metadata,
+        pre_tft_metadata,
         tft.tf_metadata.dataset_metadata.DatasetMetadata)
 
 

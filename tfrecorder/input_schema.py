@@ -16,9 +16,8 @@
 
 """Defines input types for TFRecorder's input schema."""
 
-import collections
 from dataclasses import dataclass
-from typing import Any, Dict, List, Union, OrderedDict
+from typing import Any, Dict, List, OrderedDict
 
 import frozendict
 import tensorflow as tf
@@ -32,59 +31,59 @@ from tfrecorder import types
 class SupportedType:
   """Base type for TFRecorder Types."""
   feature_spec: tf.io.FixedLenFeature
-  allowed_values: List(Any)
+  allowed_values: List[Any]
 
 @dataclass
-class ImageUriType(SupportedType, frozen=True):
+class ImageUriType(SupportedType):
   """Supports image uri columns."""
   feature_spec=tf.io.FixedLenFeature([], tf.string)
   allowed_values=[]
 
 @dataclass
-class SplitKeyType(SupportedType, frozen=True):
+class SplitKeyType(SupportedType):
   """Supports split key columns."""
   feature_spec=tf.io.FixedLenFeature([], tf.string)
   allowed_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
 
 @dataclass
-class IntegerInputType(SupportedType, frozen=True):
+class IntegerInputType(SupportedType):
   """Supports integer columns."""
   feature_spec=tf.io.FixedLenFeature([], tf.int64)
   allowed_values=[]
 
 @dataclass
-class FloatInputType (SupportedType, frozen=True):
+class FloatInputType (SupportedType):
   """Supports float columns."""
   feature_spec=tf.io.FixedLenFeature([], tf.float64)
   allowed_values=[]
 
 #TODO(mikebernico): Implement in preprocess_fn
 @dataclass
-class StringInputType(SupportedType, frozen=True):
+class StringInputType(SupportedType):
   """Supports string input columns."""
   feature_spec=tf.io.FixedLenFeature([], tf.string)
   allowed_values=[]
 
 @dataclass
-class IntegerLabelType(SupportedType, frozen=True):
+class IntegerLabelType(SupportedType):
   """Supports integer labels."""
   feature_spec=tf.io.FixedLenFeature([], tf.int64)
   allowed_values=[]
 
 @dataclass
-class StringLabelType(SupportedType, frozen=True):
+class StringLabelType(SupportedType):
   """Supports string labels."""
   feature_spec=tf.io.FixedLenFeature([], tf.string)
   allowed_values=[]
 
 @dataclass
-class ImageSupportStringType(SupportedType, frozen=True):
+class ImageSupportStringType(SupportedType):
   """Supports generated image bytestrings."""
   feature_spec=tf.io.FixedLenFeature([], tf.string)
   allowed_values=[]
 
 @dataclass
-class ImageSupportIntType(SupportedType, frozen=True):
+class ImageSupportIntType(SupportedType):
   """Supports generated image ints (height, width, channels)."""
   feature_spec=tf.io.FixedLenFeature([], tf.int64)
   allowed_values=[]
@@ -102,35 +101,38 @@ class Schema:
     """
     self.split_key = None
     self.image_uri_key = None
-    self.input_schema_map=schema_map
+    self.label_key = None
+    self.input_schema_map = schema_map
     self.pre_tft_schema_map = {}
 
     for k, v in schema_map.items():
-      if isinstance(v, SplitKeyType):
+      if v.__name__ == SplitKeyType.__name__:
         self.split_key = k
-      if isinstance(v, ImageUriType):
-        self.image_uri_key = k
+      if 'Label' in v.__name__:
+        self.label_key = k
 
+      if v.__name__ ==  ImageUriType.__name__:
+        self.image_uri_key = k
         # if an image key is present, add image features to pre tft schema
-        self.pre_tft_schema_map['image_name'] = ImageSupportStringType()
-        self.pre_tft_schema_map['image'] = ImageSupportStringType()
-        self.pre_tft_schema_map['image_height'] = ImageSupportIntType()
-        self.pre_tft_schema_map['image_width'] = ImageSupportIntType()
-        self.pre_tft_schema_map['image_channels'] = ImageSupportIntType()
+        self.pre_tft_schema_map['image_name'] = ImageSupportStringType
+        self.pre_tft_schema_map['image'] = ImageSupportStringType
+        self.pre_tft_schema_map['image_height'] = ImageSupportIntType
+        self.pre_tft_schema_map['image_width'] = ImageSupportIntType
+        self.pre_tft_schema_map['image_channels'] = ImageSupportIntType
       else:
-        self.pre_tft_schema_map[k] = self.schema_map[k]
+        self.pre_tft_schema_map[k] = schema_map[k]
 
     if not self.split_key:
       raise AttributeError("Schema must contain a split key.")
 
+  @staticmethod
   def _get_feature_spec(
-      self,
       schema_map:Dict[str, SupportedType])-> Dict[str, tf.io.FixedLenFeature]:
     """Gets map of column names to tf.io.FixedLenFeatures for TFT."""
-    return {k:v.feature_spec for (k,v) in schema_map}
+    return {k:v.feature_spec for (k,v) in schema_map.items()}
 
+  @staticmethod
   def _get_metadata(
-      self,
       feature_spec: Dict[str, tf.io.FixedLenFeature]
       ) -> types.BeamDatasetMetadata:
     """Gets DatasetMetadata."""
@@ -146,12 +148,15 @@ class Schema:
     """Gets input schema TFT CSV Coder."""
     feature_spec = self._get_feature_spec(self.input_schema_map)
     metadata = self._get_metadata(feature_spec)
-    return tft.coders.CsvCoder(list(self.schema_map.keys()), metadata.schema)
+    return tft.coders.CsvCoder(list(self.input_schema_map.keys()),
+                               metadata.schema)
 
 # Built in / Default schema map.
 image_csv_schema_map = frozendict.FrozenOrderedDict({
-    'split': SplitKeyType(),
-    'image_uri': ImageUriType(),
-    'label': StringLabelType()})
+    'split': SplitKeyType,
+    'image_uri': ImageUriType,
+    'label': StringLabelType})
 
 ImageCsvSchema = Schema(image_csv_schema_map)
+
+SchemaMapType = OrderedDict[str, SupportedType]
