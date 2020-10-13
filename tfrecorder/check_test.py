@@ -30,45 +30,7 @@ from tfrecorder import beam_image
 from tfrecorder import check
 from tfrecorder import test_utils
 from tfrecorder import schema
-
-
-# pylint: disable=protected-access
-
-class ReadTFRecordsTest(unittest.TestCase):
-  """Tests `_read_tfrecords`."""
-
-  def setUp(self):
-    self.tfrecords_dir = os.path.join(test_utils.TEST_DIR, 'sample_tfrecords')
-
-  def test_valid_compressed_gzip(self):
-    """Tests valid case using GZIP compression."""
-
-    # Use list of file pattern strings to maintain train, validation, test
-    # order.
-    file_pattern = [
-        os.path.join(self.tfrecords_dir, '{}*.tfrecord.gz'.format(f))
-        for f in ['train, validation, test']]
-
-    compression_type = 'GZIP'
-    actual = check._read_tfrecords(
-        file_pattern, self.tfrecords_dir, compression_type)
-
-    expected_csv = os.path.join(test_utils.TEST_DIR, 'data.csv')
-    expected = tf.data.experimental.make_csv_dataset(
-        expected_csv, batch_size=1, label_name=None, num_epochs=1,
-        shuffle=False)
-
-    for a, e in zip(actual, expected):
-      self.assertCountEqual(a.keys(), schema.image_csv_schema)
-      for key in schema.image_csv_schema:
-        self.assertEqual(a[key], e[key])
-
-  def test_error_invalid_file_pattern(self):
-    """Tests error case where file pattern is invalid."""
-
-    file_pattern = 'gs://path/to/memes/folder'
-    with self.assertRaises(tf.errors.OpError):
-      check._read_tfrecords(file_pattern)
+from tfrecorder import dataset as _dataset
 
 
 class CheckTFRecordsTest(unittest.TestCase):
@@ -96,21 +58,23 @@ class CheckTFRecordsTest(unittest.TestCase):
         'image_width': [image_width] * num_records,
         'image_channels': [image_channels] * num_records,
     })
+    self.tfrecord_dir = 'gs://path/to/tfrecords/dir'
+    self.split = 'TRAIN'
     self.num_records = num_records
     self.data = data
     self.dataset = tf.data.Dataset.from_tensor_slices(self.data)
 
-  @mock.patch.object(check, '_read_tfrecords', autospec=True)
+  @mock.patch.object(_dataset, 'load', autospec=True)
   def test_valid_records(self, mock_fn):
     """Tests valid case on reading multiple records."""
 
-    file_pattern = 'gs://path/to/tfrecords/*'
-    mock_fn.return_value = self.dataset
+    mock_fn.return_value = {self.split: self.dataset}
     num_records = len(self.data['image'])
 
     with tempfile.TemporaryDirectory(dir='/tmp') as dir_:
       actual_dir = check.check_tfrecords(
-          file_pattern, num_records=num_records, output_dir=dir_)
+          self.tfrecord_dir, split=self.split, num_records=num_records,
+          output_dir=dir_)
       self.assertTrue('check-tfrecords-' in actual_dir)
 
       actual_csv = os.path.join(actual_dir, 'data.csv')
@@ -128,6 +92,14 @@ class CheckTFRecordsTest(unittest.TestCase):
           f for f in os.listdir(actual_dir) if f.endswith('.jpg')]
       expected_image_files = self.data['image_name']
       self.assertCountEqual(actual_image_files, expected_image_files)
+
+  @mock.patch.object(_dataset, 'load', autospec=True)
+  def test_no_data_for_split(self, mock_fn):
+    """Check exception raised when data could not be loaded given `split`."""
+
+    mock_fn.return_value = {}
+    with self.assertRaisesRegex(ValueError, 'Could not load data for'):
+      check.check_tfrecords(self.tfrecord_dir, split='UNSUPPORTED')
 
 
 if __name__ == '__main__':

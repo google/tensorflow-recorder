@@ -61,6 +61,13 @@ class ValidateTFRecordDirTest(unittest.TestCase):
     with self.assertRaises(FileNotFoundError):
       dataset._validate_tfrecord_dir(self.temp_dir)
 
+  def test_not_dir(self):
+    """Check exception raised when input is not a valid directory."""
+
+    input_dir = '/some/non-existent/dir'
+    with self.assertRaisesRegex(ValueError, 'Not a directory:'):
+      dataset._validate_tfrecord_dir(input_dir)
+
 
 class LoadTest(unittest.TestCase):
   """Tests `load` function."""

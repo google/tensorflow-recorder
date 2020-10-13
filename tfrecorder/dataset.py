@@ -38,6 +38,10 @@ _FILE_EXT_TO_COMPRESSION_TYPE = {
 def _validate_tfrecord_dir(tfrecord_dir: str):
   """Verifies that the TFRecord directory contains expected files."""
 
+  # Check that input is a valid directory.
+  if not os.path.isdir(tfrecord_dir):
+    raise ValueError(f'Not a directory: {tfrecord_dir}')
+
   # Check that TensorFlow Transform directories are present.
   for dirname in [TRANSFORMED_METADATA_DIR, TRANSFORM_FN_DIR]:
     if not os.path.isdir(os.path.join(tfrecord_dir, dirname)):
