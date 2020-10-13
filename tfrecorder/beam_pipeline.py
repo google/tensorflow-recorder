@@ -104,11 +104,11 @@ def _partition_fn(
   del unused_num_partitions
   dataset_type = element[split_key].decode('utf-8')
   try:
-    index = input_schema.SplitKeyType.allowed_values.index(dataset_type)
+    index = types.SplitKey.allowed_values.index(dataset_type)
   except ValueError as e:
     logging.warning('Unable to index dataset type %s: %s.',
                     dataset_type, str(e))
-    index = input_schema.SplitKeyType.allowed_values.index('DISCARD')
+    index = types.SplitKey.allowed_values.index('DISCARD')
   return index
 
 def _get_write_to_tfrecord(output_dir: str,
@@ -147,7 +147,7 @@ def _preprocessing_fn(inputs: Dict[str, Any],
 
   outputs = {}
   for name, supported_type in schema_map.items():
-    if supported_type.__name__ ==  input_schema.StringLabelType.__name__:
+    if supported_type ==  types.StringLabel:
       outputs[name] = tft.compute_and_apply_vocabulary(inputs[name])
     else:
       outputs[name] = inputs[name]
@@ -188,13 +188,13 @@ def get_split_counts(df: pd.DataFrame, split_key: str):
 def _transform_and_write_tfr(
     dataset: pvalue.PCollection,
     tfr_writer: Callable[[], beam.io.tfrecordio.WriteToTFRecord],
-    pre_tft_metadata: types.BeamDatasetMetadata,
+    metadata: types.BeamDatasetMetadata,
     preprocessing_fn: Optional[Callable] = None,
     transform_fn: Optional[types.TransformFn] = None,
     label: str = 'data'):
   """Applies TF Transform to dataset and outputs it as TFRecords."""
 
-  dataset_metadata = (dataset, pre_tft_metadata)
+  dataset_metadata = (dataset, metadata)
 
   if transform_fn:
     transformed_dataset, transformed_metadata = (
@@ -309,7 +309,7 @@ def build_pipeline(
     partition_fn = functools.partial(_partition_fn, split_key=split_key)
     train_data, val_data, test_data, discard_data = (
         data | 'SplitDataset' >> beam.Partition(
-            partition_fn, len(input_schema.SplitKeyType.allowed_values)))
+            partition_fn, len(types.SplitKey.allowed_values)))
 
     preprocessing_fn = functools.partial(
         _preprocessing_fn,
@@ -323,19 +323,19 @@ def build_pipeline(
 
     transform_fn = _transform_and_write_tfr(
         train_data, tfr_writer, preprocessing_fn=preprocessing_fn,
-        pre_tft_metadata=pre_tft_metadata,
+        metadata=pre_tft_metadata,
         label='Train')
 
     if 'VALIDATION' in split_counts:
       _transform_and_write_tfr(
           val_data, tfr_writer, transform_fn=transform_fn,
-          pre_tft_metadata=pre_tft_metadata,
+          metadata=pre_tft_metadata,
           label='Validation')
 
     if 'TEST' in split_counts:
       _transform_and_write_tfr(
           test_data, tfr_writer, transform_fn=transform_fn,
-          pre_tft_metadata=pre_tft_metadata,
+          metadata=pre_tft_metadata,
           label='Test')
 
     _ = (

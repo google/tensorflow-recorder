@@ -16,11 +16,8 @@
 
 """Defines input types for TFRecorder's input schema."""
 
-from collections import OrderedDict
-from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Dict
 
-import frozendict
 import tensorflow as tf
 import tensorflow_transform as tft
 from tensorflow_transform.tf_metadata import dataset_metadata
@@ -28,72 +25,11 @@ from tensorflow_transform.tf_metadata import schema_utils
 
 from tfrecorder import types
 
-@dataclass
-class SupportedType:
-  """Base type for TFRecorder Types."""
-  feature_spec: tf.io.FixedLenFeature
-  allowed_values: List[Any]
 
-@dataclass
-class ImageUriType(SupportedType):
-  """Supports image uri columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.string)
-  allowed_values=[]
-
-@dataclass
-class SplitKeyType(SupportedType):
-  """Supports split key columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.string)
-  allowed_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
-
-@dataclass
-class IntegerInputType(SupportedType):
-  """Supports integer columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.int64)
-  allowed_values=[]
-
-@dataclass
-class FloatInputType (SupportedType):
-  """Supports float columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.float64)
-  allowed_values=[]
-
-#TODO(mikebernico): Implement in preprocess_fn
-@dataclass
-class StringInputType(SupportedType):
-  """Supports string input columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.string)
-  allowed_values=[]
-
-@dataclass
-class IntegerLabelType(SupportedType):
-  """Supports integer labels."""
-  feature_spec=tf.io.FixedLenFeature([], tf.int64)
-  allowed_values=[]
-
-@dataclass
-class StringLabelType(SupportedType):
-  """Supports string labels."""
-  feature_spec=tf.io.FixedLenFeature([], tf.string)
-  allowed_values=[]
-
-@dataclass
-class ImageSupportStringType(SupportedType):
-  """Supports generated image bytestrings."""
-  feature_spec=tf.io.FixedLenFeature([], tf.string)
-  allowed_values=[]
-
-@dataclass
-class ImageSupportIntType(SupportedType):
-  """Supports generated image ints (height, width, channels)."""
-  feature_spec=tf.io.FixedLenFeature([], tf.int64)
-  allowed_values=[]
 
 class Schema:
   """Defines a TFRecorder input schema."""
-  def __init__(self,
-               schema_map: OrderedDict
-               ) -> None:
+  def __init__(self, schema_map: Dict[str, types.SupportedType]) -> None:
     """Defines TFRecorder input schema.
 
     Args:
@@ -107,19 +43,19 @@ class Schema:
     self.pre_tft_schema_map = {}
 
     for k, v in schema_map.items():
-      if v.__name__ == SplitKeyType.__name__:
+      if v == types.SplitKey:
         self.split_key = k
-      if 'Label' in v.__name__:
+      if 'Label' in v.__name__: # Matches any label type
         self.label_key = k
 
-      if v.__name__ ==  ImageUriType.__name__:
+      if v ==  types.ImageUri:
         self.image_uri_key = k
         # if an image key is present, add image features to pre tft schema
-        self.pre_tft_schema_map['image_name'] = ImageSupportStringType
-        self.pre_tft_schema_map['image'] = ImageSupportStringType
-        self.pre_tft_schema_map['image_height'] = ImageSupportIntType
-        self.pre_tft_schema_map['image_width'] = ImageSupportIntType
-        self.pre_tft_schema_map['image_channels'] = ImageSupportIntType
+        self.pre_tft_schema_map['image_name'] = types.ImageSupportString
+        self.pre_tft_schema_map['image'] = types.ImageSupportString
+        self.pre_tft_schema_map['image_height'] = types.ImageSupportInt
+        self.pre_tft_schema_map['image_width'] = types.ImageSupportInt
+        self.pre_tft_schema_map['image_channels'] = types.ImageSupportInt
       else:
         self.pre_tft_schema_map[k] = schema_map[k]
 
@@ -128,7 +64,8 @@ class Schema:
 
   @staticmethod
   def _get_feature_spec(
-      schema_map:Dict[str, SupportedType])-> Dict[str, tf.io.FixedLenFeature]:
+      schema_map: Dict[str, types.SupportedType]
+      ) -> Dict[str, tf.io.FixedLenFeature]:
     """Gets map of column names to tf.io.FixedLenFeatures for TFT."""
     return {k:v.feature_spec for (k,v) in schema_map.items()}
 
@@ -141,7 +78,7 @@ class Schema:
         schema_utils.schema_from_feature_spec(feature_spec))
 
   def get_pre_tft_metadata(self) -> types.BeamDatasetMetadata:
-    """Gets pre tft metadata, used by TFT extern to this class."""
+    """Gets pre TFT metadata, used by TFT external to this class."""
     feature_spec = self._get_feature_spec(self.pre_tft_schema_map)
     return self._get_metadata(feature_spec)
 
@@ -153,11 +90,9 @@ class Schema:
                                metadata.schema)
 
 # Built in / Default schema map.
-image_csv_schema_map = frozendict.FrozenOrderedDict({
-    'split': SplitKeyType,
-    'image_uri': ImageUriType,
-    'label': StringLabelType})
+image_csv_schema_map = {
+    'split': types.SplitKey,
+    'image_uri': types.ImageUri,
+    'label': types.StringLabel}
 
 ImageCsvSchema = Schema(image_csv_schema_map)
-
-SchemaMapType = OrderedDict

@@ -59,8 +59,9 @@ class ReadTFRecordsTest(unittest.TestCase):
         shuffle=False)
 
     for a, e in zip(actual, expected):
-      self.assertCountEqual(a.keys(), input_schema.image_csv_schema_map)
-      for key in input_schema.image_csv_schema_map:
+      self.assertCountEqual(
+          a.keys(), input_schema.ImageCsvSchema.input_schema_map)
+      for key in input_schema.ImageCsvSchema.input_schema_map:
         self.assertEqual(a[key], e[key])
 
   def test_error_invalid_file_pattern(self):
@@ -85,7 +86,7 @@ class CheckTFRecordsTest(unittest.TestCase):
         image_channels)
 
     data = test_utils.get_test_data()
-    schema = input_schema.Schema(input_schema.image_csv_schema_map)
+    schema = input_schema.Schema(input_schema.ImageCsvSchema.input_schema_map)
     image_uri_key = schema.image_uri_key
     num_records = len(data[image_uri_key])
     image_uris = data.pop(image_uri_key)

@@ -21,8 +21,8 @@ import tempfile
 import unittest
 
 from tfrecorder import dataset
-from tfrecorder import input_schema
 from tfrecorder import test_utils
+from tfrecorder import types
 
 # pylint: disable=protected-access
 
@@ -74,7 +74,7 @@ class LoadTest(unittest.TestCase):
     self.assertEqual(len(dataset_dict), 3)
     self.assertCountEqual(
         list(dataset_dict.keys()),
-             input_schema.SplitKeyType.allowed_values[:-1])
+             types.SplitKey.allowed_values[:-1])
 
 
 if __name__ == '__main__':

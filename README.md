@@ -214,10 +214,10 @@ For example, the default image CSV input can be defined like this:
 from collections
 from tfrecorder import input_schema
 
-image_csv_schema = collections.OrderedDict({
-    'split': input_schema.split_key,
-    'image_uri': input_schema.image_uri,
-    'label': input_schema.string_label
+image_csv_schema = input_schema.Schema({
+    'split': types.split_key,
+    'image_uri': types.image_uri,
+    'label': types.string_label
 })
 ```
 Once created a schema_map can be sent to TFRecorder.
@@ -241,10 +241,10 @@ df.tensorflow.to_tfr(
 TFRecorder's schema system supports several types, all listed below. You can use
 these types by referencing them in the schema map. Each type informs TFRecorder how 
 to treat your DataFrame columns.  For example, the schema mapping 
-`my_split_key: input_schema.SplitKeyType` tells TFRecorder to treat the column `my_split_key` as
-type `input_schema.SplitKeyType` and create dataset splits based on it's contents. 
+`my_split_key: types.SplitKey` tells TFRecorder to treat the column `my_split_key` as
+type `types.SplitKey` and create dataset splits based on it's contents. 
 
-#### input_schema.ImageUriType
+#### types.ImageUri
 
 * Specifies the path to an image. When specified, TFRecorder
 will load the specified image and store the image as a [base64 encoded](https://docs.python.org/3/library/base64.html)
@@ -252,7 +252,7 @@ will load the specified image and store the image as a [base64 encoded](https://
 along with the height, width, and image channels  as integers using they keys 'image_height', 'image_width', and 'image_channels'.
 * A schema can contain only one imageUriType
 
-#### input_schema.SplitKeyType
+#### types.SplitKey
 
 * A split key is required for TFRecorder at this time.
 * Only one split key is allowed.
@@ -263,27 +263,27 @@ input dataset on.
 Note: If you do not want your data to be partitioned please include a split_key and
 set all rows to TRAIN.
 
-#### input_schema.IntegerInputType
+#### types.IntegerInput
 
 * Specifies an int input.
 * Will be scaled to mean 0, variance 1.
 
-#### input_schema.FloatInputType
+#### types.IntegerInput
 
 * Specifies an float input.
 * Will be scaled to mean 0, variance 1.
 
-#### input_schema.CategoricalInputType
+#### types.CategoricalInputType
 
 * Specifies a string input.
 * Vocabulary computed and output integerized.
 
-#### input_schema.IntegerLabelType
+#### types.IntegerLabel
 
 * Specifies an integer target.
 * Not transformed.
 
-#### input_schema.StringLabelType
+#### types.StringLabel
 
 * Specifies a string target.
 * Vocabulary computed and *output integerized.*
@@ -307,10 +307,10 @@ from tfrecorder import input_schema
 
 # First create a schema map
 schema_map = OrderedDict({
-    'split':input_schema.SplitKeyType,
-    'x':input_schema.FloatInputType,
-    'y':input_schema.IntegerInputType,
-    'label':input_schema.IntegerLabelType
+    'split':types.SplitKey,
+    'x':types.FloatInput,
+    'y':types.IntegerInput,
+    'label':types.IntegerLabel
 })
 
 # Now call TFRecorder with the specified schema_map

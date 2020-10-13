@@ -40,7 +40,7 @@ class InputSchemaTest(unittest.TestCase):
   def test_no_get_split_key(self):
     """Tests no split key present."""
     test_schema_map = dict()
-    for k, v in input_schema.image_csv_schema_map.items():
+    for k, v in input_schema.ImageCsvSchema.input_schema_map.items():
       # Brute force copy because OG is a FrozenOrderedDict.
       if k != 'split':
         test_schema_map[k] = v

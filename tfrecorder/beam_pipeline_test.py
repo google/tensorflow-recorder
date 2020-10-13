@@ -32,6 +32,7 @@ from tensorflow_transform import beam as tft_beam
 from tfrecorder import beam_pipeline
 from tfrecorder import input_schema
 from tfrecorder import test_utils
+from tfrecorder import types
 
 
 # pylint: disable=protected-access
@@ -46,9 +47,9 @@ class BeamPipelineTests(unittest.TestCase):
         'image_uri': 'gs://foo/bar.jpg',
         'label': 1}
     my_schema = frozendict.FrozenOrderedDict({
-        'split': input_schema.SplitKeyType,
-        'image_uri': input_schema.ImageUriType,
-        'label': input_schema.IntegerLabelType})
+        'split': types.SplitKey,
+        'image_uri': types.ImageUri,
+        'label': types.IntegerLabel})
 
     result = beam_pipeline._preprocessing_fn(element, schema_map=my_schema)
     self.assertEqual(element, result)
@@ -63,8 +64,7 @@ class BeamPipelineTests(unittest.TestCase):
         'image_uri': 'gs://foo/bar.jpg',
         'label': tf.constant('cat', dtype=tf.string)}
     result = beam_pipeline._preprocessing_fn(
-      element,
-      schema_map=input_schema.image_csv_schema_map)
+        element, schema_map=input_schema.ImageCsvSchema.input_schema_map)
     result['label'] = result['label'].numpy()
     self.assertEqual(0, result['label'])
 
@@ -99,7 +99,7 @@ class GetSplitCountsTest(unittest.TestCase):
 
   def setUp(self):
     self.df = test_utils.get_test_df()
-    self.schema_map = input_schema.image_csv_schema_map
+    self.schema_map = input_schema.ImageCsvSchema.input_schema_map
     self.schema = input_schema.Schema(self.schema_map)
     self.split_key = self.schema.split_key
 
@@ -135,11 +135,12 @@ class TransformAndWriteTfrTest(unittest.TestCase):
     self.tfr_writer = functools.partial(
         beam_pipeline._get_write_to_tfrecord, output_dir=self.test_dir,
         compress='gzip', num_shards=2)
-    self.schema = input_schema.Schema(input_schema.image_csv_schema_map)
+    self.schema = input_schema.Schema(
+        input_schema.ImageCsvSchema.input_schema_map)
     self.pre_tft_metadata = self.schema.get_pre_tft_metadata()
     self.converter = tft.coders.CsvCoder(
-      list(self.schema.pre_tft_schema_map.keys()),
-      self.pre_tft_metadata.schema)
+        list(self.schema.pre_tft_schema_map.keys()),
+        self.pre_tft_metadata.schema)
     self.transform_fn_path = ('./tfrecorder/test_data/sample_tfrecords')
 
   def tearDown(self):
@@ -166,7 +167,7 @@ class TransformAndWriteTfrTest(unittest.TestCase):
             beam_pipeline._transform_and_write_tfr(
                 dataset, self.tfr_writer,
                 preprocessing_fn=preprocessing_fn,
-                pre_tft_metadata=self.pre_tft_metadata,
+                metadata=self.pre_tft_metadata,
                 label='Train'))
         _ = transform_fn | tft_beam.WriteTransformFn(self.test_dir)
 
@@ -189,7 +190,7 @@ class TransformAndWriteTfrTest(unittest.TestCase):
         transform_fn = p | tft_beam.ReadTransformFn(self.transform_fn_path)
         beam_pipeline._transform_and_write_tfr(
             dataset, self.tfr_writer, transform_fn=transform_fn,
-            pre_tft_metadata=self.pre_tft_metadata, label='Test')
+            metadata=self.pre_tft_metadata, label='Test')
 
     self.assertFalse(glob.glob(os.path.join(self.test_dir, 'train*.gz')))
     self.assertFalse(glob.glob(os.path.join(self.test_dir, 'validation*.gz')))

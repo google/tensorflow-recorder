@@ -45,7 +45,7 @@ def get_test_data() -> Dict[str, List[Any]]:
 
 
 def get_pre_tft_feature_df() -> pd.DataFrame:
-  """Returns test dataframe having pre tft feature spec schema."""
+  """Returns test dataframe having pre-TF Transform feature spec schema."""
 
   df = get_test_df()
   schema = input_schema.Schema(input_schema.image_csv_schema_map)
