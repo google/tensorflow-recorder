@@ -42,8 +42,10 @@ REQUIRED_PACKAGES = [
     "tensorflow_transform >= 0.22",
 ]
 
-if (sys.version_info.major == 3) and (sys.version_info.minor < 7):
+if sys.version_info < (3,7,0,0,0):
+  print("Version less than 3.7!")
   REQUIRED_PACKAGES.append("dataclasses >= 0.5")
+  print(REQUIRED_PACKAGES)
 
 
 setup(
