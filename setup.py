@@ -43,9 +43,8 @@ REQUIRED_PACKAGES = [
 ]
 
 if sys.version_info < (3,7,0,0,0):
-  print("Version less than 3.7!")
+  print("Version less than 3.7, appending dataclasses")
   REQUIRED_PACKAGES.append("dataclasses >= 0.5")
-  print(REQUIRED_PACKAGES)
 
 
 setup(
