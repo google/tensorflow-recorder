@@ -54,21 +54,18 @@ class ClientTest(unittest.TestCase):
         output_dir='/tmp/direct_runner')
     self.assertTrue('metrics' in r)
 
+  @mock.patch('tfrecorder.client._get_dataflow_url')
   @mock.patch('tfrecorder.client.beam_pipeline')
-  def test_create_tfrecords_dataflow_runner(self, mock_beam):
+  def test_create_tfrecords_dataflow_runner(self, mock_beam, mock_url):
     """Tests `create_tfrecords` Dataflow case."""
-    mock_beam.build_pipeline().run().job_id.return_value = 'foo_id'
-
+    job_id = 'foo_id'
+    dataflow_url = 'http://some/job/url'
+    mock_beam.build_pipeline().run().job_id.return_value = job_id
+    mock_url.return_value = dataflow_url
     df2 = self.test_df.copy()
     df2['image_uri'] = 'gs://' + df2['image_uri']
 
     outdir = '/tmp/dataflow_runner'
-
-    expected = {
-        'job_id': 'foo_id',
-        'dataflow_url': 'https://console.cloud.google.com/dataflow/jobs/' +
-                        'us-central1/foo_id?project=foo'}
-
     os.makedirs(outdir, exist_ok=True)
     r = client.create_tfrecords(
         df2,
@@ -77,7 +74,11 @@ class ClientTest(unittest.TestCase):
         region=self.test_region,
         project=self.test_project,
         tfrecorder_wheel=self.test_wheel)
-    self.assertEqual(r, expected)
+
+    self.assertCountEqual(r.keys(), ['job_id', 'dataflow_url', 'tfrecord_dir'])
+    self.assertEqual(r['job_id'], job_id)
+    self.assertEqual(r['dataflow_url'], dataflow_url)
+    self.assertRegex(r['tfrecord_dir'], fr'{outdir}/tfrecorder-.+-?.*')
 
   def test_path_split(self):
     """Tests `_path_split`."""
