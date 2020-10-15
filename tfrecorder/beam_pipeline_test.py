@@ -64,7 +64,7 @@ class BeamPipelineTests(unittest.TestCase):
         'image_uri': 'gs://foo/bar.jpg',
         'label': tf.constant('cat', dtype=tf.string)}
     result = beam_pipeline._preprocessing_fn(
-        element, schema_map=input_schema.IMAGECSVSCHEMA.input_schema_map)
+        element, schema_map=input_schema.IMAGE_CSV_SCHEMA.input_schema_map)
     result['label'] = result['label'].numpy()
     self.assertEqual(0, result['label'])
 
@@ -99,7 +99,7 @@ class GetSplitCountsTest(unittest.TestCase):
 
   def setUp(self):
     self.df = test_utils.get_test_df()
-    self.schema = input_schema.IMAGECSVSCHEMA
+    self.schema = input_schema.IMAGE_CSV_SCHEMA
     self.schema_map = self.schema.input_schema_map
     self.split_key = self.schema.split_key
 
@@ -136,7 +136,7 @@ class TransformAndWriteTfrTest(unittest.TestCase):
         beam_pipeline._get_write_to_tfrecord, output_dir=self.test_dir,
         compress='gzip', num_shards=2)
     self.schema = input_schema.Schema(
-        input_schema.IMAGECSVSCHEMA.input_schema_map)
+        input_schema.IMAGE_CSV_SCHEMA.input_schema_map)
     self.pre_tft_metadata = self.schema.get_pre_tft_metadata()
     self.converter = tft.coders.CsvCoder(
         list(self.schema.pre_tft_schema_map.keys()),

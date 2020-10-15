@@ -99,7 +99,7 @@ class InputValidationTest(unittest.TestCase):
     self.test_region = 'us-central1'
     self.test_project = 'foo'
     self.test_wheel = '/my/path/wheel.whl'
-    self.test_schema_map = input_schema.IMAGECSVSCHEMA.input_schema_map
+    self.test_schema_map = input_schema.IMAGE_CSV_SCHEMA.input_schema_map
 
   def test_valid_runner(self):
     """Tests valid runner."""
@@ -173,7 +173,7 @@ class ReadImageDirectoryTest(unittest.TestCase):
     self.tempfiles = []
     self.tempdir = None
     self.schema = input_schema.Schema(
-        input_schema.IMAGECSVSCHEMA.input_schema_map)
+        input_schema.IMAGE_CSV_SCHEMA.input_schema_map)
 
   def tearDown(self):
     for fp in self.tempfiles:
@@ -197,7 +197,7 @@ class ReadImageDirectoryTest(unittest.TestCase):
         self.tempfiles.append(fp)
         rows.append([split, fp.name, label])
 
-    columns = list(input_schema.IMAGECSVSCHEMA.get_input_keys())
+    columns = list(input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
     actual = client._read_image_directory(self.tempdir.name)
     actual.sort_values(by=columns, inplace=True)
     actual.reset_index(drop=True, inplace=True)
@@ -221,7 +221,7 @@ class ReadCSVTest(unittest.TestCase):
     actual = client.read_csv(f.name, header=None)
     self.assertEqual(
       list(actual.columns),
-      list(input_schema.IMAGECSVSCHEMA.get_input_keys()))
+      list(input_schema.IMAGE_CSV_SCHEMA.get_input_keys()))
     self.assertEqual(actual.values.tolist(), self.sample_data)
 
   def test_valid_csv_no_header_names_specified(self):

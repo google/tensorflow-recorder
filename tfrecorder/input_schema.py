@@ -99,4 +99,4 @@ image_csv_schema_map = {
     'image_uri': types.ImageUri,
     'label': types.StringLabel}
 
-IMAGECSVSCHEMA = Schema(image_csv_schema_map)
+IMAGE_CSV_SCHEMA = Schema(image_csv_schema_map)

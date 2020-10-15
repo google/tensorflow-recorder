@@ -83,7 +83,7 @@ class BeamImageTests(unittest.TestCase):
 
     with self.pipeline as p:
 
-      schema = input_schema.IMAGECSVSCHEMA
+      schema = input_schema.IMAGE_CSV_SCHEMA
 
       converter = schema.get_input_coder()
 

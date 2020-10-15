@@ -117,7 +117,7 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
         rows.append(row)
 
   return pd.DataFrame(
-      rows, columns=input_schema.IMAGECSVSCHEMA.get_input_keys())
+      rows, columns=input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
 
 
 def _is_directory(input_data) -> bool:
@@ -133,7 +133,7 @@ def read_csv(
   """Returns a a Pandas DataFrame from a CSV file."""
 
   if header is None and not names:
-    names = list(input_schema.IMAGECSVSCHEMA.get_input_keys())
+    names = list(input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
 
   with tf.io.gfile.GFile(csv_file) as f:
     return pd.read_csv(f, names=names, header=header)
@@ -200,7 +200,7 @@ def _configure_logging(logfile):
 def create_tfrecords(
     source: Union[str, pd.DataFrame],
     output_dir: str,
-    schema: input_schema.Schema = input_schema.IMAGECSVSCHEMA,
+    schema: input_schema.Schema = input_schema.IMAGE_CSV_SCHEMA,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
     runner: str = 'DirectRunner',
