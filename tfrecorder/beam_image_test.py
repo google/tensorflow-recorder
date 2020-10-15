@@ -29,6 +29,8 @@ from tfrecorder import beam_image
 from tfrecorder import test_utils
 from tfrecorder import schema
 
+RANDOM_SEED = 42
+
 
 class BeamImageTests(unittest.TestCase):
   """Tests for beam_image.py"""
@@ -36,7 +38,8 @@ class BeamImageTests(unittest.TestCase):
   def setUp(self):
     self.pipeline = test_utils.get_test_pipeline()
     self.df = test_utils.get_test_df()
-    self.image_file = 'tfrecorder/test_data/images/cat/cat-640x853-1.jpg'
+    self.image_file = self.df.image_uri.sample(
+        random_state=RANDOM_SEED).values[0]
 
   def test_load(self):
     """Tests the image loading function."""
@@ -46,7 +49,7 @@ class BeamImageTests(unittest.TestCase):
   def test_file_not_found_load(self):
     """Test loading an image that doesn't exist."""
     with self.assertRaises(OSError):
-      _ = beam_image.load('tfrecorder/test_data/images/cat/food.jpg')
+      _ = beam_image.load('/some/image/dir/food.jpg')
 
   def test_mode_to_channel(self):
     """Tests `mode_to_channel`."""
@@ -85,7 +88,6 @@ class BeamImageTests(unittest.TestCase):
 
       converter = schema.get_tft_coder(['split', 'image_uri', 'label'],
                                        schema.image_csv_schema)
-
 
       extract_images_fn = beam_image.ExtractImagesDoFn('image_uri')
 
