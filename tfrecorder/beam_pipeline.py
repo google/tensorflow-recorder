@@ -147,7 +147,7 @@ def _preprocessing_fn(inputs: Dict[str, Any],
 
   outputs = {}
   for name, supported_type in schema_map.items():
-    if supported_type ==  types.StringLabel:
+    if supported_type == types.StringLabel:
       outputs[name] = tft.compute_and_apply_vocabulary(inputs[name])
     else:
       outputs[name] = inputs[name]
