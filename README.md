@@ -215,10 +215,10 @@ from collections
 from tfrecorder import input_schema
 
 image_csv_schema = input_schema.Schema({
-    'split': types.split_key,
-    'image_uri': types.image_uri,
-    'label': types.string_label
-})
+    'split': types.SplitKey,
+    'image_uri': types.ImageUri,
+    'label': types.StringLabel
+}
 ```
 Once created a schema_map can be sent to TFRecorder.
 
@@ -250,7 +250,7 @@ type `types.SplitKey` and create dataset splits based on it's contents.
 will load the specified image and store the image as a [base64 encoded](https://docs.python.org/3/library/base64.html)
  [tf.string](https://www.tensorflow.org/tutorials/load_data/unicode) in the key 'image' 
 along with the height, width, and image channels  as integers using they keys 'image_height', 'image_width', and 'image_channels'.
-* A schema can contain only one imageUriType
+* A schema can contain only one imageUri column
 
 #### types.SplitKey
 
@@ -268,12 +268,12 @@ set all rows to TRAIN.
 * Specifies an int input.
 * Will be scaled to mean 0, variance 1.
 
-#### types.IntegerInput
+#### types.FloatInput
 
 * Specifies an float input.
 * Will be scaled to mean 0, variance 1.
 
-#### types.CategoricalInputType
+#### types.CategoricalInput
 
 * Specifies a string input.
 * Vocabulary computed and output integerized.
@@ -306,7 +306,7 @@ import tfrecorder
 from tfrecorder import input_schema
 
 # First create a schema map
-schema_map = OrderedDict({
+schema = input_schema.Schema({
     'split':types.SplitKey,
     'x':types.FloatInput,
     'y':types.IntegerInput,
@@ -318,7 +318,7 @@ schema_map = OrderedDict({
 df = pd.read_csv(...)
 df.tensorflow.to_tfr(
     output_dir='gs://my/bucket',
-    schema_map=schema_map,
+    schema=schema,
     runner='DataflowRunner',
     project='my-project',
     region='us-central1')

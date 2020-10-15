@@ -53,9 +53,9 @@ class Schema:
         # if an image key is present, add image features to pre tft schema
         self.pre_tft_schema_map['image_name'] = types.ImageSupportString
         self.pre_tft_schema_map['image'] = types.ImageSupportString
-        self.pre_tft_schema_map['image_height'] = types.ImageSupportInt
-        self.pre_tft_schema_map['image_width'] = types.ImageSupportInt
-        self.pre_tft_schema_map['image_channels'] = types.ImageSupportInt
+        self.pre_tft_schema_map['image_height'] = types.ImageDim
+        self.pre_tft_schema_map['image_width'] = types.ImageDim
+        self.pre_tft_schema_map['image_channels'] = types.ImageDim
       else:
         self.pre_tft_schema_map[k] = schema_map[k]
 
@@ -89,10 +89,14 @@ class Schema:
     return tft.coders.CsvCoder(list(self.input_schema_map.keys()),
                                metadata.schema)
 
+  def get_input_keys(self):
+    """Returns keys for input_schema_map as list."""
+    return self.input_schema_map.keys()
+
 # Built in / Default schema map.
 image_csv_schema_map = {
     'split': types.SplitKey,
     'image_uri': types.ImageUri,
     'label': types.StringLabel}
 
-ImageCsvSchema = Schema(image_csv_schema_map)
+IMAGECSVSCHEMA = Schema(image_csv_schema_map)

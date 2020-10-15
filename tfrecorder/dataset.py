@@ -49,7 +49,7 @@ def _get_tfrecord_files_per_split(tfrecord_dir: str):
   """Returns TFRecord files for each split.
 
   The TFRecord filenames should have a prefix based on lowercase versions of
-  items in `itypes.SplitKey.allowed_split_values`. DISCARD split is
+  items in `types.SplitKey.allowed_split_values`. DISCARD split is
   not checked.
   """
   split_to_files = {}

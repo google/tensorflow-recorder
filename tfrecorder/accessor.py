@@ -41,7 +41,7 @@ class TFRecorderAccessor:
   def to_tfr(
       self,
       output_dir: str,
-      schema: input_schema.Schema = input_schema.ImageCsvSchema,
+      schema: input_schema.Schema = input_schema.IMAGECSVSCHEMA,
       runner: str = 'DirectRunner',
       project: Optional[str] = None,
       region: Optional[str] = None,
