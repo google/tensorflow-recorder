@@ -48,7 +48,7 @@ class Schema:
       if 'Label' in v.__name__: # Matches any label type
         self.label_key = k
 
-      if v ==  types.ImageUri:
+      if v == types.ImageUri:
         self.image_uri_key = k
         # if an image key is present, add image features to pre tft schema
         self.pre_tft_schema_map['image_name'] = types.ImageSupportString
@@ -67,7 +67,7 @@ class Schema:
       schema_map: Dict[str, types.SupportedType]
       ) -> Dict[str, tf.io.FixedLenFeature]:
     """Gets map of column names to tf.io.FixedLenFeatures for TFT."""
-    return {k:v.feature_spec for (k,v) in schema_map.items()}
+    return {k: v.feature_spec for k, v in schema_map.items()}
 
   @staticmethod
   def _get_metadata(

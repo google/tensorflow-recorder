@@ -161,8 +161,8 @@ class TransformAndWriteTfrTest(unittest.TestCase):
         df = self.pre_tft_df[self.pre_tft_df.split == 'TRAIN']
         dataset = self._get_dataset(p, df)
         preprocessing_fn = functools.partial(
-          beam_pipeline._preprocessing_fn,
-          schema_map=self.schema.pre_tft_schema_map)
+            beam_pipeline._preprocessing_fn,
+            schema_map=self.schema.pre_tft_schema_map)
         transform_fn = (
             beam_pipeline._transform_and_write_tfr(
                 dataset, self.tfr_writer,

@@ -15,6 +15,7 @@
 # limitations under the License.
 
 """Custom types."""
+
 import dataclasses
 from typing import Tuple, List, Any
 
@@ -37,37 +38,37 @@ class SupportedType:
 @dataclasses.dataclass
 class ImageUri(SupportedType):
   """Supports image uri columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.string)
-  allowed_values=[]
+  feature_spec = tf.io.FixedLenFeature([], tf.string)
+  allowed_values = []
 
 
 @dataclasses.dataclass
 class SplitKey(SupportedType):
   """Supports split key columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.string)
+  feature_spec = tf.io.FixedLenFeature([], tf.string)
   allowed_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
 
 
 @dataclasses.dataclass
 class IntegerInput(SupportedType):
   """Supports integer columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.int64)
-  allowed_values=[]
+  feature_spec = tf.io.FixedLenFeature([], tf.int64)
+  allowed_values = []
 
 
 @dataclasses.dataclass
-class FloatInput (SupportedType):
+class FloatInput(SupportedType):
   """Supports float columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.float32)
-  allowed_values=[]
+  feature_spec = tf.io.FixedLenFeature([], tf.float32)
+  allowed_values = []
 
 
 #TODO(mikebernico): Implement in preprocess_fn
 @dataclasses.dataclass
 class StringInput(SupportedType):
   """Supports string input columns."""
-  feature_spec=tf.io.FixedLenFeature([], tf.string)
-  allowed_values=[]
+  feature_spec = tf.io.FixedLenFeature([], tf.string)
+  allowed_values = []
 
 
 @dataclasses.dataclass

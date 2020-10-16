@@ -220,8 +220,8 @@ class ReadCSVTest(unittest.TestCase):
     f = _make_csv_tempfile(self.sample_data)
     actual = client.read_csv(f.name, header=None)
     self.assertEqual(
-      list(actual.columns),
-      list(input_schema.IMAGE_CSV_SCHEMA.get_input_keys()))
+        list(actual.columns),
+        list(input_schema.IMAGE_CSV_SCHEMA.get_input_keys()))
     self.assertEqual(actual.values.tolist(), self.sample_data)
 
   def test_valid_csv_no_header_names_specified(self):

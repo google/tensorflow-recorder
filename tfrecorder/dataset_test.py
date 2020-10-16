@@ -80,8 +80,7 @@ class LoadTest(unittest.TestCase):
     dataset_dict = dataset.load(self.tfrecord_dir)
     self.assertEqual(len(dataset_dict), 3)
     self.assertCountEqual(
-        list(dataset_dict.keys()),
-             types.SplitKey.allowed_values[:-1])
+        list(dataset_dict.keys()), types.SplitKey.allowed_values[:-1])
 
 
 if __name__ == '__main__':
