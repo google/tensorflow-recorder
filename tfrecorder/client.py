@@ -19,7 +19,6 @@
 client.py provides create_tfrecords() to upstream clients including
 the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
-import collections
 import logging
 import os
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
@@ -31,18 +30,9 @@ import tensorflow as tf
 from tfrecorder import beam_pipeline
 from tfrecorder import common
 from tfrecorder import constants
-from tfrecorder import schema
+from tfrecorder import input_schema
+from tfrecorder import types
 
-# TODO(mikebernico) Add test for only one split_key.
-def _validate_data(df: pd.DataFrame,
-                   schema_map: Dict[str, collections.namedtuple]):
-  """Verifies data is consistent with schema."""
-
-  for key, value in schema_map.items():
-    _ = value # TODO(mikebernico) Implement type checking.
-    if key not in df.columns:
-      raise AttributeError(
-          'DataFrame does not contain column {} listed in schema'.format(key))
 
 def _validate_runner(
     runner: str,
@@ -112,7 +102,7 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
   """
 
   rows = []
-  split_values = schema.allowed_split_values
+  split_values = types.SplitKey.allowed_values
   for root, _, files in tf.io.gfile.walk(image_dir):
     if files:
       root_, label = _path_split(root)
@@ -126,7 +116,8 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
         row = [split, image_uri, label]
         rows.append(row)
 
-  return pd.DataFrame(rows, columns=schema.image_csv_schema.keys())
+  return pd.DataFrame(
+      rows, columns=input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
 
 
 def _is_directory(input_data) -> bool:
@@ -142,7 +133,7 @@ def read_csv(
   """Returns a a Pandas DataFrame from a CSV file."""
 
   if header is None and not names:
-    names = list(schema.image_csv_schema.keys())
+    names = list(input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
 
   with tf.io.gfile.GFile(csv_file) as f:
     return pd.read_csv(f, names=names, header=header)
@@ -202,13 +193,14 @@ def _configure_logging(logfile):
   tf_logger.handlers = []
   tf_logger.addHandler(handler)
 
+
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 
 def create_tfrecords(
     source: Union[str, pd.DataFrame],
     output_dir: str,
-    schema_map: Dict[str, collections.namedtuple] = schema.image_csv_schema,
+    schema: input_schema.Schema = input_schema.IMAGE_CSV_SCHEMA,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
     runner: str = 'DirectRunner',
@@ -235,7 +227,7 @@ def create_tfrecords(
   Args:
     source: Pandas DataFrame, CSV file or image directory path.
     output_dir: Local directory or GCS Location to save TFRecords to.
-    schema_map: A dict mapping column names to supported types.
+    schema: An instance of input_schema.Schema.
     header: Indicates row/s to use as a header. Not used when `input_data` is
       a Pandas DataFrame.
       If 'infer' (default), header is taken from the first line of a CSV
@@ -258,7 +250,6 @@ def create_tfrecords(
 
   df = to_dataframe(source, header, names)
 
-  _validate_data(df, schema_map)
   _validate_runner(runner, project, region, tfrecorder_wheel)
 
   logfile = os.path.join('/tmp', constants.LOGFILE)
@@ -273,7 +264,7 @@ def create_tfrecords(
       output_dir=output_dir,
       compression=compression,
       num_shards=num_shards,
-      schema_map=schema_map,
+      schema=schema,
       tfrecorder_wheel=tfrecorder_wheel,
       dataflow_options=dataflow_options)
 
@@ -291,7 +282,6 @@ def create_tfrecords(
     good_image_count = _get_beam_metric(good_image_filter, result)
     bad_image_count = _get_beam_metric(bad_image_filter, result)
 
-    # TODO(mikebernico): Profile metric impact with larger dataset.
     metrics = {
         'rows': row_count,
         'good_images': good_image_count,
