@@ -26,13 +26,11 @@ from unittest import mock
 import apache_beam as beam
 import frozendict
 import tensorflow as tf
-import tensorflow_transform as tft
 from tensorflow_transform import beam as tft_beam
 
 from tfrecorder import beam_pipeline
-from tfrecorder import input_schema
+from tfrecorder import schema
 from tfrecorder import test_utils
-from tfrecorder import types
 
 
 # pylint: disable=protected-access
@@ -47,9 +45,9 @@ class BeamPipelineTests(unittest.TestCase):
         'image_uri': 'gs://foo/bar.jpg',
         'label': 1}
     my_schema = frozendict.FrozenOrderedDict({
-        'split': types.SplitKey,
-        'image_uri': types.ImageUri,
-        'label': types.IntegerLabel})
+        'split': schema.SplitKeyType,
+        'image_uri': schema.ImageUriType,
+        'label': schema.IntegerLabelType})
 
     result = beam_pipeline._preprocessing_fn(element, schema_map=my_schema)
     self.assertEqual(element, result)
@@ -63,8 +61,8 @@ class BeamPipelineTests(unittest.TestCase):
         'split': 'TRAIN',
         'image_uri': 'gs://foo/bar.jpg',
         'label': tf.constant('cat', dtype=tf.string)}
-    result = beam_pipeline._preprocessing_fn(
-        element, schema_map=input_schema.IMAGE_CSV_SCHEMA.input_schema_map)
+    result = beam_pipeline._preprocessing_fn(element,
+                                             schema_map=schema.image_csv_schema)
     result['label'] = result['label'].numpy()
     self.assertEqual(0, result['label'])
 
@@ -99,9 +97,8 @@ class GetSplitCountsTest(unittest.TestCase):
 
   def setUp(self):
     self.df = test_utils.get_test_df()
-    self.schema = input_schema.IMAGE_CSV_SCHEMA
-    self.schema_map = self.schema.input_schema_map
-    self.split_key = self.schema.split_key
+    self.schema_map = schema.image_csv_schema
+    self.split_key = schema.get_key(schema.SplitKeyType, self.schema_map)
 
   def test_all_splits(self):
     """Tests case where train, validation and test data exists"""
@@ -129,18 +126,16 @@ class TransformAndWriteTfrTest(unittest.TestCase):
 
   def setUp(self):
     self.pipeline = test_utils.get_test_pipeline()
-    self.pre_tft_df = test_utils.get_pre_tft_feature_df()
+    self.raw_df = test_utils.get_raw_feature_df()
     self.temp_dir_obj = tempfile.TemporaryDirectory(dir='/tmp', prefix='test-')
     self.test_dir = self.temp_dir_obj.name
     self.tfr_writer = functools.partial(
         beam_pipeline._get_write_to_tfrecord, output_dir=self.test_dir,
         compress='gzip', num_shards=2)
-    self.schema = input_schema.Schema(
-        input_schema.IMAGE_CSV_SCHEMA.input_schema_map)
-    self.pre_tft_metadata = self.schema.get_pre_tft_metadata()
-    self.converter = tft.coders.CsvCoder(
-        list(self.schema.pre_tft_schema_map.keys()),
-        self.pre_tft_metadata.schema)
+    self.raw_schema = schema.get_raw_schema_map(schema.image_csv_schema)
+    self.raw_metadata = schema.get_raw_metadata(self.raw_df.columns,
+                                                self.raw_schema)
+    self.converter = schema.get_tft_coder(self.raw_df.columns, self.raw_schema)
     self.transform_fn_path = ('./tfrecorder/test_data/sample_tfrecords')
 
   def tearDown(self):
@@ -158,16 +153,15 @@ class TransformAndWriteTfrTest(unittest.TestCase):
 
     with self.pipeline as p:
       with tft_beam.Context(temp_dir=os.path.join(self.test_dir, 'tmp')):
-        df = self.pre_tft_df[self.pre_tft_df.split == 'TRAIN']
+        df = self.raw_df[self.raw_df.split == 'TRAIN']
         dataset = self._get_dataset(p, df)
-        preprocessing_fn = functools.partial(
-          beam_pipeline._preprocessing_fn,
-          schema_map=self.schema.pre_tft_schema_map)
+        preprocessing_fn = functools.partial(beam_pipeline._preprocessing_fn,
+                                             schema_map=self.raw_schema)
         transform_fn = (
             beam_pipeline._transform_and_write_tfr(
                 dataset, self.tfr_writer,
                 preprocessing_fn=preprocessing_fn,
-                metadata=self.pre_tft_metadata,
+                raw_metadata=self.raw_metadata,
                 label='Train'))
         _ = transform_fn | tft_beam.WriteTransformFn(self.test_dir)
 
@@ -185,12 +179,12 @@ class TransformAndWriteTfrTest(unittest.TestCase):
     with self.pipeline as p:
       with tft_beam.Context(temp_dir=os.path.join(self.test_dir, 'tmp')):
 
-        df = self.pre_tft_df[self.pre_tft_df.split == 'TEST']
+        df = self.raw_df[self.raw_df.split == 'TEST']
         dataset = self._get_dataset(p, df)
         transform_fn = p | tft_beam.ReadTransformFn(self.transform_fn_path)
         beam_pipeline._transform_and_write_tfr(
             dataset, self.tfr_writer, transform_fn=transform_fn,
-            metadata=self.pre_tft_metadata, label='Test')
+            raw_metadata=self.raw_metadata, label='Test')
 
     self.assertFalse(glob.glob(os.path.join(self.test_dir, 'train*.gz')))
     self.assertFalse(glob.glob(os.path.join(self.test_dir, 'validation*.gz')))
