@@ -27,7 +27,7 @@ from PIL import Image
 
 from tfrecorder import beam_image
 from tfrecorder import test_utils
-from tfrecorder import schema
+from tfrecorder import input_schema
 
 
 class BeamImageTests(unittest.TestCase):
@@ -83,9 +83,9 @@ class BeamImageTests(unittest.TestCase):
 
     with self.pipeline as p:
 
-      converter = schema.get_tft_coder(['split', 'image_uri', 'label'],
-                                       schema.image_csv_schema)
+      schema = input_schema.IMAGE_CSV_SCHEMA
 
+      converter = schema.get_input_coder()
 
       extract_images_fn = beam_image.ExtractImagesDoFn('image_uri')
 
