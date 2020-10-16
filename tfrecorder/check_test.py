@@ -35,43 +35,6 @@ from tfrecorder import dataset as _dataset
 
 # pylint: disable=protected-access
 
-class ReadTFRecordsTest(unittest.TestCase):
-  """Tests `_read_tfrecords`."""
-
-  def setUp(self):
-    self.tfrecords_dir = os.path.join(test_utils.TEST_DIR, 'sample_tfrecords')
-
-  def test_valid_compressed_gzip(self):
-    """Tests valid case using GZIP compression."""
-
-    # Use list of file pattern strings to maintain train, validation, test
-    # order.
-    file_pattern = [
-        os.path.join(self.tfrecords_dir, '{}*.tfrecord.gz'.format(f))
-        for f in ['train, validation, test']]
-
-    compression_type = 'GZIP'
-    actual = check._read_tfrecords(
-        file_pattern, self.tfrecords_dir, compression_type)
-
-    expected_csv = os.path.join(test_utils.TEST_DIR, 'data.csv')
-    expected = tf.data.experimental.make_csv_dataset(
-        expected_csv, batch_size=1, label_name=None, num_epochs=1,
-        shuffle=False)
-
-    for a, e in zip(actual, expected):
-      self.assertCountEqual(
-          a.keys(), input_schema.IMAGE_CSV_SCHEMA.input_schema_map)
-      for key in input_schema.IMAGE_CSV_SCHEMA.input_schema_map:
-        self.assertEqual(a[key], e[key])
-
-  def test_error_invalid_file_pattern(self):
-    """Tests error case where file pattern is invalid."""
-
-    file_pattern = 'gs://path/to/memes/folder'
-    with self.assertRaises(tf.errors.OpError):
-      check._read_tfrecords(file_pattern)
-
 
 class CheckTFRecordsTest(unittest.TestCase):
   """Tests `check_tfrecords`."""
