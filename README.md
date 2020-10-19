@@ -204,51 +204,76 @@ TFRecorder's flexible schema system allows you to use any schema you want for yo
 TFRecord.
 
 ### Creating and using a schema map
-A schema map is a Python dictionary that maps DataFrame column names to [supported
+
+A schema map is an ordered dictionary that maps DataFrame column names to [supported
 TFRecorder types.](#Supported-types)
 
 For example, the default image CSV input can be defined like this:
 
 ```python
-from tfrecorder import schema
+from collections
+from tfrecorder import input_schema
 
-image_csv_schema = {
-    'split': schema.split_key,
-    'image_uri': schema.image_uri,
-    'label': schema.string_label
+<<<<<<< HEAD
+image_csv_schema = input_schema.Schema({
+    'split': types.SplitKey,
+    'image_uri': types.ImageUri,
+    'label': types.StringLabel
 }
+=======
+image_csv_schema = collections.OrderedDict({
+    'split': input_schema.split_key,
+    'image_uri': input_schema.image_uri,
+    'label': input_schema.string_label
+})
+>>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
 ```
 Once created a schema_map can be sent to TFRecorder.
 
 ```python
 import pandas as pd
-from tfrecorder import schema
+from tfrecorder import input_schema
 import tfrecorder
 
 df = pd.read_csv(...)
 df.tensorflow.to_tfr(
     output_dir='gs://my/bucket',
-    schema_map=schema.image_csv_schema,
+    schema_map=image_csv_schema,
     runner='DataflowRunner',
     project='my-project',
     region='us-central1')
 ```
 
 ### Supported types
+
 TFRecorder's schema system supports several types, all listed below. You can use
 these types by referencing them in the schema map. Each type informs TFRecorder how 
 to treat your DataFrame columns.  For example, the schema mapping 
-`my_split_key: schema.SplitKeyType` tells TFRecorder to treat the column `my_split_key` as
-type `schema.SplitKeyType` and create dataset splits based on it's contents. 
+<<<<<<< HEAD
+`my_split_key: types.SplitKey` tells TFRecorder to treat the column `my_split_key` as
+type `types.SplitKey` and create dataset splits based on it's contents. 
 
-#### schema.ImageUriType
+#### types.ImageUri
+=======
+`my_split_key: input_schema.SplitKeyType` tells TFRecorder to treat the column `my_split_key` as
+type `input_schema.SplitKeyType` and create dataset splits based on it's contents. 
+
+#### input_schema.ImageUriType
+>>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
+
 * Specifies the path to an image. When specified, TFRecorder
 will load the specified image and store the image as a [base64 encoded](https://docs.python.org/3/library/base64.html)
  [tf.string](https://www.tensorflow.org/tutorials/load_data/unicode) in the key 'image' 
 along with the height, width, and image channels  as integers using they keys 'image_height', 'image_width', and 'image_channels'.
-* A schema can contain only one imageUriType
+* A schema can contain only one imageUri column
 
-#### schema.SplitKeyType
+#### types.SplitKey
+
+<<<<<<< HEAD
+=======
+#### input_schema.SplitKeyType
+
+>>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
 * A split key is required for TFRecorder at this time.
 * Only one split key is allowed.
 * Specifies a split key that TFRecorder will use to partition the 
@@ -258,23 +283,48 @@ input dataset on.
 Note: If you do not want your data to be partitioned please include a split_key and
 set all rows to TRAIN.
 
-#### schema.IntegerInputType
+<<<<<<< HEAD
+#### types.IntegerInput
+=======
+#### input_schema.IntegerInputType
+>>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
+
 * Specifies an int input.
 * Will be scaled to mean 0, variance 1.
 
-#### schema.FloatInputType
+<<<<<<< HEAD
+#### types.FloatInput
+=======
+#### input_schema.FloatInputType
+>>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
+
 * Specifies an float input.
 * Will be scaled to mean 0, variance 1.
 
-#### schema.CategoricalInputType
+<<<<<<< HEAD
+#### types.CategoricalInput
+=======
+#### input_schema.CategoricalInputType
+>>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
+
 * Specifies a string input.
 * Vocabulary computed and output integerized.
 
-#### schema.IntegerLabelType
+<<<<<<< HEAD
+#### types.IntegerLabel
+=======
+#### input_schema.IntegerLabelType
+>>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
+
 * Specifies an integer target.
 * Not transformed.
 
-#### schema.StringLabelType
+<<<<<<< HEAD
+#### types.StringLabel
+=======
+#### input_schema.StringLabelType
+>>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
+
 * Specifies a string target.
 * Vocabulary computed and *output integerized.*
 
@@ -290,24 +340,33 @@ looks like this:
 You can use TFRecorder as shown below:
 
 ```python
+import collections
 import pandas as pd
 import tfrecorder
-from tfrecorder import schema
+from tfrecorder import input_schema
 
 # First create a schema map
-schema_map = {
-    'split':schema.SplitKeyType,
-    'x':schema.FloatInputType,
-    'y':schema.IntegerInputType,
-    'label':schema.IntegerLabelType
-}
+<<<<<<< HEAD
+schema = input_schema.Schema({
+    'split':types.SplitKey,
+    'x':types.FloatInput,
+    'y':types.IntegerInput,
+    'label':types.IntegerLabel
+=======
+schema_map = OrderedDict({
+    'split':input_schema.SplitKeyType,
+    'x':input_schema.FloatInputType,
+    'y':input_schema.IntegerInputType,
+    'label':input_schema.IntegerLabelType
+>>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
+})
 
 # Now call TFRecorder with the specified schema_map
 
 df = pd.read_csv(...)
 df.tensorflow.to_tfr(
     output_dir='gs://my/bucket',
-    schema_map=schema_map,
+    schema=schema,
     runner='DataflowRunner',
     project='my-project',
     region='us-central1')
@@ -321,6 +380,7 @@ each data column and process your data using [TensorFlow Transform](https://www.
 Pull requests are welcome. Please see our [code of conduct](docs/code-of-conduct.md) and [contributing guide](docs/contributing.md).
 
 ## Why TFRecorder?
+
 Using the TFRecord storage format is important for optimal machine learning pipelines and getting the most from your hardware (in cloud or on prem). 
 
 TFRecords help when:

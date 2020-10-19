@@ -29,8 +29,11 @@ import tensorflow as tf
 from tfrecorder import beam_image
 from tfrecorder import check
 from tfrecorder import test_utils
-from tfrecorder import schema
+from tfrecorder import input_schema
 from tfrecorder import dataset as _dataset
+
+
+# pylint: disable=protected-access
 
 
 class CheckTFRecordsTest(unittest.TestCase):
@@ -47,7 +50,8 @@ class CheckTFRecordsTest(unittest.TestCase):
         image_channels)
 
     data = test_utils.get_test_data()
-    image_uri_key = schema.get_key(schema.ImageUriType, schema.image_csv_schema)
+    schema = input_schema.IMAGE_CSV_SCHEMA
+    image_uri_key = schema.image_uri_key
     num_records = len(data[image_uri_key])
     image_uris = data.pop(image_uri_key)
     data['image_name'] = [os.path.split(uri)[-1] for uri in image_uris]
