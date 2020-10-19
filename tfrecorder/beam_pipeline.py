@@ -33,7 +33,7 @@ import tensorflow_transform as tft
 from tensorflow_transform import beam as tft_beam
 
 from tfrecorder import beam_image
-from tfrecorder import schema
+from tfrecorder import input_schema
 from tfrecorder import types
 
 
@@ -80,11 +80,11 @@ def _partition_fn(
   if isinstance(dataset_type, bytes):
     dataset_type = element[split_key].decode('utf-8')
   try:
-    index = schema.SplitKeyType.allowed_values.index(dataset_type)
+    index = types.SplitKey.allowed_values.index(dataset_type)
   except ValueError as e:
     logging.warning('Unable to index dataset type %s: %s.',
                     dataset_type, str(e))
-    index = schema.SplitKeyType.allowed_values.index('DISCARD')
+    index = types.SplitKey.allowed_values.index('DISCARD')
   return index
 
 def _get_write_to_tfrecord(output_dir: str,
@@ -123,7 +123,7 @@ def _preprocessing_fn(inputs: Dict[str, Any],
 
   outputs = {}
   for name, supported_type in schema_map.items():
-    if supported_type.type_name == 'string_label':
+    if supported_type == types.StringLabel:
       outputs[name] = tft.compute_and_apply_vocabulary(inputs[name])
     else:
       outputs[name] = inputs[name]
@@ -164,13 +164,13 @@ def get_split_counts(df: pd.DataFrame, split_key: str):
 def _transform_and_write_tfr(
     dataset: pvalue.PCollection,
     tfr_writer: Callable[[], beam.io.tfrecordio.WriteToTFRecord],
-    raw_metadata: types.BeamDatasetMetadata,
+    metadata: types.BeamDatasetMetadata,
     preprocessing_fn: Optional[Callable] = None,
     transform_fn: Optional[types.TransformFn] = None,
     label: str = 'data'):
   """Applies TF Transform to dataset and outputs it as TFRecords."""
 
-  dataset_metadata = (dataset, raw_metadata)
+  dataset_metadata = (dataset, metadata)
 
   if transform_fn:
     transformed_dataset, transformed_metadata = (
@@ -204,7 +204,7 @@ def build_pipeline(
     region: str,
     compression: str,
     num_shards: int,
-    schema_map: Dict[str, collections.namedtuple],
+    schema: input_schema.Schema,
     tfrecorder_wheel: str,
     dataflow_options: Dict[str, Any]) -> beam.Pipeline:
   """Runs TFRecorder Beam Pipeline.
@@ -217,8 +217,7 @@ def build_pipeline(
     region: GCP compute region (if DataflowRunner)
     compression: gzip or None.
     num_shards: Number of shards.
-    schema_map: A schema map (Dictionary mapping Dataframe columns to types)
-     used to derive the input and target schema.
+    schema: A Schema object defining the input schema.
     tfrecorder_wheel: Path to TFRecorder wheel for DataFlow
     dataflow_options: Dataflow Runner Options (optional)
 
@@ -241,7 +240,7 @@ def build_pipeline(
   p = beam.Pipeline(options=options)
   with tft_beam.Context(temp_dir=os.path.join(job_dir, 'tft_tmp')):
 
-    converter = schema.get_tft_coder(df.columns, schema_map)
+    converter = schema.get_input_coder()
     flatten_rows = ToCSVRows()
 
     # Each element in the data PCollection will be a dict
@@ -255,7 +254,7 @@ def build_pipeline(
     )
 
     # Extract images if an image_uri key exists.
-    image_uri_key = schema.get_key(schema.ImageUriType, schema_map)
+    image_uri_key = schema.image_uri_key
     if image_uri_key:
       extract_images_fn = beam_image.ExtractImagesDoFn(image_uri_key)
 
@@ -264,8 +263,8 @@ def build_pipeline(
           | 'ReadImage' >> beam.ParDo(extract_images_fn)
       )
 
-    # If the schema contains a valid split key, partition the dataset.
-    split_key = schema.get_key(schema.SplitKeyType, schema_map)
+    # Get the split key from schema.
+    split_key = schema.split_key
 
     # Note: This will not always reflect actual number of samples per dataset
     # written as TFRecords. The succeeding `Partition` operation may mark
@@ -273,10 +272,6 @@ def build_pipeline(
     # its samples discarded, the pipeline will still generate a TFRecord
     # file for that split, albeit empty.
     split_counts = get_split_counts(df, split_key)
-
-    # Raw metadata is the TFT metadata after image insertion but before TFT
-    # e.g Image columns have been added if necessary.
-    raw_metadata = schema.get_raw_metadata(df.columns, schema_map)
 
     # Require training set to be available in the input data. The transform_fn
     # and transformed_metadata will be generated from the training set and
@@ -287,32 +282,33 @@ def build_pipeline(
     partition_fn = functools.partial(_partition_fn, split_key=split_key)
     train_data, val_data, test_data, discard_data = (
         data | 'SplitDataset' >> beam.Partition(
-            partition_fn, len(schema.SplitKeyType.allowed_values)))
+            partition_fn, len(types.SplitKey.allowed_values)))
 
-    raw_schema_map = schema.get_raw_schema_map(schema_map=schema_map)
     preprocessing_fn = functools.partial(
         _preprocessing_fn,
-        schema_map=raw_schema_map)
+        schema_map=schema.pre_tft_schema_map)
 
     tfr_writer = functools.partial(
         _get_write_to_tfrecord, output_dir=job_dir, compress=compression,
         num_shards=num_shards)
 
+    pre_tft_metadata = schema.get_pre_tft_metadata()
+
     transform_fn = _transform_and_write_tfr(
         train_data, tfr_writer, preprocessing_fn=preprocessing_fn,
-        raw_metadata=raw_metadata,
+        metadata=pre_tft_metadata,
         label='Train')
 
     if 'VALIDATION' in split_counts:
       _transform_and_write_tfr(
           val_data, tfr_writer, transform_fn=transform_fn,
-          raw_metadata=raw_metadata,
+          metadata=pre_tft_metadata,
           label='Validation')
 
     if 'TEST' in split_counts:
       _transform_and_write_tfr(
           test_data, tfr_writer, transform_fn=transform_fn,
-          raw_metadata=raw_metadata,
+          metadata=pre_tft_metadata,
           label='Test')
 
     _ = (

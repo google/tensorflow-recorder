@@ -16,12 +16,76 @@
 
 """Custom types."""
 
-from typing import Tuple
+import dataclasses
+from typing import Tuple, List, Any
 
+import tensorflow as tf
 from apache_beam.pvalue import PCollection
 from tensorflow_transform import beam as tft_beam
-
 
 BeamDatasetMetadata = tft_beam.tft_beam_io.beam_metadata_io.BeamDatasetMetadata
 TransformedMetadata = BeamDatasetMetadata
 TransformFn = Tuple[PCollection, TransformedMetadata]
+
+
+@dataclasses.dataclass
+class SupportedType:
+  """Base type for TFRecorder Types."""
+  feature_spec: tf.io.FixedLenFeature
+  allowed_values: List[Any]
+
+
+@dataclasses.dataclass
+class ImageUri(SupportedType):
+  """Supports image uri columns."""
+  feature_spec = tf.io.FixedLenFeature([], tf.string)
+  allowed_values = []
+
+
+@dataclasses.dataclass
+class SplitKey(SupportedType):
+  """Supports split key columns."""
+  feature_spec = tf.io.FixedLenFeature([], tf.string)
+  allowed_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
+
+
+@dataclasses.dataclass
+class IntegerInput(SupportedType):
+  """Supports integer columns."""
+  feature_spec = tf.io.FixedLenFeature([], tf.int64)
+  allowed_values = []
+
+
+@dataclasses.dataclass
+class FloatInput(SupportedType):
+  """Supports float columns."""
+  feature_spec = tf.io.FixedLenFeature([], tf.float32)
+  allowed_values = []
+
+
+#TODO(mikebernico): Implement in preprocess_fn
+@dataclasses.dataclass
+class StringInput(SupportedType):
+  """Supports string input columns."""
+  feature_spec = tf.io.FixedLenFeature([], tf.string)
+  allowed_values = []
+
+
+@dataclasses.dataclass
+class IntegerLabel(IntegerInput):
+  """Supports integer labels."""
+
+
+@dataclasses.dataclass
+class StringLabel(StringInput):
+  """Supports string labels."""
+
+
+@dataclasses.dataclass
+class ImageSupportString(StringInput):
+  """Supports generated image bytestrings."""
+
+
+@dataclasses.dataclass
+class ImageDim(IntegerInput):
+  """Supports generated image ints (height, width, channels)."""
