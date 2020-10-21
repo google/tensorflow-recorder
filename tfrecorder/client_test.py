@@ -17,6 +17,7 @@
 """Tests for client."""
 
 import os
+import re
 from typing import List
 
 import csv
@@ -124,9 +125,12 @@ class InputValidationTest(unittest.TestCase):
 
   def test_missing_split(self):
     """Tests missing split column."""
-    with self.assertRaises(AttributeError):
+    split_key = 'split'
+    schema_keys = re.escape(str(list(self.test_schema_map.keys())))
+    regex = fr'^.+column: {split_key}.+keys: {schema_keys}.$'
+    with self.assertRaisesRegex(AttributeError, regex):
       df2 = self.test_df.copy()
-      df2.drop('split', inplace=True, axis=1)
+      df2.drop(split_key, inplace=True, axis=1)
       client._validate_data(df2, schema.image_csv_schema)
 
   def test_valid_runner(self):
