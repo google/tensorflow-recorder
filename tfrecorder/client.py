@@ -126,6 +126,37 @@ def _is_directory(input_data) -> bool:
   return tf.io.gfile.isdir(input_data)
 
 
+def _get_job_name(job_label: str = None) -> str:
+  """Returns Beam runner job name.
+
+  Args:
+    job_label: A user defined string that helps define the job.
+
+  Returns:
+    A job name compatible with apache beam runners, including a time stamp to
+      insure uniqueness.
+  """
+
+  job_name = 'tfrecorder-' + common.get_timestamp()
+  if job_label:
+    job_label = job_label.replace('_', '-')
+    job_name += '-' + job_label
+
+  return job_name
+
+
+def _get_job_dir(output_path: str, job_name: str) -> str:
+  """Returns Beam processing job directory."""
+
+  return os.path.join(output_path, job_name)
+
+
+def _get_dataflow_url(job_id: str, project: str, region: str) -> str:
+  """Returns Cloud DataFlow URL for Apache Beam job."""
+
+  return f'{constants.CONSOLE_DATAFLOW_URI}{region}/{job_id}?=project={project}'
+
+
 def read_csv(
     csv_file: str,
     header: Optional[Union[str, int, Sequence]] = 'infer',
@@ -255,18 +286,21 @@ def create_tfrecords(
   logfile = os.path.join('/tmp', constants.LOGFILE)
   _configure_logging(logfile)
 
+  job_name = _get_job_name(job_label)
+  job_dir = _get_job_dir(output_dir, job_name)
+
   p = beam_pipeline.build_pipeline(
       df,
-      job_label=job_label,
+      job_dir=job_dir,
       runner=runner,
       project=project,
       region=region,
-      output_dir=output_dir,
       compression=compression,
       num_shards=num_shards,
       schema=schema,
       tfrecorder_wheel=tfrecorder_wheel,
-      dataflow_options=dataflow_options)
+      dataflow_options=dataflow_options,
+  )
 
   result = p.run()
 
@@ -294,28 +328,20 @@ def create_tfrecords(
     }
     logging.info("Job Complete.")
 
-  else:
+  elif runner == 'DataflowRunner':
     logging.info("Using Dataflow Runner.")
-    # Construct Dataflow URL
-
     job_id = result.job_id()
-
-    url = (
-        constants.CONSOLE_DATAFLOW_URI +
-        region +
-        '/' +
-        job_id +
-        '?project=' +
-        project)
+    url = _get_dataflow_url(job_id, project, region)
     job_result = {
         'job_id': job_id,
-        'dataflow_url': url
+        'dataflow_url': url,
     }
-
-  logging.shutdown()
-
-  if runner == 'DataflowRunner':
-    # if this is a Dataflow job, copy the logfile to GCS
+    # Copy the logfile to GCS output dir
     common.copy_logfile_to_gcs(logfile, output_dir)
+
+  else:
+    raise ValueError(f'Unsupported runner: {runner}')
+
+  job_result['tfrecord_dir'] = job_dir
 
   return job_result

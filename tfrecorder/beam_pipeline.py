@@ -33,34 +33,8 @@ import tensorflow_transform as tft
 from tensorflow_transform import beam as tft_beam
 
 from tfrecorder import beam_image
-from tfrecorder import common
 from tfrecorder import input_schema
 from tfrecorder import types
-
-
-def _get_job_name(job_label: str = None) -> str:
-  """Returns Beam runner job name.
-
-  Args:
-    job_label: A user defined string that helps define the job.
-
-  Returns:
-    A job name compatible with apache beam runners, including a time stamp to
-      insure uniqueness.
-  """
-
-  job_name = 'tfrecorder-' + common.get_timestamp()
-  if job_label:
-    job_label = job_label.replace('_', '-')
-    job_name += '-' + job_label
-
-  return job_name
-
-
-def _get_job_dir(output_path: str, job_name: str) -> str:
-  """Returns Beam processing job directory."""
-
-  return os.path.join(output_path, job_name)
 
 
 def _get_pipeline_options(
@@ -102,7 +76,9 @@ def _partition_fn(
     split_key: str = 'split') -> int:
   """Returns index used to partition an element from a PCollection."""
   del unused_num_partitions
-  dataset_type = element[split_key].decode('utf-8')
+  dataset_type = element[split_key]
+  if isinstance(dataset_type, bytes):
+    dataset_type = element[split_key].decode('utf-8')
   try:
     index = types.SplitKey.allowed_values.index(dataset_type)
   except ValueError as e:
@@ -222,11 +198,10 @@ def _transform_and_write_tfr(
 # pylint: disable=too-many-locals
 def build_pipeline(
     df: pd.DataFrame,
-    job_label: str,
+    job_dir: str,
     runner: str,
     project: str,
     region: str,
-    output_dir: str,
     compression: str,
     num_shards: int,
     schema: input_schema.Schema,
@@ -236,11 +211,10 @@ def build_pipeline(
 
   Args:
     df: Pandas DataFrame
-    job_label: User description for the beam job.
+    job_dir: GCS or Local Path for output.
     runner: Beam Runner: (e.g. DataflowRunner, DirectRunner).
     project: GCP project ID (if DataflowRunner)
     region: GCP compute region (if DataflowRunner)
-    output_dir: GCS or Local Path for output.
     compression: gzip or None.
     num_shards: Number of shards.
     schema: A Schema object defining the input schema.
@@ -253,8 +227,7 @@ def build_pipeline(
   Note: These inputs must be validated upstream (by client.create_tfrecord())
   """
 
-  job_name = _get_job_name(job_label)
-  job_dir = _get_job_dir(output_dir, job_name)
+  _, job_name = os.path.split(job_dir)
   options = _get_pipeline_options(
       runner,
       job_name,
