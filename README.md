@@ -200,40 +200,22 @@ where:
 
 ## Flexible Schema
 
-TFRecorder's flexible schema system allows you to use any schema you want for your input data. To support any input data schema, provide a schema map to TFRecorder. A TFRecorder schema_map creates a mapping between your dataframe column names and their types in the resulting
-TFRecord.
+TFRecorder's flexible schema system allows you to use any schema you want for your input data. 
 
-### Creating and using a schema map
-
-A schema map is an ordered dictionary that maps DataFrame column names to [supported
-TFRecorder types.](#Supported-types)
-
-For example, the default image CSV input can be defined like this:
-
+For example, the default image CSV schema input can be defined like this:
 ```python
-from collections
+import pandas as pd
+import tfrecorder
 from tfrecorder import input_schema
+from tfrecorder import types
 
-<<<<<<< HEAD
 image_csv_schema = input_schema.Schema({
     'split': types.SplitKey,
     'image_uri': types.ImageUri,
     'label': types.StringLabel
-}
-=======
-image_csv_schema = collections.OrderedDict({
-    'split': input_schema.split_key,
-    'image_uri': input_schema.image_uri,
-    'label': input_schema.string_label
 })
->>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
-```
-Once created a schema_map can be sent to TFRecorder.
 
-```python
-import pandas as pd
-from tfrecorder import input_schema
-import tfrecorder
+# You can then pass the schema to `tfrecorder.create_tfrecords`.
 
 df = pd.read_csv(...)
 df.tensorflow.to_tfr(
@@ -243,90 +225,6 @@ df.tensorflow.to_tfr(
     project='my-project',
     region='us-central1')
 ```
-
-### Supported types
-
-TFRecorder's schema system supports several types, all listed below. You can use
-these types by referencing them in the schema map. Each type informs TFRecorder how 
-to treat your DataFrame columns.  For example, the schema mapping 
-<<<<<<< HEAD
-`my_split_key: types.SplitKey` tells TFRecorder to treat the column `my_split_key` as
-type `types.SplitKey` and create dataset splits based on it's contents. 
-
-#### types.ImageUri
-=======
-`my_split_key: input_schema.SplitKeyType` tells TFRecorder to treat the column `my_split_key` as
-type `input_schema.SplitKeyType` and create dataset splits based on it's contents. 
-
-#### input_schema.ImageUriType
->>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
-
-* Specifies the path to an image. When specified, TFRecorder
-will load the specified image and store the image as a [base64 encoded](https://docs.python.org/3/library/base64.html)
- [tf.string](https://www.tensorflow.org/tutorials/load_data/unicode) in the key 'image' 
-along with the height, width, and image channels  as integers using they keys 'image_height', 'image_width', and 'image_channels'.
-* A schema can contain only one imageUri column
-
-#### types.SplitKey
-
-<<<<<<< HEAD
-=======
-#### input_schema.SplitKeyType
-
->>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
-* A split key is required for TFRecorder at this time.
-* Only one split key is allowed.
-* Specifies a split key that TFRecorder will use to partition the 
-input dataset on.
-* Allowed values are 'TRAIN', 'VALIDATION, and 'TEST'
-
-Note: If you do not want your data to be partitioned please include a split_key and
-set all rows to TRAIN.
-
-<<<<<<< HEAD
-#### types.IntegerInput
-=======
-#### input_schema.IntegerInputType
->>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
-
-* Specifies an int input.
-* Will be scaled to mean 0, variance 1.
-
-<<<<<<< HEAD
-#### types.FloatInput
-=======
-#### input_schema.FloatInputType
->>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
-
-* Specifies an float input.
-* Will be scaled to mean 0, variance 1.
-
-<<<<<<< HEAD
-#### types.CategoricalInput
-=======
-#### input_schema.CategoricalInputType
->>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
-
-* Specifies a string input.
-* Vocabulary computed and output integerized.
-
-<<<<<<< HEAD
-#### types.IntegerLabel
-=======
-#### input_schema.IntegerLabelType
->>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
-
-* Specifies an integer target.
-* Not transformed.
-
-<<<<<<< HEAD
-#### types.StringLabel
-=======
-#### input_schema.StringLabelType
->>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
-
-* Specifies a string target.
-* Vocabulary computed and *output integerized.*
 
 ### Flexible Schema Example
 
@@ -340,25 +238,17 @@ looks like this:
 You can use TFRecorder as shown below:
 
 ```python
-import collections
 import pandas as pd
 import tfrecorder
 from tfrecorder import input_schema
+from tfrecorder import types
 
 # First create a schema map
-<<<<<<< HEAD
 schema = input_schema.Schema({
-    'split':types.SplitKey,
-    'x':types.FloatInput,
-    'y':types.IntegerInput,
-    'label':types.IntegerLabel
-=======
-schema_map = OrderedDict({
-    'split':input_schema.SplitKeyType,
-    'x':input_schema.FloatInputType,
-    'y':input_schema.IntegerInputType,
-    'label':input_schema.IntegerLabelType
->>>>>>> 3a48337 (Converted types to classes and refactored schema into OO pattern.)
+    'split': types.SplitKey,
+    'x': types.FloatInput,
+    'y': types.IntegerInput,
+    'label': types.IntegerLabel,
 })
 
 # Now call TFRecorder with the specified schema_map
@@ -371,13 +261,64 @@ df.tensorflow.to_tfr(
     project='my-project',
     region='us-central1')
 ```
-After calling TFRecorder's to_tfr() function, TFRecorder will create an Apache beam pipeline, either locally or in this case
+After calling TFRecorder's `to_tfr()` function, TFRecorder will create an Apache beam pipeline, either locally or in this case
 using Google Cloud's Dataflow runner. This beam pipeline will use the schema map to identify the types you've associated with
 each data column and process your data using [TensorFlow Transform](https://www.tensorflow.org/tfx/transform/get_started) and TFRecorder's image processing functions to convert the data into into TFRecords.
 
+### Supported types
+
+TFRecorder's schema system supports several types. 
+You can use these types by referencing them in the schema map. 
+Each type informs TFRecorder how to treat your DataFrame columns. 
+
+#### types.SplitKey
+
+* A split key is required for TFRecorder at this time.
+* Only one split key is allowed.
+* Specifies a split key that TFRecorder will use to partition the 
+input dataset on.
+* Allowed values are 'TRAIN', 'VALIDATION, and 'TEST'
+
+Note: If you do not want your data to be partitioned, include a column with 
+`types.SplitKey` and set all the elements to `TRAIN`.
+
+#### types.ImageUri
+
+* Specifies the path to an image. When specified, TFRecorder
+will load the specified image and store the image as a [base64 encoded](https://docs.python.org/3/library/base64.html)
+ [tf.string](https://www.tensorflow.org/tutorials/load_data/unicode) in the key 'image' 
+along with the height, width, and image channels  as integers using they keys 'image_height', 'image_width', and 'image_channels'.
+* A schema can contain only one imageUri column
+
+#### types.IntegerInput
+
+* Specifies an int input.
+* Will be scaled to mean 0, variance 1.
+
+#### types.FloatInput
+
+* Specifies an float input.
+* Will be scaled to mean 0, variance 1.
+
+#### types.CategoricalInput
+
+* Specifies a string input.
+* Vocabulary computed and output integerized.
+
+#### types.IntegerLabel
+
+* Specifies an integer target.
+* Not transformed.
+
+#### types.StringLabel
+
+* Specifies a string target.
+* Vocabulary computed and *output integerized.*
+
 ## Contributing
 
-Pull requests are welcome. Please see our [code of conduct](docs/code-of-conduct.md) and [contributing guide](docs/contributing.md).
+Pull requests are welcome. 
+Please see our [code of conduct](docs/code-of-conduct.md) and [contributing guide](docs/contributing.md).
 
 ## Why TFRecorder?
 
@@ -388,6 +329,5 @@ TFRecords help when:
 * Anytime you want to use tf.Dataset
 * When your dataset can't fit into memory
 
-
-In our work at [Google Cloud AI Services](https://cloud.google.com/consulting) we wanted to help our users spend their time writing AI/ML applications, and spend less time converting data. 
-
+Need help with using AI in the cloud? 
+Visit [Google Cloud AI Services](https://cloud.google.com/consulting).
