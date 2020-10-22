@@ -29,5 +29,6 @@ Please delete options that are not relevant.
 - [ ] I have made relevant changes to the documentation, if needed
 - [ ] My changes generate no new warnings
 - [ ] I have corrected any misspellings in my code
+- [ ] (For feature) I made sure that I'm merging to the `dev` branch
 - [ ] (For hotfix/release) I have updated the package version number in `setup.py` (i.e. [MAJOR.MINOR.PATCH](https://semver.org/))
-- [ ] (For hotfix/release) I have updated RELEASE.md with notes regarding the changes.
+- [ ] (For hotfix/release) I have updated RELEASE.md with notes regarding the changes

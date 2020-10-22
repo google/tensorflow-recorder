@@ -42,7 +42,8 @@ def _validate_data(df: pd.DataFrame,
     _ = value # TODO(mikebernico) Implement type checking.
     if key not in df.columns:
       raise AttributeError(
-          'DataFrame does not contain column {} listed in schema'.format(key))
+          f'DataFrame does not contain expected column: {key}. '
+          f'Ensure header matches schema keys: {list(schema_map.keys())}.')
 
 def _validate_runner(
     runner: str,
