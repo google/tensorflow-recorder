@@ -308,7 +308,9 @@ def build_pipeline(
     # Require training set to be available in the input data. The transform_fn
     # and transformed_metadata will be generated from the training set and
     # applied to the other datasets, if any
-    assert 'TRAIN' in split_counts
+    if 'TRAIN' not in split_counts:
+      raise AttributeError(
+          '`TRAIN` set expected to be present in splits')
 
     # Split dataset into train, validation, test sets.
     partition_fn = functools.partial(_partition_fn, split_key=split_key)
