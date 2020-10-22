@@ -44,7 +44,17 @@ pip install tfrecorder
 
 ### Generating TFRecords
 
+You can generate TFRecords from a Pandas DataFrame, CSV file or
+a directory containing images.
+
 #### From Pandas DataFrame
+
+TFRecorder has an accessor which enables creation of TFRecord files through
+the Pandas DataFrame object.
+
+Make sure the DataFrame contains a header identifying each of the columns.
+In particular, the `split` column needs to be specified so that TFRecorder
+would know how to split the data into train, test and validation sets.
 
 ##### Running on a local machine
 
@@ -52,7 +62,8 @@ pip install tfrecorder
 import pandas as pd
 import tfrecorder
 
-df = pd.read_csv(...)
+csv_file = '/path/to/images.csv'
+df = pd.read_csv(csv_file, names=['split', 'image_uri', 'label'])
 df.tensorflow.to_tfr(output_dir='/my/output/path')
 ```
 
@@ -91,7 +102,6 @@ df.tensorflow.to_tfr(
     region='us-central1',
     tfrecorder_wheel='/path/to/my/tfrecorder.whl')
 ```
-
 
 #### From CSV
 

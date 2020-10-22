@@ -17,6 +17,7 @@
 """Tests for client."""
 
 import os
+import re
 from typing import List
 
 import csv
@@ -100,7 +101,36 @@ class InputValidationTest(unittest.TestCase):
     self.test_region = 'us-central1'
     self.test_project = 'foo'
     self.test_wheel = '/my/path/wheel.whl'
-    self.test_schema_map = input_schema.IMAGE_CSV_SCHEMA.input_schema_map
+    self.test_schema = input_schema.IMAGE_CSV_SCHEMA
+
+  def test_valid_dataframe(self):
+    """Tests valid DataFrame input."""
+    self.assertIsNone(client._validate_data(self.test_df, self.test_schema))
+
+  def test_missing_image(self):
+    """Tests missing image column."""
+    with self.assertRaises(AttributeError):
+      df2 = self.test_df.copy()
+      df2.drop('image_uri', inplace=True, axis=1)
+      client._validate_data(df2, self.test_schema)
+
+  def test_missing_label(self):
+    """Tests missing label column."""
+    with self.assertRaises(AttributeError):
+      df2 = self.test_df.copy()
+      df2.drop('label', inplace=True, axis=1)
+      client._validate_data(df2, self.test_schema)
+
+  def test_missing_split(self):
+    """Tests missing split column."""
+    split_key = 'split'
+    schema_keys = re.escape(
+        str(list(self.test_schema.input_schema_map.keys())))
+    regex = fr'^.+column: {split_key}.+keys: {schema_keys}.$'
+    with self.assertRaisesRegex(AttributeError, regex):
+      df2 = self.test_df.copy()
+      df2.drop(split_key, inplace=True, axis=1)
+      client._validate_data(df2, self.test_schema)
 
   def test_valid_runner(self):
     """Tests valid runner."""

@@ -19,6 +19,7 @@
 client.py provides create_tfrecords() to upstream clients including
 the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
+
 import logging
 import os
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
@@ -32,6 +33,19 @@ from tfrecorder import common
 from tfrecorder import constants
 from tfrecorder import input_schema
 from tfrecorder import types
+
+
+# TODO(mikebernico) Add test for only one split_key.
+def _validate_data(df: pd.DataFrame, schema: input_schema.Schema):
+  """Verifies data is consistent with schema."""
+
+  for key, value in schema.input_schema_map.items():
+    _ = value # TODO(mikebernico) Implement type checking.
+    if key not in df.columns:
+      schema_keys = list(schema.input_schema_map.keys())
+      raise AttributeError(
+          f'DataFrame does not contain expected column: {key}. '
+          f'Ensure header matches schema keys: {schema_keys}.')
 
 
 def _validate_runner(
@@ -281,6 +295,7 @@ def create_tfrecords(
 
   df = to_dataframe(source, header, names)
 
+  _validate_data(df, schema)
   _validate_runner(runner, project, region, tfrecorder_wheel)
 
   logfile = os.path.join('/tmp', constants.LOGFILE)
