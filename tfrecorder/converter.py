@@ -16,7 +16,7 @@
 
 """Provides a common interface for TFRecorder to DF Accessor and CLI.
 
-client.py provides create_tfrecords() to upstream clients including
+converter.py provides create_tfrecords() to upstream clients including
 the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
 
@@ -30,6 +30,7 @@ import tensorflow as tf
 
 from tfrecorder import beam_pipeline
 from tfrecorder import common
+from tfrecorder import dataset_loader
 from tfrecorder import constants
 from tfrecorder import input_schema
 from tfrecorder import types
@@ -242,9 +243,9 @@ def _configure_logging(logfile):
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 
-def create_tfrecords(
+def convert(
     source: Union[str, pd.DataFrame],
-    output_dir: str,
+    output_dir: str = './tfrecords',
     schema: input_schema.Schema = input_schema.IMAGE_CSV_SCHEMA,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
@@ -360,3 +361,10 @@ def create_tfrecords(
   job_result['tfrecord_dir'] = job_dir
 
   return job_result
+
+
+def convert_and_load(*args, **kwargs):
+  """Converts data into TFRecords and loads them as TF Datasets."""
+
+  job_result = convert(*args, **kwargs)
+  return dataset_loader.load(job_result['tfrecord_dir'])

@@ -26,7 +26,7 @@ import tensorflow as tf
 from tfrecorder import beam_image
 from tfrecorder import common
 # TODO(cezequiel): Rename `dataset` module to something else
-from tfrecorder import dataset as _dataset
+from tfrecorder import dataset_loader as _dataset
 
 _OUT_IMAGE_TEMPLATE = 'image_{:0>3d}.png'
 

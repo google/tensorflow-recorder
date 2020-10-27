@@ -25,7 +25,7 @@ from typing import Any, Dict, Optional, Union
 import pandas as pd
 from IPython.core import display
 
-from tfrecorder import client
+from tfrecorder import converter
 from tfrecorder import constants
 from tfrecorder import input_schema
 
@@ -86,7 +86,7 @@ class TFRecorderAccessor:
         display.HTML(
             '<b>Logging output to /tmp/{} </b>'.format(constants.LOGFILE)))
 
-    r = client.create_tfrecords(
+    r = converter.convert(
         self._df,
         output_dir=output_dir,
         schema=schema,

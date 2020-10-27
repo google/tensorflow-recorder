@@ -30,7 +30,7 @@ from tfrecorder import beam_image
 from tfrecorder import check
 from tfrecorder import test_utils
 from tfrecorder import input_schema
-from tfrecorder import dataset as _dataset
+from tfrecorder import dataset_loader as _dataset
 
 
 # pylint: disable=protected-access

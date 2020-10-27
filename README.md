@@ -109,7 +109,7 @@ Using Python interpreter:
 ```python
 import tfrecorder
 
-tfrecorder.create_tfrecords(
+tfrecorder.convert(
     source='/path/to/data.csv',
     output_dir='gs://my/bucket')
 ```
@@ -126,10 +126,9 @@ tfrecorder create-tfrecords \
 ```python
 import tfrecorder
 
-tfrecorder.create_tfrecords(
+tfrecorder.convert(
     source='/path/to/image_dir',
-    output_dir='gs://my/bucket',
-)
+    output_dir='gs://my/bucket')
 ```
 
 The image directory should have the following general structure:
@@ -175,7 +174,7 @@ Using Python interpreter:
 ```python
 import tfrecorder
 
-tfrecorder.check_tfrecords(
+tfrecorder.inspect(
     file_pattern='/path/to/tfrecords/train*.tfrecord.gz',
     num_records=5,
     output_dir='/tmp/output')
