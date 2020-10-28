@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests `check.py`."""
+"""Tests `utils.py`."""
 
 import functools
 import os
@@ -27,7 +27,8 @@ from pandas import testing as pdt
 import tensorflow as tf
 
 from tfrecorder import beam_image
-from tfrecorder import check
+from tfrecorder import constants
+from tfrecorder import utils
 from tfrecorder import test_utils
 from tfrecorder import input_schema
 from tfrecorder import dataset_loader as _dataset
@@ -76,7 +77,7 @@ class CheckTFRecordsTest(unittest.TestCase):
     num_records = len(self.data['image'])
 
     with tempfile.TemporaryDirectory(dir='/tmp') as dir_:
-      actual_dir = check.check_tfrecords(
+      actual_dir = utils.inspect(
           self.tfrecord_dir, split=self.split, num_records=num_records,
           output_dir=dir_)
       self.assertTrue('check-tfrecords-' in actual_dir)
@@ -103,8 +104,33 @@ class CheckTFRecordsTest(unittest.TestCase):
 
     mock_fn.return_value = {}
     with self.assertRaisesRegex(ValueError, 'Could not load data for'):
-      check.check_tfrecords(self.tfrecord_dir, split='UNSUPPORTED')
+      utils.inspect(self.tfrecord_dir, split='UNSUPPORTED')
 
 
 if __name__ == '__main__':
   unittest.main()
+
+
+class CopyLogTest(unittest.TestCase):
+  """Misc tests for _copy_logfile_to_gcs."""
+
+  def test_valid_copy(self):
+    """Test valid file copy."""
+    with tempfile.TemporaryDirectory() as tmpdirname:
+      text = 'log test log test'
+      infile = os.path.join(tmpdirname, 'foo.log')
+      with open(infile, 'w') as f:
+        f.write(text)
+      utils.copy_logfile_to_gcs(infile, tmpdirname)
+
+      outfile = os.path.join(tmpdirname, constants.LOGFILE)
+      with open(outfile, 'r') as f:
+        data = f.read()
+        self.assertEqual(text, data)
+
+  def test_invalid_copy(self):
+    """Test invalid file copy."""
+    with tempfile.TemporaryDirectory() as tmpdirname:
+      infile = os.path.join(tmpdirname, 'foo.txt')
+      with self.assertRaises(FileNotFoundError):
+        utils.copy_logfile_to_gcs(infile, tmpdirname)

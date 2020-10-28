@@ -18,7 +18,6 @@
 
 from tfrecorder import accessor
 from tfrecorder.converter import convert
-from tfrecorder.converter import convert_and_load
-# TODO(cezequiel): refactor check module
-from tfrecorder.check import check_tfrecords as inspect
 from tfrecorder.dataset_loader import load
+from tfrecorder.converter import convert_and_load
+from tfrecorder.utils import inspect

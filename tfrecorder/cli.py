@@ -19,15 +19,15 @@
 import fire
 
 from tfrecorder import converter
-from tfrecorder import check
+from tfrecorder import utils
 
 
 def main():
   """Entry point for command-line interface."""
 
   fire.Fire({
-      'create-tfrecords': converter.convert,
-      'check-tfrecords': check.check_tfrecords,
+      'convert': converter.convert,
+      'inspect': utils.inspect,
   })
 
 

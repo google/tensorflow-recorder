@@ -29,11 +29,11 @@ import pandas as pd
 import tensorflow as tf
 
 from tfrecorder import beam_pipeline
-from tfrecorder import common
 from tfrecorder import dataset_loader
 from tfrecorder import constants
 from tfrecorder import input_schema
 from tfrecorder import types
+from tfrecorder import utils
 
 
 # TODO(mikebernico) Add test for only one split_key.
@@ -152,7 +152,7 @@ def _get_job_name(job_label: str = None) -> str:
       insure uniqueness.
   """
 
-  job_name = 'tfrecorder-' + common.get_timestamp()
+  job_name = 'tfrecorder-' + utils.get_timestamp()
   if job_label:
     job_label = job_label.replace('_', '-')
     job_name += '-' + job_label
@@ -254,7 +254,7 @@ def convert(
     region: Optional[str] = None,
     tfrecorder_wheel: Optional[str] = None,
     dataflow_options: Optional[Dict[str, Any]] = None,
-    job_label: str = 'create-tfrecords',
+    job_label: str = 'convert',
     compression: Optional[str] = 'gzip',
     num_shards: int = 0) -> Dict[str, Any]:
   """Generates TFRecord files from given input data.
@@ -265,10 +265,10 @@ def convert(
   Usage:
     import tfrecorder
 
-    job_id = tfrecorder.client.create_tfrecords(
+    job_id = tfrecorder.convert(
         train_df,
         output_dir='gcs://foo/bar/train',
-        runner='DirectFlowRunner)
+        runner='DirectRunner)
 
   Args:
     source: Pandas DataFrame, CSV file or image directory path.
@@ -277,6 +277,7 @@ def convert(
     header: Indicates row/s to use as a header. Not used when `input_data` is
       a Pandas DataFrame.
       If 'infer' (default), header is taken from the first line of a CSV
+    names: List of column names to use for CSV or DataFrame input.
     runner: Beam runner. Can be 'DirectRunner' or 'DataFlowRunner'
     project: GCP project name (Required if DataflowRunner)
     region: GCP region name (Required if DataflowRunner)
@@ -353,7 +354,7 @@ def convert(
         'dataflow_url': url,
     }
     # Copy the logfile to GCS output dir
-    common.copy_logfile_to_gcs(logfile, output_dir)
+    utils.copy_logfile_to_gcs(logfile, output_dir)
 
   else:
     raise ValueError(f'Unsupported runner: {runner}')

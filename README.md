@@ -175,7 +175,8 @@ Using Python interpreter:
 import tfrecorder
 
 tfrecorder.inspect(
-    file_pattern='/path/to/tfrecords/train*.tfrecord.gz',
+    tfrecord_dir='/path/to/tfrecords/',
+    split='TRAIN',
     num_records=5,
     output_dir='/tmp/output')
 ```
@@ -186,8 +187,9 @@ representing the images encoded into TFRecords.
 Using the command line:
 
 ```bash
-tfrecorder check-tfrecords \
-    --file_pattern=/path/to/tfrecords/train*.tfrecord.gz \
+tfrecorder inspect \
+    --tfrecord-dir=/path/to/tfrecords/ \
+    --split='TRAIN' \
     --num_records=5 \
     --output_dir=/tmp/output
 ```

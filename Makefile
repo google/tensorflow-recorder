@@ -1,4 +1,4 @@
-all: init test pylint
+all: init testnb test pylint
 
 init:
 	pip install -r requirements.txt
@@ -12,4 +12,4 @@ testnb:
 pylint:
 	pylint -j 0 tfrecorder
 
-.PHONY: all init test pylint
+.PHONY: all init testnb test pylint
