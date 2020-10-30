@@ -31,7 +31,7 @@ from tfrecorder import constants
 from tfrecorder import utils
 from tfrecorder import test_utils
 from tfrecorder import input_schema
-from tfrecorder import dataset_loader as _dataset
+from tfrecorder import dataset_loader
 
 
 # pylint: disable=protected-access
@@ -69,7 +69,7 @@ class CheckTFRecordsTest(unittest.TestCase):
     self.data = data
     self.dataset = tf.data.Dataset.from_tensor_slices(self.data)
 
-  @mock.patch.object(_dataset, 'load', autospec=True)
+  @mock.patch.object(dataset_loader, 'load', autospec=True)
   def test_valid_records(self, mock_fn):
     """Tests valid case on reading multiple records."""
 
@@ -98,7 +98,7 @@ class CheckTFRecordsTest(unittest.TestCase):
       expected_image_files = self.data['image_name']
       self.assertCountEqual(actual_image_files, expected_image_files)
 
-  @mock.patch.object(_dataset, 'load', autospec=True)
+  @mock.patch.object(dataset_loader, 'load', autospec=True)
   def test_no_data_for_split(self, mock_fn):
     """Check exception raised when data could not be loaded given `split`."""
 

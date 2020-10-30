@@ -23,7 +23,7 @@ Please delete options that are not relevant.
 - [ ] My code adheres to the [Google Python Style Guide](https://google.github.io/styleguide/pyguide.html)
 - [ ] I ran `make pylint` and code is rated 10/10
 - [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] I ran `make test testnb` and all tests pass
+- [ ] I ran `make test` and all tests pass
 - [ ] I ran the tool and verified the change works
 - [ ] I have adequately commented my code, particularly in hard-to-understand areas
 - [ ] I have made relevant changes to the documentation, if needed
