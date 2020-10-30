@@ -16,7 +16,7 @@
 
 """Provides a common interface for TFRecorder to DF Accessor and CLI.
 
-client.py provides create_tfrecords() to upstream clients including
+converter.py provides create_tfrecords() to upstream clients including
 the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
 
@@ -29,10 +29,11 @@ import pandas as pd
 import tensorflow as tf
 
 from tfrecorder import beam_pipeline
-from tfrecorder import common
+from tfrecorder import dataset_loader
 from tfrecorder import constants
 from tfrecorder import input_schema
 from tfrecorder import types
+from tfrecorder import utils
 
 
 # TODO(mikebernico) Add test for only one split_key.
@@ -151,7 +152,7 @@ def _get_job_name(job_label: str = None) -> str:
       insure uniqueness.
   """
 
-  job_name = 'tfrecorder-' + common.get_timestamp()
+  job_name = 'tfrecorder-' + utils.get_timestamp()
   if job_label:
     job_label = job_label.replace('_', '-')
     job_name += '-' + job_label
@@ -242,9 +243,9 @@ def _configure_logging(logfile):
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 
-def create_tfrecords(
+def convert(
     source: Union[str, pd.DataFrame],
-    output_dir: str,
+    output_dir: str = './tfrecords',
     schema: input_schema.Schema = input_schema.IMAGE_CSV_SCHEMA,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
@@ -253,7 +254,7 @@ def create_tfrecords(
     region: Optional[str] = None,
     tfrecorder_wheel: Optional[str] = None,
     dataflow_options: Optional[Dict[str, Any]] = None,
-    job_label: str = 'create-tfrecords',
+    job_label: str = 'convert',
     compression: Optional[str] = 'gzip',
     num_shards: int = 0) -> Dict[str, Any]:
   """Generates TFRecord files from given input data.
@@ -264,10 +265,10 @@ def create_tfrecords(
   Usage:
     import tfrecorder
 
-    job_id = tfrecorder.client.create_tfrecords(
+    job_id = tfrecorder.convert(
         train_df,
         output_dir='gcs://foo/bar/train',
-        runner='DirectFlowRunner)
+        runner='DirectRunner)
 
   Args:
     source: Pandas DataFrame, CSV file or image directory path.
@@ -276,6 +277,7 @@ def create_tfrecords(
     header: Indicates row/s to use as a header. Not used when `input_data` is
       a Pandas DataFrame.
       If 'infer' (default), header is taken from the first line of a CSV
+    names: List of column names to use for CSV or DataFrame input.
     runner: Beam runner. Can be 'DirectRunner' or 'DataFlowRunner'
     project: GCP project name (Required if DataflowRunner)
     region: GCP region name (Required if DataflowRunner)
@@ -352,7 +354,7 @@ def create_tfrecords(
         'dataflow_url': url,
     }
     # Copy the logfile to GCS output dir
-    common.copy_logfile_to_gcs(logfile, output_dir)
+    utils.copy_logfile_to_gcs(logfile, output_dir)
 
   else:
     raise ValueError(f'Unsupported runner: {runner}')
@@ -360,3 +362,10 @@ def create_tfrecords(
   job_result['tfrecord_dir'] = job_dir
 
   return job_result
+
+
+def convert_and_load(*args, **kwargs):
+  """Converts data into TFRecords and loads them as TF Datasets."""
+
+  job_result = convert(*args, **kwargs)
+  return dataset_loader.load(job_result['tfrecord_dir'])

@@ -23,13 +23,9 @@ jobs:
         python -m pip install --upgrade pip
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Run Jupyter notebook tests
+    - name: Run all tests
       run: |
         export PYTHONPATH="$GITHUB_WORKSPACE"
-        make testnb
-
-    - name: Run Python tests
-      run: |
         make test
 
     - name: Lint with pylint
