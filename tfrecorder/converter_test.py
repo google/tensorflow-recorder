@@ -38,7 +38,24 @@ from tfrecorder import input_schema
 # pylint: disable=protected-access
 
 
-class ClientTest(unittest.TestCase):
+class IsDirectoryTest(unittest.TestCase):
+  """Tests `_is_directory`."""
+
+  def test_local_ok(self):
+    """Test function returns True on local directory."""
+
+    with tempfile.TemporaryDirectory() as dirname:
+      self.assertTrue(converter._is_directory(dirname))
+
+  def test_local_exists_but_not_dir(self):
+    """Test function returns False on local (non-directory) file."""
+
+    with tempfile.NamedTemporaryFile(prefix='test_', dir='/tmp') as f:
+      self.assertFalse(converter._is_directory(f.name))
+
+
+# TODO(cezequiel): Refactor to per-function test case classes
+class MiscTest(unittest.TestCase):
   """Misc tests for `client` module."""
 
   def setUp(self):
@@ -88,11 +105,11 @@ class ClientTest(unittest.TestCase):
     """Tests `_path_split`."""
 
     filename = 'image_file.jpg'
-    dirpaths = ['/path/to/image/dir', 'gs://path/to/image/dir']
+    dirpaths = ['/path/to/image/dir/', 'gs://path/to/image/dir/']
     for dir_ in dirpaths:
       filepath = os.path.join(dir_, filename)
       act_dirpath, act_filename = converter._path_split(filepath)
-      self.assertEqual(act_dirpath, dir_)
+      self.assertEqual(act_dirpath, dir_.rsplit('/', 1)[0])
       self.assertEqual(act_filename, filename)
 
 
