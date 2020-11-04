@@ -15,7 +15,9 @@
 # limitations under the License.
 
 """Imports."""
+
 from tfrecorder import accessor
-from tfrecorder.client import create_tfrecords
-from tfrecorder.check import check_tfrecords
-from tfrecorder.dataset import load
+from tfrecorder.converter import convert
+from tfrecorder.dataset_loader import load
+from tfrecorder.converter import convert_and_load
+from tfrecorder.utils import inspect

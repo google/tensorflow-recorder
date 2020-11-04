@@ -1,12 +1,17 @@
-all: init test pylint
+all: init testnb test pylint
 
 init:
 	pip install -r requirements.txt
 
-test:
+test: test-nb test-py
+
+test-py:
 	nosetests --with-coverage -v --cover-package=tfrecorder
 
-pylint:
-	pylint tfrecorder
+test-nb:
+	ls -1 samples/*.ipynb | grep -v '^.*Dataflow.ipynb' | xargs py.test --nbval-lax -p no:python
 
-.PHONY: all init test pylint 
+pylint:
+	pylint -j 0 tfrecorder
+
+.PHONY: all init test pylint

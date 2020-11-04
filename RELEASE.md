@@ -1,3 +1,11 @@
+# Release 2.0
+
+* Changes `create_tfrecords` and `check_tfrecords` to `convert` and `inspect` respectively
+* Adds `convert_and_load` function
+* Changes flexible schema to use `dataclasses`
+* Adds automated testing for notebooks
+* Minor fixes and usability improvements
+
 # Hotfix 1.1.3
 
 * Adds note regarding DataFrame header specification in README.md.

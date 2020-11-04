@@ -16,10 +16,10 @@
 
 """Provides a common interface for TFRecorder to DF Accessor and CLI.
 
-client.py provides create_tfrecords() to upstream clients including
+converter.py provides create_tfrecords() to upstream clients including
 the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 """
-import collections
+
 import logging
 import os
 from typing import Any, Dict, Optional, Sequence, Tuple, Union
@@ -29,21 +29,25 @@ import pandas as pd
 import tensorflow as tf
 
 from tfrecorder import beam_pipeline
-from tfrecorder import common
+from tfrecorder import dataset_loader
 from tfrecorder import constants
-from tfrecorder import schema
+from tfrecorder import input_schema
+from tfrecorder import types
+from tfrecorder import utils
+
 
 # TODO(mikebernico) Add test for only one split_key.
-def _validate_data(df: pd.DataFrame,
-                   schema_map: Dict[str, collections.namedtuple]):
+def _validate_data(df: pd.DataFrame, schema: input_schema.Schema):
   """Verifies data is consistent with schema."""
 
-  for key, value in schema_map.items():
+  for key, value in schema.input_schema_map.items():
     _ = value # TODO(mikebernico) Implement type checking.
     if key not in df.columns:
+      schema_keys = list(schema.input_schema_map.keys())
       raise AttributeError(
           f'DataFrame does not contain expected column: {key}. '
-          f'Ensure header matches schema keys: {list(schema_map.keys())}.')
+          f'Ensure header matches schema keys: {schema_keys}.')
+
 
 def _validate_runner(
     runner: str,
@@ -79,7 +83,7 @@ def _path_split(filepath: str) -> Tuple[str, str]:
 
   if filepath.startswith(constants.GCS_PREFIX):
     _, path = filepath.split(constants.GCS_PREFIX)
-    head, tail = os.path.split(path)
+    head, tail = os.path.split(os.path.normpath(path))
     return constants.GCS_PREFIX + head, tail
 
   return os.path.split(filepath)
@@ -113,7 +117,7 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
   """
 
   rows = []
-  split_values = schema.allowed_split_values
+  split_values = types.SplitKey.allowed_values
   for root, _, files in tf.io.gfile.walk(image_dir):
     if files:
       root_, label = _path_split(root)
@@ -127,13 +131,47 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
         row = [split, image_uri, label]
         rows.append(row)
 
-  return pd.DataFrame(rows, columns=schema.image_csv_schema.keys())
+  return pd.DataFrame(
+      rows, columns=input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
 
 
 def _is_directory(input_data) -> bool:
   """Returns True if `input_data` is a directory; False otherwise."""
 
-  return tf.io.gfile.isdir(input_data)
+  # Note: First check will flag if user has the necessary credentials
+  # to access the directory (if it is in GCS)
+  return tf.io.gfile.exists(input_data) and tf.io.gfile.isdir(input_data)
+
+
+def _get_job_name(job_label: str = None) -> str:
+  """Returns Beam runner job name.
+
+  Args:
+    job_label: A user defined string that helps define the job.
+
+  Returns:
+    A job name compatible with apache beam runners, including a time stamp to
+      insure uniqueness.
+  """
+
+  job_name = 'tfrecorder-' + utils.get_timestamp()
+  if job_label:
+    job_label = job_label.replace('_', '-')
+    job_name += '-' + job_label
+
+  return job_name
+
+
+def _get_job_dir(output_path: str, job_name: str) -> str:
+  """Returns Beam processing job directory."""
+
+  return os.path.join(output_path, job_name)
+
+
+def _get_dataflow_url(job_id: str, project: str, region: str) -> str:
+  """Returns Cloud DataFlow URL for Apache Beam job."""
+
+  return f'{constants.CONSOLE_DATAFLOW_URI}{region}/{job_id}?=project={project}'
 
 
 def read_csv(
@@ -143,7 +181,7 @@ def read_csv(
   """Returns a a Pandas DataFrame from a CSV file."""
 
   if header is None and not names:
-    names = list(schema.image_csv_schema.keys())
+    names = list(input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
 
   with tf.io.gfile.GFile(csv_file) as f:
     return pd.read_csv(f, names=names, header=header)
@@ -203,13 +241,14 @@ def _configure_logging(logfile):
   tf_logger.handlers = []
   tf_logger.addHandler(handler)
 
+
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-locals
 
-def create_tfrecords(
+def convert(
     source: Union[str, pd.DataFrame],
-    output_dir: str,
-    schema_map: Dict[str, collections.namedtuple] = schema.image_csv_schema,
+    output_dir: str = './tfrecords',
+    schema: input_schema.Schema = input_schema.IMAGE_CSV_SCHEMA,
     header: Optional[Union[str, int, Sequence]] = 'infer',
     names: Optional[Sequence] = None,
     runner: str = 'DirectRunner',
@@ -217,7 +256,7 @@ def create_tfrecords(
     region: Optional[str] = None,
     tfrecorder_wheel: Optional[str] = None,
     dataflow_options: Optional[Dict[str, Any]] = None,
-    job_label: str = 'create-tfrecords',
+    job_label: str = 'convert',
     compression: Optional[str] = 'gzip',
     num_shards: int = 0) -> Dict[str, Any]:
   """Generates TFRecord files from given input data.
@@ -228,18 +267,19 @@ def create_tfrecords(
   Usage:
     import tfrecorder
 
-    job_id = tfrecorder.client.create_tfrecords(
+    job_id = tfrecorder.convert(
         train_df,
         output_dir='gcs://foo/bar/train',
-        runner='DirectFlowRunner)
+        runner='DirectRunner)
 
   Args:
     source: Pandas DataFrame, CSV file or image directory path.
     output_dir: Local directory or GCS Location to save TFRecords to.
-    schema_map: A dict mapping column names to supported types.
+    schema: An instance of input_schema.Schema.
     header: Indicates row/s to use as a header. Not used when `input_data` is
       a Pandas DataFrame.
       If 'infer' (default), header is taken from the first line of a CSV
+    names: List of column names to use for CSV or DataFrame input.
     runner: Beam runner. Can be 'DirectRunner' or 'DataFlowRunner'
     project: GCP project name (Required if DataflowRunner)
     region: GCP region name (Required if DataflowRunner)
@@ -259,24 +299,27 @@ def create_tfrecords(
 
   df = to_dataframe(source, header, names)
 
-  _validate_data(df, schema_map)
+  _validate_data(df, schema)
   _validate_runner(runner, project, region, tfrecorder_wheel)
 
   logfile = os.path.join('/tmp', constants.LOGFILE)
   _configure_logging(logfile)
 
+  job_name = _get_job_name(job_label)
+  job_dir = _get_job_dir(output_dir, job_name)
+
   p = beam_pipeline.build_pipeline(
       df,
-      job_label=job_label,
+      job_dir=job_dir,
       runner=runner,
       project=project,
       region=region,
-      output_dir=output_dir,
       compression=compression,
       num_shards=num_shards,
-      schema_map=schema_map,
+      schema=schema,
       tfrecorder_wheel=tfrecorder_wheel,
-      dataflow_options=dataflow_options)
+      dataflow_options=dataflow_options,
+  )
 
   result = p.run()
 
@@ -292,7 +335,6 @@ def create_tfrecords(
     good_image_count = _get_beam_metric(good_image_filter, result)
     bad_image_count = _get_beam_metric(bad_image_filter, result)
 
-    # TODO(mikebernico): Profile metric impact with larger dataset.
     metrics = {
         'rows': row_count,
         'good_images': good_image_count,
@@ -305,28 +347,27 @@ def create_tfrecords(
     }
     logging.info("Job Complete.")
 
-  else:
+  elif runner == 'DataflowRunner':
     logging.info("Using Dataflow Runner.")
-    # Construct Dataflow URL
-
     job_id = result.job_id()
-
-    url = (
-        constants.CONSOLE_DATAFLOW_URI +
-        region +
-        '/' +
-        job_id +
-        '?project=' +
-        project)
+    url = _get_dataflow_url(job_id, project, region)
     job_result = {
         'job_id': job_id,
-        'dataflow_url': url
+        'dataflow_url': url,
     }
+    # Copy the logfile to GCS output dir
+    utils.copy_logfile_to_gcs(logfile, output_dir)
 
-  logging.shutdown()
+  else:
+    raise ValueError(f'Unsupported runner: {runner}')
 
-  if runner == 'DataflowRunner':
-    # if this is a Dataflow job, copy the logfile to GCS
-    common.copy_logfile_to_gcs(logfile, output_dir)
+  job_result['tfrecord_dir'] = job_dir
 
   return job_result
+
+
+def convert_and_load(*args, **kwargs):
+  """Converts data into TFRecords and loads them as TF Datasets."""
+
+  job_result = convert(*args, **kwargs)
+  return dataset_loader.load(job_result['tfrecord_dir'])

@@ -12,3 +12,6 @@ jupyter >= 1.0.0
 tensorflow >= 2.3.1
 pyarrow <0.18,>=0.17
 frozendict >= 1.2
+dataclasses >= 0.5;python_version<"3.7"
+nbval >= 0.9.6
+pytest >= 6.1.1

@@ -25,9 +25,9 @@ from typing import Any, Dict, Optional, Union
 import pandas as pd
 from IPython.core import display
 
-from tfrecorder import client
+from tfrecorder import converter
 from tfrecorder import constants
-from tfrecorder import schema
+from tfrecorder import input_schema
 
 
 @pd.api.extensions.register_dataframe_accessor('tensorflow')
@@ -41,7 +41,7 @@ class TFRecorderAccessor:
   def to_tfr(
       self,
       output_dir: str,
-      schema_map: Dict[str, schema.SchemaMap] = schema.image_csv_schema,
+      schema: input_schema.Schema = input_schema.IMAGE_CSV_SCHEMA,
       runner: str = 'DirectRunner',
       project: Optional[str] = None,
       region: Optional[str] = None,
@@ -65,7 +65,7 @@ class TFRecorderAccessor:
           num_shards=10)
 
     Args:
-      schema_map: A dict mapping column names to supported types.
+      schema: An instance of input_schema.Schema that describes the schema.
       output_dir: Local directory or GCS Location to save TFRecords to.
         Note: GCS required for DataflowRunner
       runner: Beam runner. Can be DirectRunner or  DataflowRunner.
@@ -86,10 +86,10 @@ class TFRecorderAccessor:
         display.HTML(
             '<b>Logging output to /tmp/{} </b>'.format(constants.LOGFILE)))
 
-    r = client.create_tfrecords(
+    r = converter.convert(
         self._df,
         output_dir=output_dir,
-        schema_map=schema_map,
+        schema=schema,
         runner=runner,
         project=project,
         region=region,

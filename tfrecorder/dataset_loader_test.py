@@ -14,15 +14,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Tests for `dataset.py`."""
+"""Tests for `dataset_loader.py`."""
 
 import os
 import tempfile
 import unittest
 
-from tfrecorder import dataset
-from tfrecorder import schema
+from tfrecorder import dataset_loader
 from tfrecorder import test_utils
+from tfrecorder import types
 
 # pylint: disable=protected-access
 
@@ -38,28 +38,36 @@ class ValidateTFRecordDirTest(unittest.TestCase):
 
   def test_ok(self):
     """Checks that function works as expected when TFT dirs are present."""
-    os.makedirs(os.path.join(self.temp_dir, dataset.TRANSFORMED_METADATA_DIR))
-    os.makedirs(os.path.join(self.temp_dir, dataset.TRANSFORM_FN_DIR))
-    dataset._validate_tfrecord_dir(self.temp_dir)
+    os.makedirs(
+        os.path.join(self.temp_dir, dataset_loader.TRANSFORMED_METADATA_DIR))
+    os.makedirs(os.path.join(self.temp_dir, dataset_loader.TRANSFORM_FN_DIR))
+    dataset_loader._validate_tfrecord_dir(self.temp_dir)
 
   def test_missing_metadata_dir(self):
     """Check exception raised when metadata directory missing."""
 
     with self.assertRaises(FileNotFoundError):
-      os.makedirs(os.path.join(self.temp_dir, dataset.TRANSFORM_FN_DIR))
-      dataset._validate_tfrecord_dir(self.temp_dir)
+      os.makedirs(os.path.join(self.temp_dir, dataset_loader.TRANSFORM_FN_DIR))
+      dataset_loader._validate_tfrecord_dir(self.temp_dir)
 
   def test_missing_transform_fn_dir(self):
     """Check exception raised when transform_fn directory missing."""
     with self.assertRaises(FileNotFoundError):
       os.makedirs(
-          os.path.join(self.temp_dir, dataset.TRANSFORMED_METADATA_DIR))
-      dataset._validate_tfrecord_dir(self.temp_dir)
+          os.path.join(self.temp_dir, dataset_loader.TRANSFORMED_METADATA_DIR))
+      dataset_loader._validate_tfrecord_dir(self.temp_dir)
 
   def test_missing_tf_transform_dirs(self):
     """Check exception raised when both TFT transform directories missing."""
     with self.assertRaises(FileNotFoundError):
-      dataset._validate_tfrecord_dir(self.temp_dir)
+      dataset_loader._validate_tfrecord_dir(self.temp_dir)
+
+  def test_not_dir(self):
+    """Check exception raised when input is not a valid directory."""
+
+    input_dir = '/some/non-existent/dir'
+    with self.assertRaisesRegex(ValueError, 'Not a directory:'):
+      dataset_loader._validate_tfrecord_dir(input_dir)
 
 
 class LoadTest(unittest.TestCase):
@@ -70,10 +78,10 @@ class LoadTest(unittest.TestCase):
 
   def test_load_all_splits(self):
     """Test case where all TFRecord splits can be loaded."""
-    dataset_dict = dataset.load(self.tfrecord_dir)
+    dataset_dict = dataset_loader.load(self.tfrecord_dir)
     self.assertEqual(len(dataset_dict), 3)
     self.assertCountEqual(
-        list(dataset_dict.keys()), schema.allowed_split_values[:-1])
+        list(dataset_dict.keys()), types.SplitKey.allowed_values[:-1])
 
 
 if __name__ == '__main__':
