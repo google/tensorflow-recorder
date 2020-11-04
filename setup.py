@@ -21,7 +21,7 @@ from setuptools import setup
 
 
 # Semantic versioning (PEP 440)
-VERSION = '1.2.0'
+VERSION = '2.0'
 
 REQUIRED_PACKAGES = [
     "apache-beam[gcp] >= 2.22.0",

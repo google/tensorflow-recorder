@@ -83,7 +83,7 @@ def _path_split(filepath: str) -> Tuple[str, str]:
 
   if filepath.startswith(constants.GCS_PREFIX):
     _, path = filepath.split(constants.GCS_PREFIX)
-    head, tail = os.path.split(path)
+    head, tail = os.path.split(os.path.normpath(path))
     return constants.GCS_PREFIX + head, tail
 
   return os.path.split(filepath)
@@ -138,7 +138,9 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
 def _is_directory(input_data) -> bool:
   """Returns True if `input_data` is a directory; False otherwise."""
 
-  return tf.io.gfile.isdir(input_data)
+  # Note: First check will flag if user has the necessary credentials
+  # to access the directory (if it is in GCS)
+  return tf.io.gfile.exists(input_data) and tf.io.gfile.isdir(input_data)
 
 
 def _get_job_name(job_label: str = None) -> str:
