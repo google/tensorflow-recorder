@@ -36,6 +36,12 @@ class BeamImageTests(unittest.TestCase):
   """Tests for beam_image.py"""
 
   def setUp(self):
+      """
+      Sets the image
+
+      Args:
+          self: (todo): write your description
+      """
     self.pipeline = test_utils.get_test_pipeline()
     self.df = test_utils.get_test_df()
     self.image_file = self.df.image_uri.sample(

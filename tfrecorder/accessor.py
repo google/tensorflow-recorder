@@ -35,6 +35,13 @@ class TFRecorderAccessor:
   """DataFrame Accessor class for TFRecorder."""
 
   def __init__(self, pandas_obj):
+      """
+      Initialize a pandas dataframe.
+
+      Args:
+          self: (todo): write your description
+          pandas_obj: (todo): write your description
+      """
     self._df = pandas_obj
 
   # pylint: disable=too-many-arguments

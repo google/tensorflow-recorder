@@ -59,6 +59,12 @@ class MiscTest(unittest.TestCase):
   """Misc tests for `client` module."""
 
   def setUp(self):
+      """
+      Set the test test test results.
+
+      Args:
+          self: (todo): write your description
+      """
     self.test_df = test_utils.get_test_df()
     self.test_region = 'us-central1'
     self.test_project = 'foo'
@@ -117,6 +123,12 @@ class InputValidationTest(unittest.TestCase):
   """'Tests for validation input data."""
 
   def setUp(self):
+      """
+      Sets the test to test for the test.
+
+      Args:
+          self: (todo): write your description
+      """
     self.test_df = test_utils.get_test_df()
     self.test_region = 'us-central1'
     self.test_project = 'foo'
@@ -220,6 +232,12 @@ class ReadImageDirectoryTest(unittest.TestCase):
   """Tests `_read_image_directory`."""
 
   def setUp(self):
+      """
+      Sets the image to the image
+
+      Args:
+          self: (todo): write your description
+      """
     self.image_data = test_utils.get_test_df()
     self.tempfiles = []
     self.tempdir = None
@@ -227,6 +245,12 @@ class ReadImageDirectoryTest(unittest.TestCase):
         input_schema.IMAGE_CSV_SCHEMA.input_schema_map)
 
   def tearDown(self):
+      """
+      Tear down the temp file.
+
+      Args:
+          self: (todo): write your description
+      """
     for fp in self.tempfiles:
       fp.close()
     self.tempdir.cleanup()
@@ -262,6 +286,12 @@ class ReadCSVTest(unittest.TestCase):
   """Tests `read_csv`."""
 
   def setUp(self):
+      """
+      Sets the sample sample data
+
+      Args:
+          self: (todo): write your description
+      """
     data = get_sample_image_csv_data()
     self.header = data.pop(0)
     self.sample_data = data
@@ -303,6 +333,12 @@ class ToDataFrameTest(unittest.TestCase):
   """Tests `to_dataframe`."""
 
   def setUp(self) -> None:
+      """
+      Sets the sample sample sample.
+
+      Args:
+          self: (todo): write your description
+      """
     sample_data = get_sample_image_csv_data()
     columns = sample_data.pop(0)
     self.input_df = pd.DataFrame(sample_data, columns=columns)
@@ -349,6 +385,12 @@ class ConvertAndLoadTest(unittest.TestCase):
   """Tests `convert_and_load`."""
 
   def setUp(self):
+      """
+      Sets the records for the dataset.
+
+      Args:
+          self: (todo): write your description
+      """
     self.tfrecord_dir = '/path/to/tfrecords'
     self.dataset = tf.data.Dataset.from_tensor_slices([1, 2, 3])
     self.datasets = {
