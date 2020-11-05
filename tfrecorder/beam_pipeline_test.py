@@ -98,6 +98,12 @@ class GetSplitCountsTest(unittest.TestCase):
   """Tests `get_split_counts` function."""
 
   def setUp(self):
+      """
+      Sets the schema.
+
+      Args:
+          self: (todo): write your description
+      """
     self.df = test_utils.get_test_df()
     self.schema = input_schema.IMAGE_CSV_SCHEMA
     self.schema_map = self.schema.input_schema_map
@@ -128,6 +134,12 @@ class TransformAndWriteTfrTest(unittest.TestCase):
   """Tests `_transform_and_write_tfr` function."""
 
   def setUp(self):
+      """
+      Prepares the examples.
+
+      Args:
+          self: (todo): write your description
+      """
     self.pipeline = test_utils.get_test_pipeline()
     self.pre_tft_df = test_utils.get_pre_tft_feature_df()
     self.temp_dir_obj = tempfile.TemporaryDirectory(dir='/tmp', prefix='test-')
@@ -144,6 +156,12 @@ class TransformAndWriteTfrTest(unittest.TestCase):
     self.transform_fn_path = ('./tfrecorder/test_data/sample_tfrecords')
 
   def tearDown(self):
+      """
+      Tear down the temporary directory.
+
+      Args:
+          self: (todo): write your description
+      """
     self.temp_dir_obj.cleanup()
 
   def _get_dataset(self, pipeline, df):

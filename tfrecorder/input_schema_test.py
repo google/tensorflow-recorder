@@ -26,6 +26,12 @@ class InputSchemaTest(unittest.TestCase):
   """Tests for type module."""
 
   def setUp(self):
+      """
+      Set the schema for this schema.
+
+      Args:
+          self: (todo): write your description
+      """
     self.schema = input_schema.Schema(input_schema.image_csv_schema_map)
 
   def test_valid_get_input_coder(self):

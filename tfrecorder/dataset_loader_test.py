@@ -30,10 +30,22 @@ class ValidateTFRecordDirTest(unittest.TestCase):
   """Tests `_validate_tfrecord_dir`."""
 
   def setUp(self):
+      """
+      Create a temporary directory.
+
+      Args:
+          self: (todo): write your description
+      """
     self._temp_dir_obj = tempfile.TemporaryDirectory()
     self.temp_dir = self._temp_dir_obj.name
 
   def tearDown(self):
+      """
+      Create a temporary directory.
+
+      Args:
+          self: (todo): write your description
+      """
     self._temp_dir_obj.cleanup()
 
   def test_ok(self):
@@ -74,6 +86,12 @@ class LoadTest(unittest.TestCase):
   """Tests `load` function."""
 
   def setUp(self):
+      """
+      Sets the default tf.
+
+      Args:
+          self: (todo): write your description
+      """
     self.tfrecord_dir = test_utils.TEST_TFRECORDS_DIR
 
   def test_load_all_splits(self):
