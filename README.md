@@ -196,10 +196,12 @@ tfrecorder inspect \
 
 ### Creating an image CSV file
 
-You may want to create an image CSV file from an image directory for analysis,
-so that you can select image samples to convert to TFRecords using TFRecorder.
-Additionally, you can use the generated image CSV file to create datasets on
-[Cloud AutoML Vision](https://cloud.google.com/vision/overview/docs#automl-vision).
+You may want to create an image CSV file from an [image directory](#from-an-image-directory) 
+for analysis, so that you can select image samples to convert to TFRecords using 
+TFRecorder. Additionally, you can use the generated image CSV file to create 
+datasets on [Cloud AutoML Vision](https://cloud.google.com/vision/overview/docs#automl-vision).
+
+The image CSV file will adhere to the [Default Schema](#default-schema).
 
 Uisng Python interpreter:
 
