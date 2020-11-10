@@ -194,6 +194,29 @@ tfrecorder inspect \
     --output_dir=/tmp/output
 ```
 
+### Creating an image CSV file
+
+You may want to create an image CSV file from an [image directory](#from-an-image-directory) 
+for analysis, so that you can select image samples to convert to TFRecords using 
+TFRecorder. Additionally, you can use the generated image CSV file to create 
+datasets on [Cloud AutoML Vision](https://cloud.google.com/vision/overview/docs#automl-vision).
+
+The image CSV file will adhere to the [Default Schema](#default-schema).
+
+Uisng Python interpreter:
+
+```python
+from tfrecorder import utils
+
+utils.create_image_csv('path/to/image/dir', 'out.csv')
+```
+
+Using the command line:
+
+```bash
+tfrecorder create-image-csv path/to/image/dir out.csv
+```
+
 ## Default Schema
 
 If you don't specify an input schema, TFRecorder expects data to be in the same format as

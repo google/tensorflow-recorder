@@ -1,6 +1,9 @@
-apache-beam[gcp] >= 2.22.0
+avro == 1.10.0
+avro-python3 == 1.9.2.1
+apache-beam[gcp] == 2.24.0
 pandas >= 1.0.4
-tensorflow_transform >= 0.22
+# TODO(cezequiel): Support breaking changes in TF Transform 0.25.0
+tensorflow_transform >= 0.22, <= 0.24.1
 Pillow >= 7.1.2
 coverage >= 5.1
 ipython >= 7.15.0
