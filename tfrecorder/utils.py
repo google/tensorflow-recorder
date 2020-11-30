@@ -142,6 +142,17 @@ def _path_split(filepath: str) -> Tuple[str, str]:
   return os.path.split(filepath)
 
 
+def is_image_file(filename):
+  """Checks if a file contains an image or not.
+
+  This simply checks the filename extension based on a list of supported
+  image formats (e.g. jpg).
+  """
+
+  _, ext = os.path.splitext(filename)
+  return ext.lower() in constants.SUPPORTED_IMAGE_EXTENSIONS
+
+
 def read_image_directory(image_dir: str) -> pd.DataFrame:
   """Reads image data from a directory into a Pandas DataFrame.
 
@@ -178,9 +189,12 @@ def read_image_directory(image_dir: str) -> pd.DataFrame:
       if split not in split_values:
         logging.warning('Unexpected split value: %s. Skipping %s',
                         split, root)
-      # TODO(cezequiel): Add guard for non image files (e.g. .DS_Store)
       for f in files:
+        # Skip non-image files
         image_uri = os.path.join(root, f)
+        if not is_image_file(image_uri):
+          logging.warning('Not a supported image file: %s', image_uri)
+          continue
         row = [split, image_uri, label]
         rows.append(row)
 

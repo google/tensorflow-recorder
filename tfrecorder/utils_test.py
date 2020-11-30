@@ -152,6 +152,22 @@ class PathSplitTest(unittest.TestCase):
       self.assertEqual(act_filename, filename)
 
 
+class IsImageFileTest(unittest.TestCase):
+  """Tests `is_image_file`."""
+
+  def test_image_file(self):
+    """Check output is True when file is an image."""
+    for ext in constants.SUPPORTED_IMAGE_EXTENSIONS:
+      self.assertTrue(
+          utils.is_image_file(f'file{ext.upper()}'),
+          msg=f'False is not true: {ext}',
+      )
+
+  def test_not_image_file(self):
+    """Check output is False when file is not an image."""
+    self.assertFalse(utils.is_image_file('file.txt'))
+
+
 class ReadImageDirectoryTest(unittest.TestCase):
   """Tests `read_image_directory`."""
 
