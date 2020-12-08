@@ -35,7 +35,7 @@ REQUIRED_PACKAGES = [
     "pandas >= 1.0.4",
     "Pillow >= 7.1.2",
     "pyarrow >= 0.17, < 0.18.0",
-    "pylint >= 2.5.3",
+    "pylint = 2.6.0",
     "pytz >= 2020.1",
     "python-dateutil",
     "tensorflow == 2.3.1",
