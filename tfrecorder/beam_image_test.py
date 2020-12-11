@@ -22,7 +22,6 @@ import unittest
 import apache_beam as beam
 from apache_beam.testing import util
 import numpy as np
-import PIL
 from PIL import Image
 
 from tfrecorder import beam_image
@@ -44,7 +43,7 @@ class BeamImageTests(unittest.TestCase):
   def test_load(self):
     """Tests the image loading function."""
     img = beam_image.load(self.image_file)
-    self.assertIsInstance(img, PIL.JpegImagePlugin.JpegImageFile)
+    self.assertIsInstance(img, np.ndarray)
 
   def test_file_not_found_load(self):
     """Test loading an image that doesn't exist."""

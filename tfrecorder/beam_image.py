@@ -24,6 +24,7 @@ import apache_beam as beam
 from apache_beam.metrics import Metrics
 import tensorflow as tf
 from PIL import Image
+import numpy as np
 
 
 BASE64_ALTCHARS = b'-_'
@@ -59,7 +60,7 @@ def decode(b64_bytes, width, height, channels) -> Image:
   return Image.frombytes(mode, (width, height), image_bytes)
 
 
-def load(image_uri):
+def load(image_uri: str) -> np.ndarray:
   """Loads an image using Pillow.
 
   Supported formats:
@@ -68,7 +69,8 @@ def load(image_uri):
 
   try:
     with tf.io.gfile.GFile(image_uri, 'rb') as f:
-      return Image.open(f)
+      image_tensor = tf.io.decode_image(f.read())
+      return image_tensor.numpy()
   except tf.python.framework.errors_impl.NotFoundError as e:
     raise OSError('File {} was not found.'.format(image_uri)) from e
 
@@ -104,8 +106,8 @@ class ExtractImagesDoFn(beam.DoFn):
       image = load(image_uri)
       element['image_name'] = os.path.split(image_uri)[-1]
       d['image'] = encode(image)
-      d['image_width'], d['image_height'] = image.size
-      d['image_channels'] = mode_to_channel(image.mode)
+      d['image_width'], d['image_height'] = image.shape[1], image.shape[0]
+      d['image_channels'] = image.shape[-1]
       self.image_good_counter.inc()
 
     # pylint: disable=broad-except
