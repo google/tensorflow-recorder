@@ -352,9 +352,9 @@ class ConvertAndLoadTest(unittest.TestCase):
     self.tfrecord_dir = '/path/to/tfrecords'
     self.dataset = tf.data.Dataset.from_tensor_slices([1, 2, 3])
     self.datasets = {
-        'TRAIN': self.dataset,
-        'VALIDATION': self.dataset,
-        'TEST': self.dataset,
+        'train': self.dataset,
+        'validation': self.dataset,
+        'test': self.dataset,
     }
 
   @mock.patch.object(dataset_loader, 'load', autospec=True)

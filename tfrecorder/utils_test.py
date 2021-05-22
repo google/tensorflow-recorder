@@ -64,7 +64,7 @@ class CheckTFRecordsTest(unittest.TestCase):
         'image_channels': [image_channels] * num_records,
     })
     self.tfrecord_dir = 'gs://path/to/tfrecords/dir'
-    self.split = 'TRAIN'
+    self.split = 'train'
     self.num_records = num_records
     self.data = data
     self.dataset = tf.data.Dataset.from_tensor_slices(self.data)

@@ -276,8 +276,8 @@ def build_pipeline(
     # Require training set to be available in the input data. The transform_fn
     # and transformed_metadata will be generated from the training set and
     # applied to the other datasets, if any
-    if 'TRAIN' not in split_counts:
-      raise AttributeError('`TRAIN` set expected to be present in splits')
+    if 'train' not in split_counts:
+      raise AttributeError('`train` set expected to be present in splits')
 
     # Split dataset into train, validation, test sets.
     partition_fn = functools.partial(_partition_fn, split_key=split_key)
@@ -300,13 +300,13 @@ def build_pipeline(
         metadata=pre_tft_metadata,
         label='Train')
 
-    if 'VALIDATION' in split_counts:
+    if 'validation' in split_counts:
       _transform_and_write_tfr(
           val_data, tfr_writer, transform_fn=transform_fn,
           metadata=pre_tft_metadata,
           label='Validation')
 
-    if 'TEST' in split_counts:
+    if 'test' in split_counts:
       _transform_and_write_tfr(
           test_data, tfr_writer, transform_fn=transform_fn,
           metadata=pre_tft_metadata,

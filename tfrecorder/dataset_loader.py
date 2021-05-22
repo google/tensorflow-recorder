@@ -85,9 +85,9 @@ def load(tfrecord_dir: str) -> Dict[str, tf.data.Dataset]:
   This returns a `dict` keyed by dataset split, e.g.
     ```
     {
-      'TRAIN': <tf.data.Dataset>,
-      'VALIDATION': <tf.data.Dataset>,
-      'TEST': <tf.data.Dataset>,
+      'train': <tf.data.Dataset>,
+      'validation': <tf.data.Dataset>,
+      'test': <tf.data.Dataset>,
     }
     ```
 

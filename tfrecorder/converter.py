@@ -100,7 +100,7 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
 
   Example expected directory structure:
     image_dir/
-      TRAIN/
+      train/
         label0/
           image_000.jpg
           image_001.jpg
@@ -108,7 +108,7 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
         label1/
           image_100.jpg
           ...
-      VALIDATION/
+      validation/
         ...
 
   Output will be based on `schema.image_csv_schema`.
