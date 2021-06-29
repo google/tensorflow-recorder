@@ -28,8 +28,8 @@ import pandas as pd
 
 from tfrecorder import input_schema
 
-
-TEST_DIR = 'test_data/'
+#for windows just write 'test_data/' as path
+TEST_DIR = 'tfrecorder/test_data/'
 TEST_TFRECORDS_DIR = os.path.join(TEST_DIR, 'sample_tfrecords')
 
 
