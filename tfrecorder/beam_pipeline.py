@@ -84,7 +84,7 @@ def _partition_fn(
   except ValueError as e:
     logging.warning('Unable to index dataset type %s: %s.',
                     dataset_type, str(e))
-    index = types.SplitKey.allowed_values.index('DISCARD')
+    index = types.SplitKey.allowed_values.index('discard')
   return index
 
 def _get_write_to_tfrecord(output_dir: str,

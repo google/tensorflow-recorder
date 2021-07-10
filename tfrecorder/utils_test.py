@@ -75,8 +75,7 @@ class CheckTFRecordsTest(unittest.TestCase):
 
     mock_fn.return_value = {self.split: self.dataset}
     num_records = len(self.data['image'])
-    #omit dir='/tmp' if on windows
-    with tempfile.TemporaryDirectory(dir='/tmp') as dir_:
+    with tempfile.TemporaryDirectory() as dir_:
       actual_dir = utils.inspect(
           self.tfrecord_dir, split=self.split, num_records=num_records,
           output_dir=dir_)

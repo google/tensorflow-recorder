@@ -113,7 +113,7 @@ class ExtractImagesDoFn(beam.DoFn):
       logging.warning('Could not load image: %s', image_uri)
       logging.error('Exception was: %s', str(e))
       self.image_bad_counter.inc()
-      d['split'] = 'DISCARD'
+      d['split'] = 'discard'
 
     element.update(d)
     yield element
