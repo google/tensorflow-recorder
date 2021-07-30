@@ -38,7 +38,7 @@ REQUIRED_PACKAGES = [
     "pylint >= 2.5.3",
     "pytz >= 2020.1",
     "python-dateutil",
-    "tensorflow == 2.3.1",
+    "tensorflow == 2.4.2",
     "tensorflow_transform == 0.24.1",
 ]
 
