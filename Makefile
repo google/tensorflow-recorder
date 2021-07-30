@@ -1,4 +1,4 @@
-all: init testnb test pylint
+all: init test-nb test pylint
 
 init:
 	pip install -r requirements.txt

@@ -21,15 +21,15 @@ from setuptools import setup
 
 
 # Semantic versioning (PEP 440)
-VERSION = '2.0'
+VERSION = '2.0.1'
 
 REQUIRED_PACKAGES = [
-    "apache-beam[gcp] >= 2.22.0",
+    "apache-beam[gcp] == 2.24.0",
     "avro >= 1.10.0",
     "coverage >= 5.1",
     "ipython >= 7.15.0",
     "fire >= 0.3.1",
-    "frozendict >= 1.2",
+    "frozendict == 1.2",
     "nose >= 1.3.7",
     "numpy < 1.19.0",
     "pandas >= 1.0.4",
@@ -39,7 +39,7 @@ REQUIRED_PACKAGES = [
     "pytz >= 2020.1",
     "python-dateutil",
     "tensorflow == 2.3.1",
-    "tensorflow_transform >= 0.22",
+    "tensorflow_transform == 0.24.1",
 ]
 
 if sys.version_info < (3,7,0,0,0):
