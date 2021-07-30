@@ -1,3 +1,8 @@
+# Hotfix 2.0,1
+
+* Updates certain package versions in requirements.txt and setup.py to address
+  package dependency compatibility issues.
+
 # Release 2.0
 
 * Changes `create_tfrecords` and `check_tfrecords` to `convert` and `inspect` respectively
