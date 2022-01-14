@@ -1,7 +1,7 @@
 split,image_uri,label
-test,tfrecorder/test_data/images/TEST/cat/cat-800x600-3.jpg,cat
-test,tfrecorder/test_data/images/TEST/goat/goat-640x427-3.jpg,goat
-train,tfrecorder/test_data/images/TRAIN/cat/cat-640x853-1.jpg,cat
-train,tfrecorder/test_data/images/TRAIN/goat/goat-640x640-1.jpg,goat
-validation,tfrecorder/test_data/images/VALIDATION/cat/cat-800x600-2.jpg,cat
-validation,tfrecorder/test_data/images/VALIDATION/goat/goat-320x320-2.jpg,goat
+test,tfrecorder/test_data/images/test/cat/cat-800x600-3.jpg,cat
+test,tfrecorder/test_data/images/test/goat/goat-640x427-3.jpg,goat
+train,tfrecorder/test_data/images/train/cat/cat-640x853-1.jpg,cat
+train,tfrecorder/test_data/images/train/goat/goat-640x640-1.jpg,goat
+validation,tfrecorder/test_data/images/validation/cat/cat-800x600-2.jpg,cat
+validation,tfrecorder/test_data/images/validation/goat/goat-320x320-2.jpg,goat
