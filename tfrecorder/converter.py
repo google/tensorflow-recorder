@@ -22,7 +22,7 @@ the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 
 import logging
 import os
-from typing import Any, Dict, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, Optional, Sequence, Union
 
 import apache_beam as beam
 import pandas as pd
@@ -32,7 +32,6 @@ from tfrecorder import beam_pipeline
 from tfrecorder import dataset_loader
 from tfrecorder import constants
 from tfrecorder import input_schema
-from tfrecorder import types
 from tfrecorder import utils
 
 
@@ -67,6 +66,7 @@ def _validate_runner(
   if (runner == 'DataflowRunner') & (not tfrecorder_wheel):
     raise AttributeError(
         'DataflowRunner requires a tfrecorder whl file for remote execution.')
+
 
 
 def _path_split(filepath: str) -> Tuple[str, str]:
@@ -135,6 +135,7 @@ def _read_image_directory(image_dir: str) -> pd.DataFrame:
       rows, columns=input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
 
 
+
 def _is_directory(input_data) -> bool:
   """Returns True if `input_data` is a directory; False otherwise."""
 
@@ -200,7 +201,7 @@ def to_dataframe(
     df = read_csv(input_data, header, names)
 
   elif isinstance(input_data, str) and _is_directory(input_data):
-    df = _read_image_directory(input_data)
+    df = utils.read_image_directory(input_data)
 
   else:
     raise ValueError('Unsupported `input_data`: {}'.format(type(input_data)))

@@ -15,18 +15,21 @@
 # limitations under the License.
 
 """Miscellaneous utility functions."""
-
+import logging
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Tuple
 
 import csv
 import os
 
+import pandas as pd
 import tensorflow as tf
 
 from tfrecorder import beam_image
 from tfrecorder import constants
 from tfrecorder import dataset_loader
+from tfrecorder import input_schema
+from tfrecorder import types
 
 _OUT_IMAGE_TEMPLATE = 'image_{:0>3d}.png'
 
@@ -117,3 +120,76 @@ def copy_logfile_to_gcs(logfile: str, output_dir: str):
   except FileNotFoundError as e:
     raise FileNotFoundError("Unable to copy log file {} to gcs.".format(
         e.filename)) from e
+
+
+def _path_split(filepath: str) -> Tuple[str, str]:
+  """Splits `filepath` into (head, tail) where `tail` part after last '/'.
+
+  e.g.
+    filepath = '/path/to/image/file.jpg'
+    head, tail = _path_split(filepath)
+    # head -> '/path/to/image'
+    # tail -> 'file.jpg'
+
+  Similar to `os.path.split` but supports GCS paths (prefix: gs://).
+  """
+
+  if filepath.startswith(constants.GCS_PREFIX):
+    _, path = filepath.split(constants.GCS_PREFIX)
+    head, tail = os.path.split(os.path.normpath(path))
+    return constants.GCS_PREFIX + head, tail
+
+  return os.path.split(filepath)
+
+
+def read_image_directory(image_dir: str) -> pd.DataFrame:
+  """Reads image data from a directory into a Pandas DataFrame.
+
+  Expected directory structure:
+    image_dir/
+      <dataset split>/
+        <label>/
+          <image file>
+
+  Example expected directory structure:
+    image_dir/
+      TRAIN/
+        label0/
+          image_000.jpg
+          image_001.jpg
+          ...
+        label1/
+          image_100.jpg
+          ...
+      VALIDATION/
+        ...
+
+  Output will be based on `schema.image_csv_schema`.
+  The subdirectories should only contain image files.
+  See `beam_image.load` for supported image formats.
+  """
+
+  rows = []
+  split_values = types.SplitKey.allowed_values
+  for root, _, files in tf.io.gfile.walk(image_dir):
+    if files:
+      root_, label = _path_split(root)
+      _, split = _path_split(root_)
+      if split not in split_values:
+        logging.warning('Unexpected split value: %s. Skipping %s',
+                        split, root)
+      # TODO(cezequiel): Add guard for non image files (e.g. .DS_Store)
+      for f in files:
+        image_uri = os.path.join(root, f)
+        row = [split, image_uri, label]
+        rows.append(row)
+
+  return pd.DataFrame(
+      rows, columns=input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
+
+
+def create_image_csv(image_dir: str, output_filename: str):
+  """Generates an Image CSV file from an image directory."""
+
+  df = read_image_directory(image_dir)
+  return df.to_csv(output_filename, header=False, index=False)
