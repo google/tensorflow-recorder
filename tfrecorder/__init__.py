@@ -17,9 +17,7 @@
 """Imports."""
 
 from tfrecorder import accessor
-from tfrecorder import input_schema
-from tfrecorder import types
 from tfrecorder.converter import convert
-from tfrecorder.converter import convert_and_load
 from tfrecorder.dataset_loader import load
+from tfrecorder.converter import convert_and_load
 from tfrecorder.utils import inspect

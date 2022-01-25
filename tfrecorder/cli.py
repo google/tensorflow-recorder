@@ -28,7 +28,6 @@ def main():
   fire.Fire({
       'convert': converter.convert,
       'inspect': utils.inspect,
-      'create-image-csv': utils.create_image_csv,
   })
 
 
