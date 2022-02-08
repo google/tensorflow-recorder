@@ -22,7 +22,7 @@ the Pandas DataFrame Accessor (accessor.py) and the CLI (cli.py).
 
 import logging
 import os
-from typing import Any, Dict, Optional, Sequence, Union
+from typing import Any, Dict, Optional, Sequence, Tuple, Union
 
 import apache_beam as beam
 import pandas as pd
@@ -32,6 +32,7 @@ from tfrecorder import beam_pipeline
 from tfrecorder import dataset_loader
 from tfrecorder import constants
 from tfrecorder import input_schema
+from tfrecorder import types
 from tfrecorder import utils
 
 
@@ -66,6 +67,72 @@ def _validate_runner(
   if (runner == 'DataflowRunner') & (not tfrecorder_wheel):
     raise AttributeError(
         'DataflowRunner requires a tfrecorder whl file for remote execution.')
+
+
+def _path_split(filepath: str) -> Tuple[str, str]:
+  """Splits `filepath` into (head, tail) where `tail` part after last '/'.
+
+  e.g.
+    filepath = '/path/to/image/file.jpg'
+    head, tail = _path_split(filepath)
+    # head -> '/path/to/image'
+    # tail -> 'file.jpg'
+
+  Similar to `os.path.split` but supports GCS paths (prefix: gs://).
+  """
+
+  if filepath.startswith(constants.GCS_PREFIX):
+    _, path = filepath.split(constants.GCS_PREFIX)
+    head, tail = os.path.split(os.path.normpath(path))
+    return constants.GCS_PREFIX + head, tail
+
+  return os.path.split(filepath)
+
+
+def _read_image_directory(image_dir: str) -> pd.DataFrame:
+  """Reads image data from a directory into a Pandas DataFrame.
+
+  Expected directory structure:
+    image_dir/
+      <dataset split>/
+        <label>/
+          <image file>
+
+  Example expected directory structure:
+    image_dir/
+      train/
+        label0/
+          image_000.jpg
+          image_001.jpg
+          ...
+        label1/
+          image_100.jpg
+          ...
+      validation/
+        ...
+
+  Output will be based on `schema.image_csv_schema`.
+  The subdirectories should only contain image files.
+  See `beam_image.load` for supported image formats.
+  """
+
+  rows = []
+  split_values = types.SplitKey.allowed_values
+  for root, _, files in tf.io.gfile.walk(image_dir):
+    if files:
+      root_, label = _path_split(root)
+      _, split = _path_split(root_)
+      if split not in split_values:
+        logging.warning('Unexpected split value: %s. Skipping %s',
+                        split, root)
+      # TODO(cezequiel): Add guard for non image files (e.g. .DS_Store)
+      for f in files:
+        image_uri = os.path.join(root, f)
+        row = [split, image_uri, label]
+        rows.append(row)
+
+  return pd.DataFrame(
+      rows, columns=input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
 
 
 def _is_directory(input_data) -> bool:
@@ -133,7 +200,7 @@ def to_dataframe(
     df = read_csv(input_data, header, names)
 
   elif isinstance(input_data, str) and _is_directory(input_data):
-    df = utils.read_image_directory(input_data)
+    df = _read_image_directory(input_data)
 
   else:
     raise ValueError('Unsupported `input_data`: {}'.format(type(input_data)))

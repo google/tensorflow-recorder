@@ -43,7 +43,7 @@ class BeamPipelineTests(unittest.TestCase):
   def test_processing_fn_with_int_label(self):
     'Test preprocessing fn with integer label.'
     element = {
-        'split': 'TRAIN',
+        'split': 'train',
         'image_uri': 'gs://foo/bar.jpg',
         'label': 1}
     my_schema = frozendict.FrozenOrderedDict({
@@ -60,7 +60,7 @@ class BeamPipelineTests(unittest.TestCase):
     mock_transform.compute_and_apply_vocabulary.return_value = tf.constant(
         0, dtype=tf.int64)
     element = {
-        'split': 'TRAIN',
+        'split': 'train',
         'image_uri': 'gs://foo/bar.jpg',
         'label': tf.constant('cat', dtype=tf.string)}
     result = beam_pipeline._preprocessing_fn(
@@ -85,7 +85,7 @@ class BeamPipelineTests(unittest.TestCase):
         'image_uri': 'gs://foo/bar0.jpg',
         'label': 1}
 
-    for i, part in enumerate(['TRAIN', 'VALIDATION', 'TEST', 'FOO']):
+    for i, part in enumerate(['train', 'validation', 'test', 'FOO']):
       test_data['split'] = part.encode('utf-8')
       index = beam_pipeline._partition_fn(test_data, split_key='split')
 
@@ -105,14 +105,14 @@ class GetSplitCountsTest(unittest.TestCase):
 
   def test_all_splits(self):
     """Tests case where train, validation and test data exists"""
-    expected = {'TRAIN': 2, 'VALIDATION': 2, 'TEST': 2}
+    expected = {'train': 2, 'validation': 2, 'test': 2}
     actual = beam_pipeline.get_split_counts(self.df, self.split_key)
     self.assertEqual(actual, expected)
 
   def test_one_split(self):
     """Tests case where only one split (train) exists."""
-    df = self.df[self.df.split == 'TRAIN']
-    expected = {'TRAIN': 2}
+    df = self.df[self.df.split == 'train']
+    expected = {'train': 2}
     actual = beam_pipeline.get_split_counts(df, self.split_key)
     self.assertEqual(actual, expected)
 
@@ -158,7 +158,7 @@ class TransformAndWriteTfrTest(unittest.TestCase):
 
     with self.pipeline as p:
       with tft_beam.Context(temp_dir=os.path.join(self.test_dir, 'tmp')):
-        df = self.pre_tft_df[self.pre_tft_df.split == 'TRAIN']
+        df = self.pre_tft_df[self.pre_tft_df.split == 'train']
         dataset = self._get_dataset(p, df)
         preprocessing_fn = functools.partial(
             beam_pipeline._preprocessing_fn,
@@ -185,7 +185,7 @@ class TransformAndWriteTfrTest(unittest.TestCase):
     with self.pipeline as p:
       with tft_beam.Context(temp_dir=os.path.join(self.test_dir, 'tmp')):
 
-        df = self.pre_tft_df[self.pre_tft_df.split == 'TEST']
+        df = self.pre_tft_df[self.pre_tft_df.split == 'test']
         dataset = self._get_dataset(p, df)
         transform_fn = p | tft_beam.ReadTransformFn(self.transform_fn_path)
         beam_pipeline._transform_and_write_tfr(

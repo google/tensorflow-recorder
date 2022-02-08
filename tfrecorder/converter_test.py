@@ -28,7 +28,6 @@ import mock
 import pandas as pd
 import tensorflow as tf
 
-from tfrecorder import utils
 from tfrecorder import beam_pipeline
 from tfrecorder import converter
 from tfrecorder import dataset_loader
@@ -101,6 +100,17 @@ class MiscTest(unittest.TestCase):
     self.assertEqual(r['job_id'], job_id)
     self.assertEqual(r['dataflow_url'], dataflow_url)
     self.assertRegex(r['tfrecord_dir'], fr'{outdir}/tfrecorder-.+-?.*')
+
+  def test_path_split(self):
+    """Tests `_path_split`."""
+
+    filename = 'image_file.jpg'
+    dirpaths = ['/path/to/image/dir/', 'gs://path/to/image/dir/']
+    for dir_ in dirpaths:
+      filepath = os.path.join(dir_, filename)
+      act_dirpath, act_filename = converter._path_split(filepath)
+      self.assertEqual(act_dirpath, dir_.rsplit('/', 1)[0])
+      self.assertEqual(act_filename, filename)
 
 
 class InputValidationTest(unittest.TestCase):
@@ -206,6 +216,48 @@ def get_sample_image_csv_data() -> List[List[str]]:
   return [header] + content
 
 
+class ReadImageDirectoryTest(unittest.TestCase):
+  """Tests `_read_image_directory`."""
+
+  def setUp(self):
+    self.image_data = test_utils.get_test_df()
+    self.tempfiles = []
+    self.tempdir = None
+    self.schema = input_schema.Schema(
+        input_schema.IMAGE_CSV_SCHEMA.input_schema_map)
+
+  def tearDown(self):
+    for fp in self.tempfiles:
+      fp.close()
+    self.tempdir.cleanup()
+
+  def test_normal(self):
+    """Tests conversion of expected directory structure on local machine."""
+
+    g = self.image_data.groupby([self.schema.split_key, self.schema.label_key])
+
+    self.tempdir = tempfile.TemporaryDirectory()
+    rows = []
+    for (split, label), indices in g.groups.items():
+      dir_ = os.path.join(self.tempdir.name, split, label)
+      os.makedirs(dir_)
+      for f in list(self.image_data.loc[indices, self.schema.image_uri_key]):
+        _, name = os.path.split(f)
+        fp = tempfile.NamedTemporaryFile(
+            dir=dir_, suffix='.jpg', prefix=name)
+        self.tempfiles.append(fp)
+        rows.append([split, fp.name, label])
+
+    columns = list(input_schema.IMAGE_CSV_SCHEMA.get_input_keys())
+    actual = converter._read_image_directory(self.tempdir.name)
+    actual.sort_values(by=columns, inplace=True)
+    actual.reset_index(drop=True, inplace=True)
+    expected = pd.DataFrame(rows, columns=columns)
+    expected.sort_values(by=columns, inplace=True)
+    expected.reset_index(drop=True, inplace=True)
+    pd.testing.assert_frame_equal(actual, expected)
+
+
 class ReadCSVTest(unittest.TestCase):
   """Tests `read_csv`."""
 
@@ -275,7 +327,7 @@ class ToDataFrameTest(unittest.TestCase):
     actual = converter.to_dataframe(self.input_df, names=names)
     pd.testing.assert_frame_equal(actual, self.input_df[names])
 
-  @mock.patch.object(utils, 'read_image_directory', autospec=True)
+  @mock.patch.object(converter, '_read_image_directory')
   def test_input_image_dir(self, mock_fn):
     """Tests valid input image directory."""
 
@@ -300,9 +352,9 @@ class ConvertAndLoadTest(unittest.TestCase):
     self.tfrecord_dir = '/path/to/tfrecords'
     self.dataset = tf.data.Dataset.from_tensor_slices([1, 2, 3])
     self.datasets = {
-        'TRAIN': self.dataset,
-        'VALIDATION': self.dataset,
-        'TEST': self.dataset,
+        'train': self.dataset,
+        'validation': self.dataset,
+        'test': self.dataset,
     }
 
   @mock.patch.object(dataset_loader, 'load', autospec=True)

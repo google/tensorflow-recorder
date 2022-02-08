@@ -46,7 +46,7 @@ class ImageUri(SupportedType):
 class SplitKey(SupportedType):
   """Supports split key columns."""
   feature_spec = tf.io.FixedLenFeature([], tf.string)
-  allowed_values = ['TRAIN', 'VALIDATION', 'TEST', 'DISCARD']
+  allowed_values = ['train', 'validation', 'test', 'discard']
 
 
 @dataclasses.dataclass
