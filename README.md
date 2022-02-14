@@ -35,6 +35,22 @@ For "bleeding edge" changes, check out the `dev` branch.
 python setup.py install
 ```
 
+#### Docker
+
+Docker support is available through the `dev` branch
+
+1. Run the following command to build the image. Specify the image name and tag:
+
+```bash
+docker build -t <image_name>:<tag> .
+```
+
+2. Run the following command to create and start the image. Include `bash` to use an interactive shell
+
+```bash
+docker run -it --rm -v $(pwd):/<working_directory> <image_name>:<tag> [bash]
+```
+
 ### Install from PyPi
 ```bash
 pip install tfrecorder
