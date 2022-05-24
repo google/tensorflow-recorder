@@ -10,7 +10,7 @@ numpy < 1.19.0
 pylint == 2.6.0
 fire >= 0.3.1
 jupyter >= 1.0.0
-tensorflow == 2.3.1
+tensorflow == 2.6.4
 pyarrow <0.18,>=0.17
 frozendict == 1.2
 dataclasses >= 0.5;python_version<"3.7"
